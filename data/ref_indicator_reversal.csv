@@ -1,0 +1,32 @@
+indicator_code,reversal_tc,reversal_action_code,verification
+LEVY_PRED,972,640,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+CERTIFIED,972,641,"IRM 5.19.25.7(5), 5.19.25.10(9)"
+REVOCATION_REF,972,644,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+IA,972,63,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+OIC_ACCEPTED,781,,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+OIC_ACCEPTED,782,,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+CDP_LEVY_AC275,972,275,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+CDP_LEVY_520,521,,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+INNOCENT_SPOUSE,972,65,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+COMBAT_ZONE_52,502,,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+COMBAT_ZONE_54,502,,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+COMBAT_ZONE_56,502,,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+CNC_HARDSHIP,531,,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+IDT_522,972,522,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+IDT_523,972,523,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+IDT_525,972,525,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+BANKRUPTCY_A,521,,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+BANKRUPTCY_B,521,,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+BANKRUPTCY_C,521,,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+DECEASED_540,542,,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+DECEASED_530,531,,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+OIC_PENDING,481,,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+OIC_PENDING,482,,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+OIC_PENDING,483,,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+IA_PENDING,972,43,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+ADJ_PENDING,472,,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+DISASTER,972,87,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+RESTITUTION,972,102,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+EQUIV_HEARING,972,278,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+SHORT_TERM_PLAN,972,899,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209
+CONT_WAGE_LEVY,972,898,Pairing assumed - not stated in IRM 5.19.25; verify vs Doc 6209

@@ -1,0 +1,366 @@
+tin_token,scenario_id,scenario,expected_findings,hand_built
+T000001,S01,Certified correctly; levy predicate; no change since,NONE,Y
+T000002,S02,"Lien filed, CDP window lapsed, above threshold, never certified",MISSED_CERTIFICATION,Y
+T000003,S03,Below threshold with levy; correctly not certified,NONE,Y
+T000004,S04,Above threshold but no lien or levy; correctly not certified,NONE,Y
+T000005,S05,Equivalent hearing (AC 278) does not exclude; should be certified,MISSED_CERTIFICATION,Y
+T000006,S06,IA established after certification; no reversal after 81 days,DECERT_DUE_OVERDUE,Y
+T000007,S07,IA established 10 days ago; reversal still within 30-day window,DECERT_DUE_PENDING,Y
+T000008,S08,Full paid; reversed in 21 days,REVERSED_TIMELY,Y
+T000009,S09,Full paid; reversal took 75 days,REVERSED_LATE,Y
+T000010,S10,Partial payment below threshold; correctly stays certified,INFO_BELOW_THRESHOLD_STILL_CERTIFIED,Y
+T000011,S11,"One certified module's CSED expired; that module needs TC 972, taxpayer stays certified",MODULE_REVERSAL_DUE_OVERDUE,Y
+T000012,S12,"Certified module with no AC 640 and no lien (e.g., pre-2017 levy only); research",CERTIFIED_MODULE_NO_PREDICATE,Y
+T000013,S13,Certified when assessed balance was below threshold (erroneous),CERTIFIED_BELOW_THRESHOLD_AT_CERT,Y
+T000014,S14,Timely levy CDP pending (TC 520 cc 76); correctly not certified,NONE,Y
+T000015,S15,Timely CDP request (AC 275) after certification; reversal 52 days overdue,DECERT_DUE_OVERDUE,Y
+T000017,S16b,"Joint liability, secondary spouse filed innocent spouse claim; secondary only",DECERT_DUE_OVERDUE,Y
+T000016,S16,"Joint liability, primary spouse; stays certified",NONE,Y
+T000018,S17,Taxpayer deceased (TC 540) after certification,DECERT_DUE_OVERDUE,Y
+T000019,S18,CNC hardship (TC 530 cc 24); correctly not certified,NONE,Y
+T000020,S19,"CNC reversed (TC 531); exclusion gone, should be certified",MISSED_CERTIFICATION,Y
+T000021,S20,Total over threshold only with SRP (MFT 35) and restitution (MFT 31 AC 102); not certifiable,NONE,Y
+T000022,S21,New eligible module after certification lacks AC 641,NEW_ELIGIBLE_MODULE_NOT_CERTIFIED,Y
+T000023,S22,Revocation referred to State (AC 644); not eligible for expedited decertification,INFO_EXPEDITE_INELIGIBLE,Y
+T000024,S23,Lien CDP hearing pending; lien predicate not met,NONE,Y
+T000025,S24,Lien CDP concluded in ACMS; stale open copy in ACDS must be deduped; should be certified,MISSED_CERTIFICATION,Y
+T000026,S25,Bankruptcy filed (TC 520 cc 81) 7 days ago,DECERT_DUE_PENDING,Y
+T000027,S26,TFRP (MFT 55) plus income tax; correctly certified,NONE,Y
+T000028,S27,Untimely lien CDP request; 6320 rights lapsed at the deadline; should be certified,MISSED_CERTIFICATION,Y
+T000029,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000030,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000031,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000032,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000033,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000034,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000035,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000036,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000037,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000038,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000039,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000040,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000041,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000042,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000043,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000044,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000045,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000046,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000047,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000048,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000049,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000050,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000051,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000052,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000053,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000054,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000055,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000056,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000057,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000058,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000059,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000060,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000061,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000062,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000063,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000064,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000065,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000066,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000067,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000068,S01,Certified correctly; levy predicate; no change since,NONE,N
+T000069,S02,"Lien filed, CDP window lapsed, above threshold, never certified",MISSED_CERTIFICATION,N
+T000070,S02,"Lien filed, CDP window lapsed, above threshold, never certified",MISSED_CERTIFICATION,N
+T000071,S02,"Lien filed, CDP window lapsed, above threshold, never certified",MISSED_CERTIFICATION,N
+T000072,S02,"Lien filed, CDP window lapsed, above threshold, never certified",MISSED_CERTIFICATION,N
+T000073,S02,"Lien filed, CDP window lapsed, above threshold, never certified",MISSED_CERTIFICATION,N
+T000074,S02,"Lien filed, CDP window lapsed, above threshold, never certified",MISSED_CERTIFICATION,N
+T000075,S02,"Lien filed, CDP window lapsed, above threshold, never certified",MISSED_CERTIFICATION,N
+T000076,S02,"Lien filed, CDP window lapsed, above threshold, never certified",MISSED_CERTIFICATION,N
+T000077,S02,"Lien filed, CDP window lapsed, above threshold, never certified",MISSED_CERTIFICATION,N
+T000078,S02,"Lien filed, CDP window lapsed, above threshold, never certified",MISSED_CERTIFICATION,N
+T000079,S02,"Lien filed, CDP window lapsed, above threshold, never certified",MISSED_CERTIFICATION,N
+T000080,S02,"Lien filed, CDP window lapsed, above threshold, never certified",MISSED_CERTIFICATION,N
+T000081,S02,"Lien filed, CDP window lapsed, above threshold, never certified",MISSED_CERTIFICATION,N
+T000082,S02,"Lien filed, CDP window lapsed, above threshold, never certified",MISSED_CERTIFICATION,N
+T000083,S02,"Lien filed, CDP window lapsed, above threshold, never certified",MISSED_CERTIFICATION,N
+T000084,S03,Below threshold with levy; correctly not certified,NONE,N
+T000085,S03,Below threshold with levy; correctly not certified,NONE,N
+T000086,S03,Below threshold with levy; correctly not certified,NONE,N
+T000087,S03,Below threshold with levy; correctly not certified,NONE,N
+T000088,S03,Below threshold with levy; correctly not certified,NONE,N
+T000089,S03,Below threshold with levy; correctly not certified,NONE,N
+T000090,S03,Below threshold with levy; correctly not certified,NONE,N
+T000091,S03,Below threshold with levy; correctly not certified,NONE,N
+T000092,S03,Below threshold with levy; correctly not certified,NONE,N
+T000093,S03,Below threshold with levy; correctly not certified,NONE,N
+T000094,S03,Below threshold with levy; correctly not certified,NONE,N
+T000095,S03,Below threshold with levy; correctly not certified,NONE,N
+T000096,S03,Below threshold with levy; correctly not certified,NONE,N
+T000097,S03,Below threshold with levy; correctly not certified,NONE,N
+T000098,S03,Below threshold with levy; correctly not certified,NONE,N
+T000099,S03,Below threshold with levy; correctly not certified,NONE,N
+T000100,S03,Below threshold with levy; correctly not certified,NONE,N
+T000101,S03,Below threshold with levy; correctly not certified,NONE,N
+T000102,S03,Below threshold with levy; correctly not certified,NONE,N
+T000103,S03,Below threshold with levy; correctly not certified,NONE,N
+T000104,S03,Below threshold with levy; correctly not certified,NONE,N
+T000105,S03,Below threshold with levy; correctly not certified,NONE,N
+T000106,S03,Below threshold with levy; correctly not certified,NONE,N
+T000107,S03,Below threshold with levy; correctly not certified,NONE,N
+T000108,S03,Below threshold with levy; correctly not certified,NONE,N
+T000109,S03,Below threshold with levy; correctly not certified,NONE,N
+T000110,S03,Below threshold with levy; correctly not certified,NONE,N
+T000111,S03,Below threshold with levy; correctly not certified,NONE,N
+T000112,S03,Below threshold with levy; correctly not certified,NONE,N
+T000113,S03,Below threshold with levy; correctly not certified,NONE,N
+T000114,S03,Below threshold with levy; correctly not certified,NONE,N
+T000115,S03,Below threshold with levy; correctly not certified,NONE,N
+T000116,S03,Below threshold with levy; correctly not certified,NONE,N
+T000117,S03,Below threshold with levy; correctly not certified,NONE,N
+T000118,S03,Below threshold with levy; correctly not certified,NONE,N
+T000119,S03,Below threshold with levy; correctly not certified,NONE,N
+T000120,S03,Below threshold with levy; correctly not certified,NONE,N
+T000121,S03,Below threshold with levy; correctly not certified,NONE,N
+T000122,S03,Below threshold with levy; correctly not certified,NONE,N
+T000123,S03,Below threshold with levy; correctly not certified,NONE,N
+T000124,S03,Below threshold with levy; correctly not certified,NONE,N
+T000125,S03,Below threshold with levy; correctly not certified,NONE,N
+T000126,S03,Below threshold with levy; correctly not certified,NONE,N
+T000127,S03,Below threshold with levy; correctly not certified,NONE,N
+T000128,S03,Below threshold with levy; correctly not certified,NONE,N
+T000129,S03,Below threshold with levy; correctly not certified,NONE,N
+T000130,S03,Below threshold with levy; correctly not certified,NONE,N
+T000131,S03,Below threshold with levy; correctly not certified,NONE,N
+T000132,S03,Below threshold with levy; correctly not certified,NONE,N
+T000133,S03,Below threshold with levy; correctly not certified,NONE,N
+T000134,S03,Below threshold with levy; correctly not certified,NONE,N
+T000135,S03,Below threshold with levy; correctly not certified,NONE,N
+T000136,S03,Below threshold with levy; correctly not certified,NONE,N
+T000137,S03,Below threshold with levy; correctly not certified,NONE,N
+T000138,S03,Below threshold with levy; correctly not certified,NONE,N
+T000139,S03,Below threshold with levy; correctly not certified,NONE,N
+T000140,S03,Below threshold with levy; correctly not certified,NONE,N
+T000141,S03,Below threshold with levy; correctly not certified,NONE,N
+T000142,S03,Below threshold with levy; correctly not certified,NONE,N
+T000143,S03,Below threshold with levy; correctly not certified,NONE,N
+T000144,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000145,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000146,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000147,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000148,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000149,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000150,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000151,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000152,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000153,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000154,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000155,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000156,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000157,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000158,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000159,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000160,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000161,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000162,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000163,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000164,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000165,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000166,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000167,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000168,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000169,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000170,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000171,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000172,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000173,S04,Above threshold but no lien or levy; correctly not certified,NONE,N
+T000174,S05,Equivalent hearing (AC 278) does not exclude; should be certified,MISSED_CERTIFICATION,N
+T000175,S05,Equivalent hearing (AC 278) does not exclude; should be certified,MISSED_CERTIFICATION,N
+T000176,S05,Equivalent hearing (AC 278) does not exclude; should be certified,MISSED_CERTIFICATION,N
+T000177,S05,Equivalent hearing (AC 278) does not exclude; should be certified,MISSED_CERTIFICATION,N
+T000178,S05,Equivalent hearing (AC 278) does not exclude; should be certified,MISSED_CERTIFICATION,N
+T000179,S05,Equivalent hearing (AC 278) does not exclude; should be certified,MISSED_CERTIFICATION,N
+T000180,S05,Equivalent hearing (AC 278) does not exclude; should be certified,MISSED_CERTIFICATION,N
+T000181,S05,Equivalent hearing (AC 278) does not exclude; should be certified,MISSED_CERTIFICATION,N
+T000182,S06,IA established after certification; no reversal after 81 days,DECERT_DUE_OVERDUE,N
+T000183,S06,IA established after certification; no reversal after 81 days,DECERT_DUE_OVERDUE,N
+T000184,S06,IA established after certification; no reversal after 81 days,DECERT_DUE_OVERDUE,N
+T000185,S06,IA established after certification; no reversal after 81 days,DECERT_DUE_OVERDUE,N
+T000186,S06,IA established after certification; no reversal after 81 days,DECERT_DUE_OVERDUE,N
+T000187,S06,IA established after certification; no reversal after 81 days,DECERT_DUE_OVERDUE,N
+T000188,S06,IA established after certification; no reversal after 81 days,DECERT_DUE_OVERDUE,N
+T000189,S06,IA established after certification; no reversal after 81 days,DECERT_DUE_OVERDUE,N
+T000190,S07,IA established 10 days ago; reversal still within 30-day window,DECERT_DUE_PENDING,N
+T000191,S07,IA established 10 days ago; reversal still within 30-day window,DECERT_DUE_PENDING,N
+T000192,S07,IA established 10 days ago; reversal still within 30-day window,DECERT_DUE_PENDING,N
+T000193,S07,IA established 10 days ago; reversal still within 30-day window,DECERT_DUE_PENDING,N
+T000194,S07,IA established 10 days ago; reversal still within 30-day window,DECERT_DUE_PENDING,N
+T000195,S07,IA established 10 days ago; reversal still within 30-day window,DECERT_DUE_PENDING,N
+T000196,S07,IA established 10 days ago; reversal still within 30-day window,DECERT_DUE_PENDING,N
+T000197,S07,IA established 10 days ago; reversal still within 30-day window,DECERT_DUE_PENDING,N
+T000198,S08,Full paid; reversed in 21 days,REVERSED_TIMELY,N
+T000199,S08,Full paid; reversed in 21 days,REVERSED_TIMELY,N
+T000200,S08,Full paid; reversed in 21 days,REVERSED_TIMELY,N
+T000201,S08,Full paid; reversed in 21 days,REVERSED_TIMELY,N
+T000202,S08,Full paid; reversed in 21 days,REVERSED_TIMELY,N
+T000203,S08,Full paid; reversed in 21 days,REVERSED_TIMELY,N
+T000204,S08,Full paid; reversed in 21 days,REVERSED_TIMELY,N
+T000205,S08,Full paid; reversed in 21 days,REVERSED_TIMELY,N
+T000206,S09,Full paid; reversal took 75 days,REVERSED_LATE,N
+T000207,S09,Full paid; reversal took 75 days,REVERSED_LATE,N
+T000208,S09,Full paid; reversal took 75 days,REVERSED_LATE,N
+T000209,S09,Full paid; reversal took 75 days,REVERSED_LATE,N
+T000210,S09,Full paid; reversal took 75 days,REVERSED_LATE,N
+T000211,S09,Full paid; reversal took 75 days,REVERSED_LATE,N
+T000212,S09,Full paid; reversal took 75 days,REVERSED_LATE,N
+T000213,S09,Full paid; reversal took 75 days,REVERSED_LATE,N
+T000214,S10,Partial payment below threshold; correctly stays certified,INFO_BELOW_THRESHOLD_STILL_CERTIFIED,N
+T000215,S10,Partial payment below threshold; correctly stays certified,INFO_BELOW_THRESHOLD_STILL_CERTIFIED,N
+T000216,S10,Partial payment below threshold; correctly stays certified,INFO_BELOW_THRESHOLD_STILL_CERTIFIED,N
+T000217,S10,Partial payment below threshold; correctly stays certified,INFO_BELOW_THRESHOLD_STILL_CERTIFIED,N
+T000218,S10,Partial payment below threshold; correctly stays certified,INFO_BELOW_THRESHOLD_STILL_CERTIFIED,N
+T000219,S10,Partial payment below threshold; correctly stays certified,INFO_BELOW_THRESHOLD_STILL_CERTIFIED,N
+T000220,S10,Partial payment below threshold; correctly stays certified,INFO_BELOW_THRESHOLD_STILL_CERTIFIED,N
+T000221,S10,Partial payment below threshold; correctly stays certified,INFO_BELOW_THRESHOLD_STILL_CERTIFIED,N
+T000222,S11,"One certified module's CSED expired; that module needs TC 972, taxpayer stays certified",MODULE_REVERSAL_DUE_OVERDUE,N
+T000223,S11,"One certified module's CSED expired; that module needs TC 972, taxpayer stays certified",MODULE_REVERSAL_DUE_OVERDUE,N
+T000224,S11,"One certified module's CSED expired; that module needs TC 972, taxpayer stays certified",MODULE_REVERSAL_DUE_OVERDUE,N
+T000225,S11,"One certified module's CSED expired; that module needs TC 972, taxpayer stays certified",MODULE_REVERSAL_DUE_OVERDUE,N
+T000226,S11,"One certified module's CSED expired; that module needs TC 972, taxpayer stays certified",MODULE_REVERSAL_DUE_OVERDUE,N
+T000227,S11,"One certified module's CSED expired; that module needs TC 972, taxpayer stays certified",MODULE_REVERSAL_DUE_OVERDUE,N
+T000228,S11,"One certified module's CSED expired; that module needs TC 972, taxpayer stays certified",MODULE_REVERSAL_DUE_OVERDUE,N
+T000229,S11,"One certified module's CSED expired; that module needs TC 972, taxpayer stays certified",MODULE_REVERSAL_DUE_OVERDUE,N
+T000230,S12,"Certified module with no AC 640 and no lien (e.g., pre-2017 levy only); research",CERTIFIED_MODULE_NO_PREDICATE,N
+T000231,S12,"Certified module with no AC 640 and no lien (e.g., pre-2017 levy only); research",CERTIFIED_MODULE_NO_PREDICATE,N
+T000232,S12,"Certified module with no AC 640 and no lien (e.g., pre-2017 levy only); research",CERTIFIED_MODULE_NO_PREDICATE,N
+T000233,S12,"Certified module with no AC 640 and no lien (e.g., pre-2017 levy only); research",CERTIFIED_MODULE_NO_PREDICATE,N
+T000234,S12,"Certified module with no AC 640 and no lien (e.g., pre-2017 levy only); research",CERTIFIED_MODULE_NO_PREDICATE,N
+T000235,S12,"Certified module with no AC 640 and no lien (e.g., pre-2017 levy only); research",CERTIFIED_MODULE_NO_PREDICATE,N
+T000236,S12,"Certified module with no AC 640 and no lien (e.g., pre-2017 levy only); research",CERTIFIED_MODULE_NO_PREDICATE,N
+T000237,S12,"Certified module with no AC 640 and no lien (e.g., pre-2017 levy only); research",CERTIFIED_MODULE_NO_PREDICATE,N
+T000238,S13,Certified when assessed balance was below threshold (erroneous),CERTIFIED_BELOW_THRESHOLD_AT_CERT,N
+T000239,S13,Certified when assessed balance was below threshold (erroneous),CERTIFIED_BELOW_THRESHOLD_AT_CERT,N
+T000240,S13,Certified when assessed balance was below threshold (erroneous),CERTIFIED_BELOW_THRESHOLD_AT_CERT,N
+T000241,S13,Certified when assessed balance was below threshold (erroneous),CERTIFIED_BELOW_THRESHOLD_AT_CERT,N
+T000242,S13,Certified when assessed balance was below threshold (erroneous),CERTIFIED_BELOW_THRESHOLD_AT_CERT,N
+T000243,S13,Certified when assessed balance was below threshold (erroneous),CERTIFIED_BELOW_THRESHOLD_AT_CERT,N
+T000244,S13,Certified when assessed balance was below threshold (erroneous),CERTIFIED_BELOW_THRESHOLD_AT_CERT,N
+T000245,S13,Certified when assessed balance was below threshold (erroneous),CERTIFIED_BELOW_THRESHOLD_AT_CERT,N
+T000246,S14,Timely levy CDP pending (TC 520 cc 76); correctly not certified,NONE,N
+T000247,S14,Timely levy CDP pending (TC 520 cc 76); correctly not certified,NONE,N
+T000248,S14,Timely levy CDP pending (TC 520 cc 76); correctly not certified,NONE,N
+T000249,S14,Timely levy CDP pending (TC 520 cc 76); correctly not certified,NONE,N
+T000250,S14,Timely levy CDP pending (TC 520 cc 76); correctly not certified,NONE,N
+T000251,S14,Timely levy CDP pending (TC 520 cc 76); correctly not certified,NONE,N
+T000252,S14,Timely levy CDP pending (TC 520 cc 76); correctly not certified,NONE,N
+T000253,S14,Timely levy CDP pending (TC 520 cc 76); correctly not certified,NONE,N
+T000254,S15,Timely CDP request (AC 275) after certification; reversal 52 days overdue,DECERT_DUE_OVERDUE,N
+T000255,S15,Timely CDP request (AC 275) after certification; reversal 52 days overdue,DECERT_DUE_OVERDUE,N
+T000256,S15,Timely CDP request (AC 275) after certification; reversal 52 days overdue,DECERT_DUE_OVERDUE,N
+T000257,S15,Timely CDP request (AC 275) after certification; reversal 52 days overdue,DECERT_DUE_OVERDUE,N
+T000258,S15,Timely CDP request (AC 275) after certification; reversal 52 days overdue,DECERT_DUE_OVERDUE,N
+T000259,S15,Timely CDP request (AC 275) after certification; reversal 52 days overdue,DECERT_DUE_OVERDUE,N
+T000260,S15,Timely CDP request (AC 275) after certification; reversal 52 days overdue,DECERT_DUE_OVERDUE,N
+T000261,S15,Timely CDP request (AC 275) after certification; reversal 52 days overdue,DECERT_DUE_OVERDUE,N
+T000263,S16b,"Joint liability, secondary spouse filed innocent spouse claim; secondary only",DECERT_DUE_OVERDUE,N
+T000262,S16,"Joint liability, primary spouse; stays certified",NONE,N
+T000265,S16b,"Joint liability, secondary spouse filed innocent spouse claim; secondary only",DECERT_DUE_OVERDUE,N
+T000264,S16,"Joint liability, primary spouse; stays certified",NONE,N
+T000267,S16b,"Joint liability, secondary spouse filed innocent spouse claim; secondary only",DECERT_DUE_OVERDUE,N
+T000266,S16,"Joint liability, primary spouse; stays certified",NONE,N
+T000269,S16b,"Joint liability, secondary spouse filed innocent spouse claim; secondary only",DECERT_DUE_OVERDUE,N
+T000268,S16,"Joint liability, primary spouse; stays certified",NONE,N
+T000271,S16b,"Joint liability, secondary spouse filed innocent spouse claim; secondary only",DECERT_DUE_OVERDUE,N
+T000270,S16,"Joint liability, primary spouse; stays certified",NONE,N
+T000273,S16b,"Joint liability, secondary spouse filed innocent spouse claim; secondary only",DECERT_DUE_OVERDUE,N
+T000272,S16,"Joint liability, primary spouse; stays certified",NONE,N
+T000275,S16b,"Joint liability, secondary spouse filed innocent spouse claim; secondary only",DECERT_DUE_OVERDUE,N
+T000274,S16,"Joint liability, primary spouse; stays certified",NONE,N
+T000277,S16b,"Joint liability, secondary spouse filed innocent spouse claim; secondary only",DECERT_DUE_OVERDUE,N
+T000276,S16,"Joint liability, primary spouse; stays certified",NONE,N
+T000278,S17,Taxpayer deceased (TC 540) after certification,DECERT_DUE_OVERDUE,N
+T000279,S17,Taxpayer deceased (TC 540) after certification,DECERT_DUE_OVERDUE,N
+T000280,S17,Taxpayer deceased (TC 540) after certification,DECERT_DUE_OVERDUE,N
+T000281,S17,Taxpayer deceased (TC 540) after certification,DECERT_DUE_OVERDUE,N
+T000282,S17,Taxpayer deceased (TC 540) after certification,DECERT_DUE_OVERDUE,N
+T000283,S17,Taxpayer deceased (TC 540) after certification,DECERT_DUE_OVERDUE,N
+T000284,S17,Taxpayer deceased (TC 540) after certification,DECERT_DUE_OVERDUE,N
+T000285,S17,Taxpayer deceased (TC 540) after certification,DECERT_DUE_OVERDUE,N
+T000286,S18,CNC hardship (TC 530 cc 24); correctly not certified,NONE,N
+T000287,S18,CNC hardship (TC 530 cc 24); correctly not certified,NONE,N
+T000288,S18,CNC hardship (TC 530 cc 24); correctly not certified,NONE,N
+T000289,S18,CNC hardship (TC 530 cc 24); correctly not certified,NONE,N
+T000290,S18,CNC hardship (TC 530 cc 24); correctly not certified,NONE,N
+T000291,S18,CNC hardship (TC 530 cc 24); correctly not certified,NONE,N
+T000292,S18,CNC hardship (TC 530 cc 24); correctly not certified,NONE,N
+T000293,S18,CNC hardship (TC 530 cc 24); correctly not certified,NONE,N
+T000294,S19,"CNC reversed (TC 531); exclusion gone, should be certified",MISSED_CERTIFICATION,N
+T000295,S19,"CNC reversed (TC 531); exclusion gone, should be certified",MISSED_CERTIFICATION,N
+T000296,S19,"CNC reversed (TC 531); exclusion gone, should be certified",MISSED_CERTIFICATION,N
+T000297,S19,"CNC reversed (TC 531); exclusion gone, should be certified",MISSED_CERTIFICATION,N
+T000298,S19,"CNC reversed (TC 531); exclusion gone, should be certified",MISSED_CERTIFICATION,N
+T000299,S19,"CNC reversed (TC 531); exclusion gone, should be certified",MISSED_CERTIFICATION,N
+T000300,S19,"CNC reversed (TC 531); exclusion gone, should be certified",MISSED_CERTIFICATION,N
+T000301,S19,"CNC reversed (TC 531); exclusion gone, should be certified",MISSED_CERTIFICATION,N
+T000302,S20,Total over threshold only with SRP (MFT 35) and restitution (MFT 31 AC 102); not certifiable,NONE,N
+T000303,S20,Total over threshold only with SRP (MFT 35) and restitution (MFT 31 AC 102); not certifiable,NONE,N
+T000304,S20,Total over threshold only with SRP (MFT 35) and restitution (MFT 31 AC 102); not certifiable,NONE,N
+T000305,S20,Total over threshold only with SRP (MFT 35) and restitution (MFT 31 AC 102); not certifiable,NONE,N
+T000306,S20,Total over threshold only with SRP (MFT 35) and restitution (MFT 31 AC 102); not certifiable,NONE,N
+T000307,S20,Total over threshold only with SRP (MFT 35) and restitution (MFT 31 AC 102); not certifiable,NONE,N
+T000308,S20,Total over threshold only with SRP (MFT 35) and restitution (MFT 31 AC 102); not certifiable,NONE,N
+T000309,S20,Total over threshold only with SRP (MFT 35) and restitution (MFT 31 AC 102); not certifiable,NONE,N
+T000310,S21,New eligible module after certification lacks AC 641,NEW_ELIGIBLE_MODULE_NOT_CERTIFIED,N
+T000311,S21,New eligible module after certification lacks AC 641,NEW_ELIGIBLE_MODULE_NOT_CERTIFIED,N
+T000312,S21,New eligible module after certification lacks AC 641,NEW_ELIGIBLE_MODULE_NOT_CERTIFIED,N
+T000313,S21,New eligible module after certification lacks AC 641,NEW_ELIGIBLE_MODULE_NOT_CERTIFIED,N
+T000314,S21,New eligible module after certification lacks AC 641,NEW_ELIGIBLE_MODULE_NOT_CERTIFIED,N
+T000315,S21,New eligible module after certification lacks AC 641,NEW_ELIGIBLE_MODULE_NOT_CERTIFIED,N
+T000316,S21,New eligible module after certification lacks AC 641,NEW_ELIGIBLE_MODULE_NOT_CERTIFIED,N
+T000317,S21,New eligible module after certification lacks AC 641,NEW_ELIGIBLE_MODULE_NOT_CERTIFIED,N
+T000318,S22,Revocation referred to State (AC 644); not eligible for expedited decertification,INFO_EXPEDITE_INELIGIBLE,N
+T000319,S22,Revocation referred to State (AC 644); not eligible for expedited decertification,INFO_EXPEDITE_INELIGIBLE,N
+T000320,S22,Revocation referred to State (AC 644); not eligible for expedited decertification,INFO_EXPEDITE_INELIGIBLE,N
+T000321,S22,Revocation referred to State (AC 644); not eligible for expedited decertification,INFO_EXPEDITE_INELIGIBLE,N
+T000322,S22,Revocation referred to State (AC 644); not eligible for expedited decertification,INFO_EXPEDITE_INELIGIBLE,N
+T000323,S22,Revocation referred to State (AC 644); not eligible for expedited decertification,INFO_EXPEDITE_INELIGIBLE,N
+T000324,S22,Revocation referred to State (AC 644); not eligible for expedited decertification,INFO_EXPEDITE_INELIGIBLE,N
+T000325,S22,Revocation referred to State (AC 644); not eligible for expedited decertification,INFO_EXPEDITE_INELIGIBLE,N
+T000326,S23,Lien CDP hearing pending; lien predicate not met,NONE,N
+T000327,S23,Lien CDP hearing pending; lien predicate not met,NONE,N
+T000328,S23,Lien CDP hearing pending; lien predicate not met,NONE,N
+T000329,S23,Lien CDP hearing pending; lien predicate not met,NONE,N
+T000330,S23,Lien CDP hearing pending; lien predicate not met,NONE,N
+T000331,S23,Lien CDP hearing pending; lien predicate not met,NONE,N
+T000332,S23,Lien CDP hearing pending; lien predicate not met,NONE,N
+T000333,S23,Lien CDP hearing pending; lien predicate not met,NONE,N
+T000334,S24,Lien CDP concluded in ACMS; stale open copy in ACDS must be deduped; should be certified,MISSED_CERTIFICATION,N
+T000335,S24,Lien CDP concluded in ACMS; stale open copy in ACDS must be deduped; should be certified,MISSED_CERTIFICATION,N
+T000336,S24,Lien CDP concluded in ACMS; stale open copy in ACDS must be deduped; should be certified,MISSED_CERTIFICATION,N
+T000337,S24,Lien CDP concluded in ACMS; stale open copy in ACDS must be deduped; should be certified,MISSED_CERTIFICATION,N
+T000338,S24,Lien CDP concluded in ACMS; stale open copy in ACDS must be deduped; should be certified,MISSED_CERTIFICATION,N
+T000339,S24,Lien CDP concluded in ACMS; stale open copy in ACDS must be deduped; should be certified,MISSED_CERTIFICATION,N
+T000340,S24,Lien CDP concluded in ACMS; stale open copy in ACDS must be deduped; should be certified,MISSED_CERTIFICATION,N
+T000341,S24,Lien CDP concluded in ACMS; stale open copy in ACDS must be deduped; should be certified,MISSED_CERTIFICATION,N
+T000342,S25,Bankruptcy filed (TC 520 cc 81) 7 days ago,DECERT_DUE_PENDING,N
+T000343,S25,Bankruptcy filed (TC 520 cc 81) 7 days ago,DECERT_DUE_PENDING,N
+T000344,S25,Bankruptcy filed (TC 520 cc 81) 7 days ago,DECERT_DUE_PENDING,N
+T000345,S25,Bankruptcy filed (TC 520 cc 81) 7 days ago,DECERT_DUE_PENDING,N
+T000346,S25,Bankruptcy filed (TC 520 cc 81) 7 days ago,DECERT_DUE_PENDING,N
+T000347,S25,Bankruptcy filed (TC 520 cc 81) 7 days ago,DECERT_DUE_PENDING,N
+T000348,S25,Bankruptcy filed (TC 520 cc 81) 7 days ago,DECERT_DUE_PENDING,N
+T000349,S25,Bankruptcy filed (TC 520 cc 81) 7 days ago,DECERT_DUE_PENDING,N
+T000350,S26,TFRP (MFT 55) plus income tax; correctly certified,NONE,N
+T000351,S26,TFRP (MFT 55) plus income tax; correctly certified,NONE,N
+T000352,S26,TFRP (MFT 55) plus income tax; correctly certified,NONE,N
+T000353,S26,TFRP (MFT 55) plus income tax; correctly certified,NONE,N
+T000354,S26,TFRP (MFT 55) plus income tax; correctly certified,NONE,N
+T000355,S26,TFRP (MFT 55) plus income tax; correctly certified,NONE,N
+T000356,S26,TFRP (MFT 55) plus income tax; correctly certified,NONE,N
+T000357,S26,TFRP (MFT 55) plus income tax; correctly certified,NONE,N
+T000358,S27,Untimely lien CDP request; 6320 rights lapsed at the deadline; should be certified,MISSED_CERTIFICATION,N
+T000359,S27,Untimely lien CDP request; 6320 rights lapsed at the deadline; should be certified,MISSED_CERTIFICATION,N
+T000360,S27,Untimely lien CDP request; 6320 rights lapsed at the deadline; should be certified,MISSED_CERTIFICATION,N
+T000361,S27,Untimely lien CDP request; 6320 rights lapsed at the deadline; should be certified,MISSED_CERTIFICATION,N
+T000362,S27,Untimely lien CDP request; 6320 rights lapsed at the deadline; should be certified,MISSED_CERTIFICATION,N
+T000363,S27,Untimely lien CDP request; 6320 rights lapsed at the deadline; should be certified,MISSED_CERTIFICATION,N
+T000364,S27,Untimely lien CDP request; 6320 rights lapsed at the deadline; should be certified,MISSED_CERTIFICATION,N
+T000365,S27,Untimely lien CDP request; 6320 rights lapsed at the deadline; should be certified,MISSED_CERTIFICATION,N
