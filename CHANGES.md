@@ -1,5 +1,9 @@
 # Changes
 
+## v0.5.3 docs update — 2026-11-06
+- README: "Setting up in a team or enterprise workspace" (repo access, admin asks, per-person schema names, troubleshooting).
+- `docs/Passport_Certification_Analytics_POC_User_Guide.pdf` added (export of the live User Guide).
+
 ## v0.5.3 — 2026-11-05
 - **CDP request deadline per IRM 5.19.4.6.2 (12-30-2024).** Letter 3172 must-file date = NFTL mailing date
   + 3 business days (estimated filing date) + 5 business days + 30 calendar days, federal holidays observed.
