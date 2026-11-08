@@ -1,0 +1,4 @@
+issue_id,episode_id,tin_token,tax_period,issue_code,description,return_ref,amount_claimed,status
+I-A1,EP-A-EX24,TK100001,202412,UNREPORTED_INTEREST,Interest reported by Harbor Trust Savings not on Schedule B,SCH_B 2,0,CLOSED
+I-A2,EP-A-EX24,TK100001,202412,SCH_C_OTHER_EXPENSES,Schedule C Part V other expenses supported only by a PDF statement,SCH_C 27a,18400,CLOSED
+I-B1,EP-B-EX24,TK200001,202412,REP_469C7,Rental losses claimed as nonpassive under the real estate professional rule,SCH_E 43,-64000,UNAGREED

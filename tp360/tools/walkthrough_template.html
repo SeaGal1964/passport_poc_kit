@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TP360 + RVE — individual return walkthroughs</title>
+<style>
+:root{
+  --navy:#0b1f3a;--navy2:#132d52;--navy3:#1d3d6b;--cyan:#38b6db;--gold:#c9a227;
+  --paper:#f4f6f9;--card:#fff;--ink:#16202e;--mut:#5b6b80;--line:#dde3ea;--line2:#c9d3de;
+  --green:#2e7d4f;--green-lt:#e5f2ea;--amber:#9a6412;--amber-lt:#fbf0dc;--red:#a8322a;--red-lt:#f9e6e4;
+  --slate:#41546b;--slate-lt:#e8edf3;--purple:#5a4a97;--purple-lt:#eeebf8;--teal:#16766c;--teal-lt:#e0f2ef;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+  --sans:"IBM Plex Sans","Segoe UI",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--sans);font-size:14px;color:var(--ink);background:var(--paper);line-height:1.45}
+button{font:inherit}
+/* top bar */
+.top{background:var(--navy);color:#fff;display:flex;align-items:center;gap:14px;padding:10px 20px;flex-wrap:wrap;border-bottom:2px solid var(--cyan)}
+.tag{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan)}
+.top h1{font-size:15px;font-weight:600;margin:0}
+.top .sp{flex:1}
+.cases{display:flex;gap:6px}
+.cases button{background:transparent;color:#cfe3f3;border:1px solid #3a5a86;border-radius:4px;padding:5px 12px;cursor:pointer;font-size:12px}
+.cases button[aria-pressed=true]{background:var(--cyan);border-color:var(--cyan);color:var(--navy);font-weight:600}
+.cases button:focus-visible,.rail button:focus-visible,.nav button:focus-visible,.snaps button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.disc{font-size:11px;color:#9fb6cf}
+/* stage rail */
+.rail{background:var(--navy2);display:flex;overflow-x:auto;padding:0 12px}
+.rail button{background:none;border:0;border-bottom:3px solid transparent;color:#b9cde3;padding:10px 12px 8px;cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:12.5px}
+.rail button .n{font-family:var(--mono);font-size:11px;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--navy3);color:#cfe3f3}
+.rail button[aria-current=step]{color:#fff;border-bottom-color:var(--gold)}
+.rail button[aria-current=step] .n{background:var(--gold);color:var(--navy);font-weight:700}
+.rail button.done .n{background:var(--cyan);color:var(--navy)}
+/* layout */
+.wrap{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:18px;padding:18px 20px 30px;max-width:1440px;margin:0 auto}
+@media (max-width:980px){.wrap{grid-template-columns:minmax(0,1fr)}}
+.stagehead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+.stagehead .k{font-family:var(--mono);font-size:11px;color:var(--mut);letter-spacing:.08em;text-transform:uppercase}
+.stagehead h2{margin:0;font-size:21px}
+.lede{color:var(--mut);margin:0 0 14px;max-width:880px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-bottom:14px}
+.card h3{margin:0 0 10px;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--slate)}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:760px){.grid2,.grid3{grid-template-columns:minmax(0,1fr)}}
+.kv{display:grid;grid-template-columns:150px minmax(0,1fr);gap:4px 12px;font-size:13px}
+.kv dt{color:var(--mut)} .kv dd{margin:0}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.metric{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--navy3);border-radius:6px;padding:10px 12px}
+.metric .l{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.05em}
+.metric .v{font-size:19px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums}
+.metric .s{font-size:11.5px;color:var(--mut)}
+.metric.bad{border-left-color:var(--red)} .metric.warn{border-left-color:var(--amber)} .metric.ok{border-left-color:var(--green)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);border-bottom:1px solid var(--line2);padding:6px 8px;font-weight:600}
+td{border-bottom:1px solid var(--line);padding:6px 8px;vertical-align:top}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.grp td{background:var(--slate-lt);font-weight:600;font-size:12px;color:var(--slate)}
+tr.chg td{background:#fffaf0}
+.tbl{overflow-x:auto}
+.badge{display:inline-block;font-size:10.5px;font-weight:600;letter-spacing:.03em;padding:1px 7px;border-radius:10px;white-space:nowrap;font-family:var(--mono)}
+.o-MEF{background:var(--slate-lt);color:var(--slate)}
+.o-ATTACHMENT_EXTRACT{background:var(--purple-lt);color:var(--purple)}
+.o-RVE_SUPPLEMENT{background:var(--teal-lt);color:var(--teal)}
+.o-EXAMINER_ADJUSTMENT{background:var(--amber-lt);color:var(--amber)}
+.o-COMPUTED{background:#eef0f3;color:#5e6670}
+.b-A{background:var(--green-lt);color:var(--green)} .b-B{background:var(--slate-lt);color:var(--slate)} .b-C{background:var(--amber-lt);color:var(--amber)}
+.s-cited{background:var(--green-lt);color:var(--green)} .s-design{background:var(--slate-lt);color:var(--slate)} .s-question{background:var(--amber-lt);color:var(--amber)}
+.sev-HIGH{background:var(--red-lt);color:var(--red)} .sev-MEDIUM{background:var(--amber-lt);color:var(--amber)}
+.lock{color:var(--mut);font-size:11px}
+.signals{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}
+.sig{border:1px solid var(--line);border-left:4px solid var(--red);border-radius:6px;padding:10px 12px;background:#fff}
+.sig.MEDIUM{border-left-color:var(--amber)}
+.sig b{display:block;font-size:13.5px;margin-bottom:3px}
+.sig span{font-size:12.5px;color:var(--mut)}
+.sig code{font-family:var(--mono);font-size:10.5px;color:var(--slate)}
+.snaps{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.snaps button{border:1px solid var(--line2);background:#fff;border-radius:6px;padding:6px 10px;cursor:pointer;text-align:left;font-size:12px}
+.snaps button[aria-pressed=true]{border-color:var(--navy3);background:var(--navy3);color:#fff}
+.snaps button small{display:block;opacity:.75;font-size:10.5px}
+.legend{display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--mut);margin:6px 0 10px;align-items:center}
+.finding{border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin-bottom:8px;background:#fff}
+.finding .h{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
+.finding .h b{font-size:13.5px}
+.finding .amt{font-family:var(--mono);font-size:12px;color:var(--slate)}
+.finding p{margin:2px 0 0;font-size:13px;color:#334}
+.idr{border:1px solid var(--line);border-top:3px solid var(--navy3);border-radius:6px;padding:12px 14px;margin-bottom:10px;background:#fff}
+.idr ol{margin:6px 0 0 18px;padding:0} .idr li{margin-bottom:4px}
+.det{border-left:3px solid var(--navy3);padding:6px 0 6px 12px;margin-bottom:10px}
+.det .auth{font-family:var(--mono);font-size:11px;color:var(--slate)}
+.timeline{list-style:none;margin:0;padding:0}
+.timeline li{display:grid;grid-template-columns:96px 70px minmax(0,1fr);gap:10px;padding:6px 0;border-bottom:1px dashed var(--line);font-size:13px}
+.timeline .d{font-family:var(--mono);font-size:12px;color:var(--mut)}
+.chip{font-family:var(--mono);font-size:10.5px;font-weight:600;padding:1px 6px;border-radius:4px;background:var(--slate-lt);color:var(--slate);text-align:center;height:fit-content}
+.chip.EXAM{background:var(--amber-lt);color:var(--amber)} .chip.RVE{background:var(--purple-lt);color:var(--purple)} .chip.OIC{background:var(--green-lt);color:var(--green)}
+.side .card{position:sticky;top:12px}
+.side h3{margin-top:0}
+.side ul{margin:0;padding-left:16px;font-size:12.5px} .side li{margin-bottom:4px}
+.side code{font-family:var(--mono);font-size:11.5px;background:var(--slate-lt);padding:0 4px;border-radius:3px}
+.side .why{font-size:12.5px;color:var(--mut);border-top:1px solid var(--line);margin-top:10px;padding-top:10px}
+.nav{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+.nav button{background:var(--navy3);color:#fff;border:0;border-radius:5px;padding:8px 16px;cursor:pointer;font-size:13px}
+.nav button:disabled{opacity:.35;cursor:default}
+.nav .prog{font-family:var(--mono);font-size:11px;color:var(--mut)}
+.callout{border:1px solid var(--line);border-left:4px solid var(--gold);background:#fffdf5;border-radius:6px;padding:10px 12px;font-size:13px;margin-bottom:14px}
+.big{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums}
+svg text{font-family:var(--sans)}
+.foot{font-size:11px;color:var(--mut);text-align:center;padding:0 20px 24px}
+.sr{position:absolute;left:-9999px}
+</style>
+</head>
+<body>
+<header class="top">
+  <span class="tag">IRS · UCP · RVE</span>
+  <h1 id="caseTitle">TP360 + Return Viewer Editor</h1>
+  <span class="sp"></span>
+  <div class="cases" role="group" aria-label="Choose case">
+    <button data-case="A" aria-pressed="true">A · Marisol Vance</button>
+    <button data-case="B" aria-pressed="false">B · Thornbury</button>
+  </div>
+  <span class="disc">Fictional taxpayers · synthetic data · not IRS data</span>
+</header>
+<nav class="rail" id="rail" aria-label="Stages"></nav>
+<div class="wrap">
+  <main id="main" tabindex="-1"></main>
+  <aside class="side" id="side"></aside>
+</div>
+<div class="foot">Draft for discussion · CKN Consulting LLC / Booz Allen Hamilton · Tax figures from the POC's simplified TY2024 engine — production recompute is the calculator behind RVE</div>
+
+<script>
+const DATA = /*__DATA__*/null;
+const STAGES = ["Selection and intake","Taxpayer 360 context","Exam plan","RVE return workspace","Reconciliation (RRI)","IDR and determination","Closing and effects"];
+const POWERED = [
+  ["tp_taxpayer","tp_compliance_episode","tp_treatment_assignment","tp_statutory_clock"],
+  ["v_tp360_header","v_tp_signals","v_related_parties_named","tp_bank_account","tp_asset"],
+  ["tp_issue","tp_rri_finding (branch C)","tp_statutory_clock","tp_idr"],
+  ["tp_return_snapshot","tp_return_line","v_rve_data_origin"],
+  ["tp_information_return","tp_rri_finding"],
+  ["tp_idr","tp_contact_event","tp_determination","tp_return_line (RVE_SUPPLEMENT)"],
+  ["v_return_compare","v_exam_results","tp_adjustment","v_tp_timeline"]
+];
+const WHY = [
+  "Selection reads the same canonical tables every treatment writes to, so the examiner starts with the whole taxpayer, not one module.",
+  "Signals are rules over the canonical model — the same SQL runs in Genie, dashboards and the case tool. Nothing is copied into a workflow vendor.",
+  "The plan is built from RRI findings: only branch C items reach the taxpayer, so the IDR is narrow from day one.",
+  "Every line carries its origin. MeF, attachment extracts and examiner supplements live side by side, versioned, never overwriting the as-filed baseline.",
+  "Three branches: A resolved from data, B not a taxpayer issue (never an IDR), C needs the taxpayer. Branch B is where examiner time is saved.",
+  "Responses land as RVE supplements tied to the IDR, so the determination cites the data it rests on.",
+  "Results flow back to the account and every other episode on the taxpayer. The 360 view updates itself because it reads the same tables."
+];
+const SIG_TEXT = {
+  SG01_UNDISCLOSED_BANK_ACCOUNT:["Bank account not on the Form 433-A","An account in information returns or locator data is missing from the financial statement supporting the offer."],
+  SG02_RELATED_PARTY_TRANSFER_BEFORE_OFFER:["Related-party transfer before the offer","Property moved to a related party for little or no consideration within 24 months before the offer."],
+  SG03_PASSPORT_REVERSAL_TRIGGER_ARMED:["Offer acceptance would reverse Passport","Certified seriously delinquent debt with an offer pending — acceptance is a reversal trigger under IRC 7345(c)."],
+  SG04_LEVY_BARRED_OIC_PENDING:["Levy barred — offer pending","No levy while the offer is pending, for 30 days after rejection, or during an appeal (IRC 6331(k))."],
+  SG05_REPEAT_IA_DEFAULT:["Repeat installment agreement default","Two or more agreements defaulted in 24 months."],
+  SG06_IRP_INCOME_UNREPORTED:["Information-return income not on the return","An IRP document has no matching entry on the return."],
+  SG07_REP_CLAIM_NO_AGGREGATION_ELECTION:["Real estate professional claim, no aggregation election","Rental losses claimed as nonpassive; without an election each rental is tested separately."],
+  SG08_RESPONSIBLE_PERSON_MULTIPLE_ENTITIES:["Responsible person for several entities","Linked to two or more entities with trust fund balances."],
+  SG09_ENTITY_INTEREST_NOT_ON_433:["Entity interest not on the Form 433-A","A K-1 shows a partnership interest that the financial statement does not list."]
+};
+const SEV = {SG04_LEVY_BARRED_OIC_PENDING:"MEDIUM",SG05_REPEAT_IA_DEFAULT:"MEDIUM",SG07_REP_CLAIM_NO_AGGREGATION_ELECTION:"MEDIUM",SG09_ENTITY_INTEREST_NOT_ON_433:"MEDIUM"};
+const ORIGIN = {MEF:"MeF",ATTACHMENT_EXTRACT:"Attachment extract",RVE_SUPPLEMENT:"RVE supplement",EXAMINER_ADJUSTMENT:"Examiner adjustment",COMPUTED:"Computed"};
+const BRANCH = {A:"A · resolved from data",B:"B · not a taxpayer issue",C:"C · needs the taxpayer"};
+const FORM_ORDER = ["W2","SCH_B","F8949","SCH_D","SCH_C","SCH_E","F8582","SCH_A","SCH_SE","SCH_8812","RVE_SUPP","1040"];
+const FORM_NAME = {W2:"W-2",SCH_B:"Schedule B",F8949:"Form 8949",SCH_D:"Schedule D",SCH_C:"Schedule C",SCH_E:"Schedule E",F8582:"Form 8582",SCH_A:"Schedule A",SCH_SE:"Schedule SE",SCH_8812:"Schedule 8812",RVE_SUPP:"RVE supplements (not in MeF)","1040":"Form 1040"};
+
+let cur = "A", stage = 0, snapSel = {};
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const money = v => (v === "" || v === null || v === undefined) ? "—" : (v < 0 ? "−$" + Math.abs(v).toLocaleString("en-US") : "$" + Number(v).toLocaleString("en-US"));
+const signed = v => v === 0 ? "—" : (v > 0 ? "+" : "−") + "$" + Math.abs(v).toLocaleString("en-US");
+const fmtD = s => { if (!s) return "—"; const d = new Date(s + "T00:00:00"); return d.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}); };
+const status = s => `<span class="badge s-${s}">${s === "cited" ? "cited" : s === "design" ? "design choice" : "SME to confirm"}</span>`;
+
+function C(){ return DATA[cur]; }
+
+function renderRail(){
+  $("#rail").innerHTML = STAGES.map((t,i)=>`<button data-s="${i}" class="${i<stage?'done':''}" ${i===stage?'aria-current="step"':''}><span class="n">${i+1}</span>${t}</button>`).join("");
+  document.querySelectorAll("#rail button").forEach(b=>b.onclick=()=>go(+b.dataset.s));
+}
+function go(i){ stage = Math.max(0, Math.min(STAGES.length-1, i)); location.hash = cur + "-" + stage; render(); $("#main").focus({preventScroll:true}); window.scrollTo({top:0}); }
+
+function head(sub){
+  return `<div class="stagehead"><span class="k">Stage ${stage+1} of ${STAGES.length}</span><h2>${STAGES[stage]}</h2></div><p class="lede">${sub}</p>`;
+}
+function navBar(){
+  return `<div class="nav"><button id="prev" ${stage===0?'disabled':''}>← ${stage>0?esc(STAGES[stage-1]):'Start'}</button><span class="prog">${C().meta.name} · TY2024</span><button id="next" ${stage===STAGES.length-1?'disabled':''}>${stage<STAGES.length-1?esc(STAGES[stage+1]):'End'} →</button></div>`;
+}
+
+/* ---------- Stage 0 ---------- */
+function s0(){
+  const c = C(), m = c.meta;
+  const clocks = c.clocks.map(k=>`<tr><td>${esc(k.clock_type.replace(/_/g," "))}</td><td>${esc(k.module_id||k.episode_id)}</td><td>${fmtD(k.expiry_date)}</td><td class="lock">${esc(k.authority)}</td></tr>`).join("");
+  const eps = c.episodes.map(e=>`<tr><td><b>${esc(e.episode_type)}</b> <span class="lock">${esc(e.episode_subtype)}</span></td><td>${esc(e.status.replace(/_/g," ").toLowerCase())}</td><td>${fmtD(e.opened_date)}</td><td>${e.closed_date?fmtD(e.closed_date):'<b>open</b>'}</td></tr>`).join("");
+  return head(m.case_id==="A"
+      ? "An exam that lands inside a live collection case. Before anything else, the examiner sees every episode already open on this taxpayer."
+      : "A pure exam. The selection reason points at a claim MeF cannot fully describe, which is where RVE earns its place.")
+   + `<div class="callout"><b>Why this return:</b> ${esc(m.selection)} ${status(m.selection_status)}</div>
+   <div class="grid2">
+    <div class="card"><h3>Return</h3><dl class="kv">
+      <dt>Taxpayer</dt><dd>${esc(m.name)}</dd><dt>TIN</dt><dd>${esc(m.tin_display)} <span class="lock">(token ${esc(m.tin)})</span></dd>
+      <dt>Form · period</dt><dd>1040 · TY2024 (${esc(m.tax_period)})</dd><dt>Filing status</dt><dd>${esc(m.filing_status)}</dd>
+      <dt>Location</dt><dd>${esc(m.city)}, ${esc(m.state)}</dd><dt>Representative</dt><dd>${esc(m.poa)}</dd></dl></div>
+    <div class="card"><h3>Team</h3><table><tbody>${m.team.map(t=>`<tr><td>${esc(t[0])}</td><td><b>${esc(t[1])}</b></td><td class="lock">${esc(t[2])}</td></tr>`).join("")}</tbody></table></div>
+   </div>
+   <div class="card"><h3>Episodes on this taxpayer</h3><div class="tbl"><table><thead><tr><th>Episode</th><th>Status</th><th>Opened</th><th>Closed</th></tr></thead><tbody>${eps}</tbody></table></div></div>
+   <div class="card"><h3>Statutory clocks</h3><div class="tbl"><table><thead><tr><th>Clock</th><th>Applies to</th><th>Expires</th><th>Authority</th></tr></thead><tbody>${clocks}</tbody></table></div></div>`;
+}
+
+/* ---------- Stage 1 ---------- */
+function graphSVG(g, center){
+  const adj = {}; g.edges.forEach(e=>{(adj[e.source]=adj[e.source]||[]).push(e.target);(adj[e.target]=adj[e.target]||[]).push(e.source);});
+  const dist = {[center]:0}, q=[center]; while(q.length){const n=q.shift();(adj[n]||[]).forEach(m=>{if(dist[m]===undefined){dist[m]=dist[n]+1;q.push(m);}});}
+  const cols = {}; g.nodes.forEach(n=>{const d=dist[n.id]??0;(cols[d]=cols[d]||[]).push(n);});
+  Object.values(cols).forEach(arr=>arr.sort((a,b)=>(adj[a.id]||[]).length-(adj[b.id]||[]).length));
+  const maxD = Math.max(...Object.keys(cols).map(Number)), maxN = Math.max(...Object.values(cols).map(a=>a.length));
+  const CW = 215, RH = 74, W = 120 + maxD*CW + 120, H = Math.max(160, maxN*RH + 30);
+  const pos = {};
+  Object.entries(cols).forEach(([d,arr])=>arr.forEach((n,i)=>{pos[n.id]=[110 + (+d)*CW, (H - arr.length*RH)/2 + RH/2 + i*RH];}));
+  const col = n => n.kind==="ASSET" ? "var(--purple)" : (n.kind==="INDIVIDUAL" ? "var(--navy3)" : "var(--teal)");
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;display:block;margin:0 auto" role="img" aria-label="Related-party graph">`;
+  g.edges.forEach(e=>{const [x1,y1]=pos[e.source],[x2,y2]=pos[e.target];
+    s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#b8c4d2" stroke-width="1.4"/>`;
+    const mx=(x1+x2)/2, my=(y1+y2)/2, lbl=e.type.replace(/_/g," ").toLowerCase()+(e.pct?` ${e.pct}%`:"");
+    s+=`<rect x="${mx-lbl.length*2.9-4}" y="${my-8}" width="${lbl.length*5.8+8}" height="13" rx="3" fill="#fff" opacity=".9"/><text x="${mx}" y="${my+2}" font-size="9.5" fill="#5b6b80" text-anchor="middle">${esc(lbl)}</text>`;});
+  g.nodes.forEach(n=>{const [x,y]=pos[n.id];const r=n.id===center?10:7;
+    s+=`<circle cx="${x}" cy="${y}" r="${r}" fill="${col(n)}" stroke="${n.signals.length?'var(--red)':'#fff'}" stroke-width="${n.signals.length?3:2}"/>`;
+    const lbl = n.label.length>30 ? n.label.slice(0,28)+"…" : n.label;
+    s+=`<text x="${x}" y="${y+r+13}" font-size="11" text-anchor="middle" fill="#16202e" font-weight="${n.id===center?700:500}">${esc(lbl)}</text>`;
+    if(n.signals.length && n.id!==center) s+=`<text x="${x}" y="${y+r+25}" font-size="9.5" text-anchor="middle" fill="var(--red)" font-family="var(--mono)">${n.signals.map(x=>x.slice(0,4)).join(" ")}</text>`;});
+  return s + `</svg><div class="legend"><span style="color:var(--navy3)">● individual</span><span style="color:var(--teal)">● entity</span><span style="color:var(--purple)">● asset</span><span style="color:var(--red)">◯ red ring = has signals</span><span>Columns = hops from the taxpayer</span></div>`;
+}
+function s1(){
+  const c = C(), m = c.meta;
+  const sigs = c.signals.map(id=>{const t=SIG_TEXT[id]||[id,""];const sv=SEV[id]||"HIGH";return `<div class="sig ${sv}"><b>${esc(t[0])}</b><span>${esc(t[1])}</span><div style="margin-top:6px"><span class="badge sev-${sv}">${sv}</span> <code>${id}</code></div></div>`;}).join("");
+  let facts = "";
+  if (m.case_id==="A"){
+    const bal = c.modules.reduce((a,x)=>a+(+x.assessed_balance||0),0) - (c.modules.find(x=>x.tax_period==202412)||{assessed_balance:0}).assessed_balance;
+    facts = `<div class="metrics">
+      <div class="metric bad"><div class="l">Balance before this exam</div><div class="v">${money(bal)}</div><div class="s">4 modules, 2019–2022</div></div>
+      <div class="metric warn"><div class="l">Offer</div><div class="v">${money(c.financial[0].offer_amount)}</div><div class="s">RCP on file ${money(c.financial[0].minimum_offer)}</div></div>
+      <div class="metric bad"><div class="l">Passport</div><div class="v">Certified</div><div class="s">12 Mar 2026</div></div>
+      <div class="metric warn"><div class="l">Undisclosed balances</div><div class="v">${money(c.accounts.filter(a=>a.disclosed_on_433==="N").reduce((a,x)=>a+x.balance,0))}</div><div class="s">2 accounts not on the 433-A</div></div></div>
+     <div class="card"><h3>Bank accounts</h3><div class="tbl"><table><thead><tr><th>Institution</th><th>Type</th><th class="n">Balance</th><th>Source</th><th>On Form 433-A</th></tr></thead><tbody>${c.accounts.map(a=>`<tr class="${a.disclosed_on_433==='N'?'chg':''}"><td>${esc(a.institution)} ···${esc(a.acct_last4)}</td><td>${esc(a.account_type.replace(/_/g," ").toLowerCase())}</td><td class="n">${money(a.balance)}</td><td>${esc(a.source)}</td><td>${a.disclosed_on_433==='N'?'<b style="color:var(--red)">No</b>':'Yes'}</td></tr>`).join("")}</tbody></table></div></div>`;
+  } else {
+    facts = `<div class="metrics">
+      <div class="metric"><div class="l">W-2 wages</div><div class="v">$182,000</div><div class="s">Marcus · Lumenfield Software</div></div>
+      <div class="metric"><div class="l">Schedule C</div><div class="v">$65,000</div><div class="s">Elena · real estate commissions</div></div>
+      <div class="metric warn"><div class="l">Rental losses claimed</div><div class="v">−$64,000</div><div class="s">3 properties, all nonpassive</div></div>
+      <div class="metric ok"><div class="l">Account</div><div class="v">No balance</div><div class="s">$837 refunded</div></div></div>
+     <div class="card"><h3>Rental properties</h3><div class="tbl"><table><thead><tr><th>Property</th><th class="n">Rents</th><th class="n">Expenses</th><th class="n">Net</th><th>Managed by</th></tr></thead><tbody>${c.props.map(p=>`<tr><td>${esc(p.addr)}</td><td class="n">${money(p.rents)}</td><td class="n">${money(p.exp)}</td><td class="n">${money(p.net)}</td><td>${esc(p.mgr)}</td></tr>`).join("")}</tbody></table></div></div>`;
+  }
+  return head(m.case_id==="A"
+      ? "The same TP360 view the collection side uses. Seven signals fire, and the relationship graph reaches past the taxpayer to a co-member with trust fund exposure."
+      : "Only one signal, but it is the one that shapes the exam. The graph is small — spouse, employer, brokerage and property manager.")
+   + facts
+   + `<div class="card"><h3>Signals (${c.signals.length})</h3><div class="signals">${sigs}</div></div>
+      <div class="card"><h3>Related parties</h3>${graphSVG(c.graph, m.tin)}</div>`;
+}
+
+/* ---------- Stage 2 ---------- */
+function s2(){
+  const c = C(), m = c.meta;
+  const cItems = c.findings.filter(f=>f.branch==="C"), aItems = c.findings.filter(f=>f.branch==="A" && f.disposition!=="MATCHED"), bItems = c.findings.filter(f=>f.branch==="B");
+  const ased = c.clocks.find(k=>k.clock_type==="ASED");
+  const plan = [...aItems.map(f=>[f.item,"Propose from data; confirm in the IDR","A"]), ...cItems.map(f=>[f.item,"IDR — ask only for what the data cannot answer","C"])];
+  return head("What the examiner knows before the first contact. RRI has already sorted the return: some items need nothing, a few need the taxpayer.")
+   + `<div class="metrics">
+      <div class="metric ok"><div class="l">Resolved or matched from data</div><div class="v">${c.findings.filter(f=>f.branch==="A").length}</div><div class="s">branch A</div></div>
+      <div class="metric"><div class="l">Not a taxpayer issue</div><div class="v">${bItems.length}</div><div class="s">branch B — no IDR</div></div>
+      <div class="metric warn"><div class="l">Needs the taxpayer</div><div class="v">${cItems.length}</div><div class="s">branch C — IDR</div></div>
+      <div class="metric"><div class="l">ASED</div><div class="v">${fmtD(ased.expiry_date)}</div><div class="s">IRC 6501(a)</div></div></div>
+     <div class="card"><h3>Planned issues</h3><div class="tbl"><table><thead><tr><th>Item</th><th>Approach</th><th>Branch</th></tr></thead><tbody>${plan.map(p=>`<tr><td>${esc(p[0])}</td><td>${esc(p[1])}</td><td><span class="badge b-${p[2]}">${BRANCH[p[2]]}</span></td></tr>`).join("")}</tbody></table></div></div>
+     <div class="card"><h3>Set aside before contact</h3><ul>${bItems.map(f=>`<li><b>${esc(f.item)}</b> — ${esc(f.note)}</li>`).join("")}</ul></div>
+     <div class="callout">${m.case_id==="A"
+        ? "The exam owner is not the only reader. The offer examiner sees the plan in the same episode record, because the exam result will change the offer's liability and RCP."
+        : "Without RVE the examiner would ask for 'all records supporting Schedule E'. With the gap identified up front, the IDR names three things: hours, any election statement, management agreements."}</div>`;
+}
+
+/* ---------- Stage 3 ---------- */
+const lineKey = l => { const m = String(l).match(/^(\d+)([a-z]?)/); return m ? +m[1]*30 + (m[2] ? m[2].charCodeAt(0)-96 : 0) : 9999; };
+function s3(){
+  const c = C();
+  const snaps = c.snapshots;
+  const sid = snapSel[cur] || (snaps.find(s=>s.version_type==="PROPOSED")||snaps[snaps.length-1]).snapshot_id;
+  const snap = snaps.find(s=>s.snapshot_id===sid);
+  const basis = snap.basis_snapshot_id ? c.lines[snap.basis_snapshot_id] : null;
+  const key = l => l.form+"|"+l.line+"|"+(l.sub_id||"");
+  const bmap = {}; (basis||[]).forEach(l=>bmap[key(l)]=l.amount);
+  const lines = [...c.lines[sid]].sort((a,b)=>FORM_ORDER.indexOf(a.form)-FORM_ORDER.indexOf(b.form) || lineKey(a.line)-lineKey(b.line));
+  let rows = "", lastForm = "";
+  lines.forEach(l=>{
+    if (l.form!==lastForm){ rows += `<tr class="grp"><td colspan="5">${esc(FORM_NAME[l.form]||l.form)}</td></tr>`; lastForm=l.form; }
+    const was = bmap[key(l)], changed = basis && (was===undefined || was!==l.amount);
+    rows += `<tr class="${changed?'chg':''}"><td>${esc(l.line)}</td><td>${esc(l.line_desc)}${l.modifiable==='N'?' <span class="lock" title="Calculated or rolled up — edits route to the source line">🔒</span>':''}</td><td class="n">${l.line==='ELECTION_469_9G'?(l.amount?'Yes':'None found'):(l.line.includes('HOURS')?Number(l.amount).toLocaleString()+' hrs':money(l.amount))}</td><td class="n lock">${changed?(was===undefined?'new':signed(l.amount-was)):''}</td><td><span class="badge o-${l.data_origin}">${ORIGIN[l.data_origin]}</span></td></tr>`;
+  });
+  const counts = {}; c.lines[sid].forEach(l=>counts[l.data_origin]=(counts[l.data_origin]||0)+1);
+  return head("One return, several versions. The as-filed baseline (what posted as the TC 150) is never overwritten; each later snapshot records what changed and where the data came from.")
+   + `<div class="snaps" role="group" aria-label="Snapshots">${snaps.map(s=>`<button data-snap="${s.snapshot_id}" aria-pressed="${s.snapshot_id===sid}">${esc(s.version_type.replace(/_/g," "))}<small>${fmtD(s.created_date)} · ${esc(s.created_by)}${s.source_tc?` · TC ${s.source_tc}`:""}</small></button>`).join("")}</div>
+     <div class="legend">Data origin in this snapshot: ${Object.entries(counts).map(([k,v])=>`<span class="badge o-${k}">${ORIGIN[k]} ${v}</span>`).join(" ")} <span>🔒 = calculated line, locked; edits route to the source schedule</span></div>
+     <div class="card"><h3>${esc(snap.version_type.replace(/_/g," "))} ${basis?`<span class="lock" style="text-transform:none;letter-spacing:0"> — highlighted lines differ from ${esc(snap.basis_snapshot_id)}</span>`:""}</h3>
+       <div class="tbl"><table><thead><tr><th>Line</th><th>Description</th><th class="n">Amount</th><th class="n">Change</th><th>Origin</th></tr></thead><tbody>${rows}</tbody></table></div></div>
+     <div class="callout">${cur==="A"
+        ? "MeF carried only the Schedule C line 27a total ($18,400). The taxpayer's PDF statement held the detail; RVE extracted the four Part V lines and the examiner confirmed them. <b>Attachment extraction is not in RVE today</b> — it is the next capability this case argues for."
+        : "MeF has no field for an aggregation election or participation hours. RVE holds them as supplements on the working snapshot, so the determination can point at data rather than a workpaper."}</div>`;
+}
+
+/* ---------- Stage 4 ---------- */
+function s4(){
+  const c = C();
+  const groups = ["A","B","C"].map(b=>{
+    const fs = c.findings.filter(f=>f.branch===b);
+    if(!fs.length) return "";
+    return `<div class="card"><h3><span class="badge b-${b}">${BRANCH[b]}</span></h3>${fs.map(f=>`<div class="finding"><div class="h"><b>${esc(f.item)}</b><span class="badge">${esc(f.disposition.replace(/_/g," ").toLowerCase())}</span></div>
+      <div class="amt">${f.irp!==null&&f.irp!==""?`IRP ${money(f.irp)} · `:""}return ${esc(f.ref)} ${money(f.ret)}${f.irp!==null&&f.irp!==""?` · delta ${signed(f.ret-f.irp)}`:""}</div><p>${esc(f.note)}</p></div>`).join("")}</div>`;
+  }).join("");
+  const irp = c.irp.map(i=>`<tr><td>${esc(i.form_type)}</td><td>${esc(i.payer_name)}</td><td>${esc(i.box)}</td><td class="n">${money(i.amount)}</td><td class="lock">${esc(i.note)}</td></tr>`).join("");
+  return head("Return Reconciliation Intelligence compares the return with every information return and with what the computation needs. Each finding gets a root cause and a branch.")
+   + groups
+   + `<div class="card"><h3>Information returns on file (TY2024)</h3><div class="tbl"><table><thead><tr><th>Form</th><th>Payer</th><th>Box</th><th class="n">Amount</th><th>Note</th></tr></thead><tbody>${irp}</tbody></table></div></div>`;
+}
+
+/* ---------- Stage 5 ---------- */
+function s5(){
+  const c = C();
+  const idrs = c.idrs.map(i=>{const late = i.response && i.response > i.due;
+    return `<div class="idr"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><b>${esc(i.idr_id)} · ${esc(i.form)}</b><span class="lock">to ${esc(i.to)}</span></div>
+     <div class="lock">Issued ${fmtD(i.issued)} · due ${fmtD(i.due)} · answered ${fmtD(i.response)} <span class="badge ${late?'sev-HIGH':'b-A'}">${late?'late':'on time'}</span></div>
+     <ol>${i.items.map(x=>`<li>${esc(x)}</li>`).join("")}</ol></div>`;}).join("");
+  const dets = c.determinations.map(d=>`<div class="det"><b>${esc(d.issue)}</b> — <span class="badge">${esc(d.outcome.replace(/_/g," ").toLowerCase())}</span>${d.amount?` <span class="amt" style="font-family:var(--mono);font-size:12px">${signed(d.amount)}</span>`:""}<div>${esc(d.detail)}</div><div class="auth">${esc(d.authority)}</div></div>`).join("");
+  let extra = "";
+  if (cur==="B"){
+    extra = `<div class="card"><h3>Material participation, rental by rental</h3><div class="tbl"><table><thead><tr><th>Property</th><th class="n">Elena's hours</th><th>Managed by</th><th>500-hour test</th><th class="n">Loss</th><th>Treatment</th></tr></thead><tbody>${c.props.map(p=>`<tr class="${p.hours<500?'chg':''}"><td>${esc(p.addr)}</td><td class="n">${p.hours}</td><td>${esc(p.mgr)}</td><td>${p.hours>=500?'Met':'Not met'}</td><td class="n">${money(p.net)}</td><td>${p.hours>=500?'Nonpassive — allowed':'Passive — suspended'}</td></tr>`).join("")}
+      <tr><td><b>If aggregated</b> <span class="lock">(election or Rev. Proc. 2011-34 relief)</span></td><td class="n"><b>${c.props.reduce((a,p)=>a+p.hours,0)}</b></td><td></td><td><b>Met</b></td><td class="n">${money(c.props.reduce((a,p)=>a+p.net,0))}</td><td>All nonpassive ${status("question")}</td></tr></tbody></table></div>
+      <p class="lock" style="margin:8px 0 0">Real estate professional status itself is sustained: 1,450 brokerage hours, her only work. Hours captured from the IDR response as RVE supplements.</p></div>`;
+  }
+  return head("The IDR asks only for branch C items. Responses are captured against the working snapshot, and each determination cites its authority.")
+   + `<div class="card"><h3>Information document requests</h3>${idrs}</div>` + extra + `<div class="card"><h3>Determinations</h3>${dets}</div>`;
+}
+
+/* ---------- Stage 6 ---------- */
+function s6(){
+  const c = C(), m = c.meta;
+  const ex = c.adjustments.filter(a=>a.adjustment_kind==="EXAMINER"), co = c.adjustments.filter(a=>a.adjustment_kind==="COMPUTED");
+  const row = a => `<tr><td>${esc(FORM_NAME[a.form]||a.form)} ${esc(a.line)}</td><td>${esc(a.line_desc)}</td><td class="n">${money(a.as_filed)}</td><td class="n">${signed(a.adjustment)}</td><td class="n"><b>${money(a.as_adjusted)}</b></td></tr>`;
+  const taxRows = c.tax.map(t=>`<tr class="${t.delta?'chg':''}"><td>${esc(t.line)}</td><td>${esc(t.desc)}</td><td class="n">${money(t.filed)}</td><td class="n">${signed(t.delta)}</td><td class="n">${money(t.adjusted)}</td></tr>`).join("");
+  const effects = c.effects.map(e=>`<tr><td><b>${esc(e[0])}</b></td><td>${esc(e[1])}</td><td>${status(e[2])}</td></tr>`).join("");
+  const tl = c.timeline.map(t=>`<li><span class="d">${fmtD(t[0])}</span><span class="chip ${t[1]}">${t[1]}</span><span>${esc(t[2])} <span class="lock">· ${esc(t[3])}</span></span></li>`).join("");
+  const flags = c.flags.map(f=>`<li>${esc(f[1])} ${status(f[2])}</li>`).join("");
+  return head(m.case_id==="A"
+      ? "Agreed. The as-examined snapshot posts as a TC 300 and the result flows straight into the collection case."
+      : "Unagreed. The 30-day letter issued with Form 4549 and Form 886-A; the taxpayers protested and asked for Appeals.")
+   + `<div class="metrics">
+      <div class="metric ${m.case_id==='A'?'ok':'warn'}"><div class="l">Status</div><div class="v">${c.agreed?'Agreed':'Unagreed'}</div><div class="s">${c.agreed?'Form 4549 signed 9 Oct 2026':'Protest received 26 Oct 2026'}</div></div>
+      <div class="metric bad"><div class="l">Deficiency</div><div class="v">${money(c.deficiency)}</div><div class="s">change in Form 1040 line 24</div></div>
+      <div class="metric"><div class="l">Taxable income change</div><div class="v">${signed(c.tax.find(t=>t.line==='15').delta)}</div><div class="s">line 15</div></div>
+      <div class="metric ${c.substantial?'warn':''}"><div class="l">Substantial understatement</div><div class="v">${c.substantial?'Threshold met':'Below threshold'}</div><div class="s">IRC 6662(d)${c.penalty_if_asserted?` · ${money(c.penalty_if_asserted)} if asserted`:''}</div></div></div>
+     <div class="card"><h3>Three-column view — examiner adjustments</h3><div class="tbl"><table><thead><tr><th>Form · line</th><th>Description</th><th class="n">As filed</th><th class="n">Adjustment</th><th class="n">As adjusted</th></tr></thead><tbody>${ex.map(row).join("")}</tbody></table></div></div>
+     <div class="card"><h3>Form 1040 recomputed</h3><div class="tbl"><table><thead><tr><th>Line</th><th>Description</th><th class="n">As filed</th><th class="n">Change</th><th class="n">As adjusted</th></tr></thead><tbody>${taxRows}</tbody></table></div>
+       <p class="lock" style="margin:8px 0 0">Recomputed by the POC's simplified TY2024 engine (rate schedules, not the Tax Table). The production recompute is the calculator behind RVE.</p></div>
+     <div class="card"><h3>Effects across the taxpayer</h3><div class="tbl"><table><tbody>${effects}</tbody></table></div></div>
+     <div class="grid2">
+      <div class="card"><h3>Timeline</h3><ul class="timeline">${tl}</ul></div>
+      <div class="card"><h3>Open points for the SME</h3><ul>${flags}</ul></div>
+     </div>`;
+}
+
+const RENDER = [s0,s1,s2,s3,s4,s5,s6];
+function render(){
+  document.querySelectorAll(".cases button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.case===cur));
+  $("#caseTitle").textContent = `${C().meta.name} — ${C().meta.title}`;
+  document.title = `${C().meta.name} · ${STAGES[stage]} — TP360 + RVE`;
+  renderRail();
+  $("#main").innerHTML = RENDER[stage]() + navBar();
+  $("#side").innerHTML = `<div class="card"><h3>Data behind this screen</h3><ul>${POWERED[stage].map(t=>`<li><code>${esc(t)}</code></li>`).join("")}</ul>
+    <div class="why">${esc(WHY[stage])}</div>
+    <div class="why">Same Delta tables in Databricks power Genie: <i>"What changed on ${esc(C().meta.name.split(" &")[0])}'s 2024 return?"</i></div></div>`;
+  $("#prev").onclick = ()=>go(stage-1); $("#next").onclick = ()=>go(stage+1);
+  document.querySelectorAll("[data-snap]").forEach(b=>b.onclick=()=>{snapSel[cur]=b.dataset.snap; render();});
+}
+document.querySelectorAll(".cases button").forEach(b=>b.onclick=()=>{cur=b.dataset.case; go(stage);});
+document.addEventListener("keydown", e=>{ if(e.target.tagName==="INPUT") return; if(e.key==="ArrowRight") go(stage+1); if(e.key==="ArrowLeft") go(stage-1); });
+const h = location.hash.match(/^#([AB])-(\d)$/); if(h){cur=h[1];stage=+h[2];}
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,219 @@
+-- TP360 / RVE POC — gold views and signal rules (Databricks SQL)
+-- Synthetic data only. Table and column names are POC names, not CDW names.
+-- The setup notebook runs this file statement by statement after loading tp360/data/*.csv.
+-- The same rules are implemented independently in Python (tools/build_tp360_data.py) to produce
+-- tp_signal_answer_key; the notebook fails if the two disagree.
+
+-- --------------------------------------------------------------------------------------------
+-- Run parameter
+-- --------------------------------------------------------------------------------------------
+CREATE OR REPLACE VIEW v_as_of AS
+SELECT CAST(value AS DATE) AS as_of_date FROM tp_run_params WHERE param = 'as_of_date';
+
+-- --------------------------------------------------------------------------------------------
+-- Signals: one row per taxpayer per rule that fires, with the evidence behind it
+-- --------------------------------------------------------------------------------------------
+CREATE OR REPLACE VIEW v_open_oic AS
+SELECT tin_token, CAST(opened_date AS DATE) AS oic_opened, episode_id
+FROM tp_compliance_episode
+WHERE episode_type = 'OIC' AND closed_date IS NULL;
+
+CREATE OR REPLACE VIEW v_tp_signals AS
+SELECT b.tin_token, 'SG01_UNDISCLOSED_BANK_ACCOUNT' AS signal_id, 'HIGH' AS severity,
+       concat(b.institution, ' ', b.account_type, ' ending ', CAST(b.acct_last4 AS STRING), ' — balance ', CAST(b.balance AS STRING), ' — source ', b.source) AS evidence,
+       'Form 433-A (OIC) completeness; reasonable collection potential' AS basis
+FROM tp_bank_account b JOIN v_open_oic o ON o.tin_token = b.tin_token
+WHERE b.disclosed_on_433 = 'N'
+
+UNION ALL
+SELECT t.from_tin_token, 'SG02_RELATED_PARTY_TRANSFER_BEFORE_OFFER', 'HIGH',
+       concat('Asset ', t.asset_id, ' to ', t.to_tin_token, ' on ', CAST(t.transfer_date AS STRING), ', ',
+              CAST(datediff(o.oic_opened, CAST(t.transfer_date AS DATE)) AS STRING), ' days before the offer; consideration ',
+              CAST(t.consideration AS STRING), ' of FMV ', CAST(t.fmv_at_transfer AS STRING)),
+       'Dissipated asset; possible transferee or nominee question'
+FROM tp_transfer t
+JOIN v_open_oic o ON o.tin_token = t.from_tin_token
+WHERE datediff(o.oic_opened, CAST(t.transfer_date AS DATE)) BETWEEN 0 AND 730
+  AND t.consideration < 0.10 * t.fmv_at_transfer
+  AND EXISTS (SELECT 1 FROM tp_relationship r
+              WHERE (r.from_id = t.from_tin_token AND r.to_id = t.to_tin_token)
+                 OR (r.from_id = t.to_tin_token AND r.to_id = t.from_tin_token))
+
+UNION ALL
+SELECT p.tin_token, 'SG03_PASSPORT_REVERSAL_TRIGGER_ARMED', 'HIGH',
+       concat('Certified (', p.episode_id, ') with offer ', o.episode_id, ' pending'),
+       'IRC 7345(c): acceptance would require reversal'
+FROM tp_compliance_episode p JOIN v_open_oic o ON o.tin_token = p.tin_token
+WHERE p.episode_type = 'PASSPORT' AND p.status = 'CERTIFIED' AND p.closed_date IS NULL
+
+UNION ALL
+SELECT tin_token, 'SG04_LEVY_BARRED_OIC_PENDING', 'MEDIUM',
+       concat('Overlay ', overlay_id, ' since ', CAST(start_date AS STRING)), authority
+FROM tp_procedural_overlay
+WHERE overlay_type = 'OIC_PENDING' AND end_date IS NULL
+
+UNION ALL
+SELECT e.tin_token, 'SG05_REPEAT_IA_DEFAULT', 'MEDIUM',
+       concat(CAST(count(*) AS STRING), ' installment agreements defaulted in the last 24 months'),
+       'Agreement history; offer and agreement terms'
+FROM tp_compliance_episode e CROSS JOIN v_as_of a
+WHERE e.episode_type = 'IA' AND e.status = 'DEFAULTED' AND e.closed_date IS NOT NULL
+  AND datediff(a.as_of_date, CAST(e.closed_date AS DATE)) <= 730
+GROUP BY e.tin_token
+HAVING count(*) >= 2
+
+UNION ALL
+SELECT DISTINCT f.tin_token, 'SG06_IRP_INCOME_UNREPORTED', 'HIGH',
+       concat(f.item, ' — ', CAST(f.irp_amount AS STRING), ' not on ', f.return_ref), 'IRC 61; IRP match (RRI branch A)'
+FROM tp_rri_finding f
+WHERE f.disposition = 'UNREPORTED_INCOME'
+
+UNION ALL
+SELECT DISTINCT s.tin_token, 'SG07_REP_CLAIM_NO_AGGREGATION_ELECTION', 'MEDIUM',
+       concat('Schedule E line 43 ', CAST(l.amount AS STRING), ' with no aggregation election captured'),
+       'IRC 469(c)(7); Treas. Reg. 1.469-9(g) — each rental tested separately'
+FROM tp_return_line l JOIN tp_return_snapshot s ON s.snapshot_id = l.snapshot_id
+WHERE s.version_type = 'AS_FILED' AND l.form = 'SCH_E' AND l.line = '43' AND l.amount <> 0
+  AND NOT EXISTS (SELECT 1 FROM tp_return_line l2 JOIN tp_return_snapshot s2 ON s2.snapshot_id = l2.snapshot_id
+                  WHERE s2.tin_token = s.tin_token AND l2.line = 'ELECTION_469_9G' AND l2.amount = 1)
+
+UNION ALL
+SELECT r.from_id, 'SG08_RESPONSIBLE_PERSON_MULTIPLE_ENTITIES', 'HIGH',
+       concat('Responsible person for ', CAST(count(DISTINCT r.to_id) AS STRING), ' entities with trust fund balances'),
+       'IRC 6672 exposure across entities'
+FROM tp_relationship r
+WHERE r.rel_type = 'RESPONSIBLE_PERSON'
+  AND r.to_id IN (SELECT tin_token FROM tp_tax_module WHERE mft = 1 AND assessed_balance > 0)
+GROUP BY r.from_id
+HAVING count(DISTINCT r.to_id) >= 2
+
+UNION ALL
+SELECT DISTINCT i.tin_token, 'SG09_ENTITY_INTEREST_NOT_ON_433', 'MEDIUM',
+       concat('K-1 from ', i.payer_name, ' (', i.payer_tin_token, ') — interest not listed on Form 433-A'),
+       'Form 433-A (OIC) completeness'
+FROM tp_information_return i
+JOIN v_open_oic o ON o.tin_token = i.tin_token
+JOIN tp_relationship r ON r.rel_type = 'MEMBER' AND r.from_id = i.tin_token AND r.to_id = i.payer_tin_token
+WHERE i.form_type LIKE 'K-1%'
+  AND NOT EXISTS (SELECT 1 FROM tp_asset a
+                  WHERE a.owner_tin_token = i.tin_token AND a.asset_type = 'ENTITY_INTEREST'
+                    AND a.description = concat('Interest in ', i.payer_tin_token));
+
+-- --------------------------------------------------------------------------------------------
+-- TP360 header: one row per taxpayer
+-- --------------------------------------------------------------------------------------------
+CREATE OR REPLACE VIEW v_tp360_header AS
+WITH m AS (
+  SELECT tin_token, sum(assessed_balance) AS total_balance,
+         count_if(assessed_balance > 0) AS modules_with_balance,
+         min(CAST(csed AS DATE)) AS nearest_csed
+  FROM tp_tax_module GROUP BY tin_token),
+e AS (
+  SELECT tin_token,
+         concat_ws('; ', collect_list(concat(episode_type, ' (', status, ')'))) AS open_episodes,
+         max(CASE WHEN episode_type = 'PASSPORT' THEN status END) AS passport_status,
+         max(CASE WHEN episode_type = 'OIC' THEN status END) AS oic_status
+  FROM tp_compliance_episode WHERE closed_date IS NULL GROUP BY tin_token),
+s AS (SELECT tin_token, count(*) AS signal_count, concat_ws('; ', collect_list(signal_id)) AS signals
+      FROM v_tp_signals GROUP BY tin_token)
+SELECT t.tin_token, t.display_name, t.entity_type, t.filing_status, t.city, t.state, t.poa_on_file, t.case_group,
+       coalesce(m.total_balance, 0) AS total_balance, coalesce(m.modules_with_balance, 0) AS modules_with_balance,
+       m.nearest_csed, e.open_episodes, e.passport_status, e.oic_status,
+       coalesce(s.signal_count, 0) AS signal_count, s.signals
+FROM tp_taxpayer t
+LEFT JOIN m ON m.tin_token = t.tin_token
+LEFT JOIN e ON e.tin_token = t.tin_token
+LEFT JOIN s ON s.tin_token = t.tin_token;
+
+-- --------------------------------------------------------------------------------------------
+-- RVE: three-column view, as filed vs the latest snapshot (proposed or as examined)
+-- --------------------------------------------------------------------------------------------
+CREATE OR REPLACE VIEW v_latest_snapshot AS
+SELECT tin_token, tax_period, snapshot_id, version_type FROM (
+  SELECT s.*, row_number() OVER (PARTITION BY tin_token, tax_period
+         ORDER BY CASE version_type WHEN 'AS_EXAMINED' THEN 1 WHEN 'PROPOSED' THEN 2 WHEN 'RVE_WORKING' THEN 3 ELSE 4 END) AS rn
+  FROM tp_return_snapshot s) x
+WHERE rn = 1;
+
+CREATE OR REPLACE VIEW v_return_compare AS
+WITH f AS (
+  -- "as filed" = the MeF lines plus anything RVE extracted from attachments the taxpayer filed
+  SELECT s.tin_token, s.tax_period, l.form, l.line, coalesce(l.sub_id, '') AS sub_id, l.line_desc, l.amount
+  FROM tp_return_line l JOIN tp_return_snapshot s ON s.snapshot_id = l.snapshot_id
+  WHERE s.version_type = 'AS_FILED'
+     OR (s.version_type = 'RVE_WORKING' AND l.data_origin = 'ATTACHMENT_EXTRACT')),
+c AS (
+  SELECT v.tin_token, v.tax_period, v.version_type, l.form, l.line, coalesce(l.sub_id, '') AS sub_id, l.line_desc,
+         l.amount, l.data_origin
+  FROM tp_return_line l JOIN v_latest_snapshot v ON v.snapshot_id = l.snapshot_id)
+SELECT coalesce(c.tin_token, f.tin_token) AS tin_token, coalesce(c.tax_period, f.tax_period) AS tax_period,
+       coalesce(c.form, f.form) AS form, coalesce(c.line, f.line) AS line, coalesce(c.sub_id, f.sub_id) AS sub_id,
+       coalesce(f.line_desc, c.line_desc) AS line_desc, c.version_type AS compared_to,
+       coalesce(f.amount, 0) AS as_filed, coalesce(c.amount, f.amount) AS as_adjusted,
+       coalesce(c.amount, f.amount) - coalesce(f.amount, 0) AS delta, c.data_origin
+FROM f FULL OUTER JOIN c
+  ON c.tin_token = f.tin_token AND c.tax_period = f.tax_period AND c.form = f.form AND c.line = f.line AND c.sub_id = f.sub_id;
+
+-- RVE data origin: what came from MeF vs what RVE added
+CREATE OR REPLACE VIEW v_rve_data_origin AS
+SELECT s.tin_token, s.tax_period, s.snapshot_id, s.version_type, l.data_origin, count(*) AS line_count
+FROM tp_return_line l JOIN tp_return_snapshot s ON s.snapshot_id = l.snapshot_id
+GROUP BY s.tin_token, s.tax_period, s.snapshot_id, s.version_type, l.data_origin;
+
+-- --------------------------------------------------------------------------------------------
+-- Related parties: one and two hops, undirected (SQL fallback when GraphFrames isn't available)
+-- --------------------------------------------------------------------------------------------
+CREATE OR REPLACE VIEW v_edges_undirected AS
+SELECT from_id AS a, to_id AS b, rel_type FROM tp_relationship
+UNION ALL
+SELECT to_id AS a, from_id AS b, rel_type FROM tp_relationship;
+
+CREATE OR REPLACE VIEW v_related_parties AS
+SELECT e1.a AS tin_token, e1.b AS related_id, 1 AS hops, e1.rel_type AS path, e1.b AS via
+FROM v_edges_undirected e1
+UNION ALL
+SELECT e1.a, e2.b, 2, concat(e1.rel_type, ' > ', e2.rel_type), e1.b
+FROM v_edges_undirected e1 JOIN v_edges_undirected e2 ON e2.a = e1.b
+WHERE e2.b <> e1.a;
+
+CREATE OR REPLACE VIEW v_related_parties_named AS
+SELECT r.tin_token, t1.display_name AS name, r.hops, r.path, r.via,
+       coalesce(tv.display_name, av.description, r.via) AS via_name,
+       r.related_id, coalesce(t2.display_name, a2.description, r.related_id) AS related_name,
+       h.total_balance AS related_balance, h.signals AS related_signals
+FROM v_related_parties r
+LEFT JOIN tp_taxpayer t1 ON t1.tin_token = r.tin_token
+LEFT JOIN tp_taxpayer tv ON tv.tin_token = r.via
+LEFT JOIN tp_asset av ON av.asset_id = r.via
+LEFT JOIN tp_taxpayer t2 ON t2.tin_token = r.related_id
+LEFT JOIN tp_asset a2 ON a2.asset_id = r.related_id
+LEFT JOIN v_tp360_header h ON h.tin_token = r.related_id;
+
+-- --------------------------------------------------------------------------------------------
+-- One timeline per taxpayer across episodes, contacts, snapshots and determinations
+-- --------------------------------------------------------------------------------------------
+CREATE OR REPLACE VIEW v_tp_timeline AS
+SELECT tin_token, CAST(opened_date AS DATE) AS event_date, 'EPISODE_OPENED' AS event_type,
+       concat(episode_type, ' — ', episode_subtype) AS detail, episode_id AS ref
+FROM tp_compliance_episode
+UNION ALL
+SELECT tin_token, CAST(closed_date AS DATE), 'EPISODE_CLOSED', concat(episode_type, ' — ', status), episode_id
+FROM tp_compliance_episode WHERE closed_date IS NOT NULL
+UNION ALL
+SELECT tin_token, CAST(issued_date AS DATE), concat('CONTACT_', contact_type), item_code, contact_id FROM tp_contact_event
+UNION ALL
+SELECT tin_token, CAST(created_date AS DATE), 'RVE_SNAPSHOT', concat(version_type, ' — ', tax_period), snapshot_id FROM tp_return_snapshot
+UNION ALL
+SELECT tin_token, CAST(decided_date AS DATE), 'DETERMINATION', concat(determination_type, ' — ', outcome), determination_id FROM tp_determination;
+
+-- --------------------------------------------------------------------------------------------
+-- Exam results summary per episode (feeds the closing view and Genie)
+-- --------------------------------------------------------------------------------------------
+CREATE OR REPLACE VIEW v_exam_results AS
+SELECT a.episode_id, a.tin_token, a.tax_period,
+       sum(CASE WHEN a.form = '1040' AND a.line = '24' THEN a.adjustment ELSE 0 END) AS deficiency,
+       sum(CASE WHEN a.form = '1040' AND a.line = '15' THEN a.adjustment ELSE 0 END) AS taxable_income_change,
+       count_if(a.adjustment_kind = 'EXAMINER') AS examiner_adjustments,
+       max(e.status) AS episode_status
+FROM tp_adjustment a JOIN tp_compliance_episode e ON e.episode_id = a.episode_id
+GROUP BY a.episode_id, a.tin_token, a.tax_period;
