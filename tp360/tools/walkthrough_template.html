@@ -134,7 +134,7 @@ const DATA = /*__DATA__*/null;
 const STAGES = ["Selection and intake","Taxpayer 360 context","Exam plan","RVE return workspace","Reconciliation (RRI)","IDR and determination","Closing and effects"];
 const POWERED = [
   ["tp_taxpayer","tp_compliance_episode","tp_treatment_assignment","tp_statutory_clock"],
-  ["v_tp360_header","v_tp_signals","v_related_parties_named","tp_bank_account","tp_asset"],
+  ["v_tp360_header","v_tp_signals","v_related_parties_named","v_prior_audit_history","tp_case_closure","tp_issue","tp_bank_account","tp_asset"],
   ["tp_issue","tp_rri_finding (branch C)","tp_statutory_clock","tp_idr"],
   ["tp_return_snapshot","tp_return_line","v_rve_data_origin"],
   ["tp_information_return","tp_rri_finding"],
@@ -159,9 +159,10 @@ const SIG_TEXT = {
   SG06_IRP_INCOME_UNREPORTED:["Information-return income not on the return","An IRP document has no matching entry on the return."],
   SG07_REP_CLAIM_NO_AGGREGATION_ELECTION:["Real estate professional claim, no aggregation election","Rental losses claimed as nonpassive; without an election each rental is tested separately."],
   SG08_RESPONSIBLE_PERSON_MULTIPLE_ENTITIES:["Responsible person for several entities","Linked to two or more entities with trust fund balances."],
-  SG09_ENTITY_INTEREST_NOT_ON_433:["Entity interest not on the Form 433-A","A K-1 shows a partnership interest that the financial statement does not list."]
+  SG09_ENTITY_INTEREST_NOT_ON_433:["Entity interest not on the Form 433-A","A K-1 shows a partnership interest that the financial statement does not list."],
+  SG10_REPEAT_ISSUE:["Repeat issue","The same issue was adjusted in a prior exam within five years."]
 };
-const SEV = {SG04_LEVY_BARRED_OIC_PENDING:"MEDIUM",SG05_REPEAT_IA_DEFAULT:"MEDIUM",SG07_REP_CLAIM_NO_AGGREGATION_ELECTION:"MEDIUM",SG09_ENTITY_INTEREST_NOT_ON_433:"MEDIUM"};
+const SEV = {SG10_REPEAT_ISSUE:"MEDIUM",SG04_LEVY_BARRED_OIC_PENDING:"MEDIUM",SG05_REPEAT_IA_DEFAULT:"MEDIUM",SG07_REP_CLAIM_NO_AGGREGATION_ELECTION:"MEDIUM",SG09_ENTITY_INTEREST_NOT_ON_433:"MEDIUM"};
 const ORIGIN = {MEF:"MeF",ATTACHMENT_EXTRACT:"Attachment extract",RVE_SUPPLEMENT:"RVE supplement",EXAMINER_ADJUSTMENT:"Examiner adjustment",COMPUTED:"Computed"};
 const BRANCH = {A:"A · resolved from data",B:"B · not a taxpayer issue",C:"C · needs the taxpayer"};
 const FORM_ORDER = ["W2","SCH_B","F8949","SCH_D","SCH_C","SCH_E","F8582","SCH_A","SCH_SE","SCH_8812","RVE_SUPP","1040"];
@@ -257,8 +258,23 @@ function s1(){
       ? "The same TP360 view the collection side uses. Seven signals fire, and the relationship graph reaches past the taxpayer to a co-member with trust fund exposure."
       : "Only one signal, but it is the one that shapes the exam. The graph is small — spouse, employer, brokerage and property manager.")
    + facts
-   + `<div class="card"><h3>Signals (${c.signals.length})</h3><div class="signals">${sigs}</div></div>
-      <div class="card"><h3>Related parties</h3>${graphSVG(c.graph, m.tin)}</div>`;
+   + `<div class="card"><h3>Signals (${c.signals.length})</h3><div class="signals">${sigs}</div></div>`
+   + priorCard(c)
+   + `<div class="card"><h3>Related parties</h3>${graphSVG(c.graph, m.tin)}</div>`;
+}
+
+const HOW = {IRP_MATCH:"IRP match",IDR_RESPONSE:"IDR response",EXAMINER_INTERVIEW:"Interview",RVE_ATTACHMENT_EXTRACT:"RVE attachment extract",
+  RRI_RECOMPUTE_VARIANCE:"RRI recompute variance",BANK_DEPOSITS_ANALYSIS:"Bank deposits analysis",THIRD_PARTY_RECORDS:"Third-party records"};
+const PROG = {AUR:"AUR",CORRESPONDENCE:"Correspondence exam",FIELD:"Field exam"};
+const SEL = {IRP_MATCH:"IRP match",DIF_SCORE:"DIF score",CAMPAIGN:"campaign",REFERRAL:"referral",RELATED_PICKUP:"related pickup",PRIOR_EXAM_REPEAT:"prior-exam repeat"};
+function priorCard(c){
+  if(!c.prior || !c.prior.length) return "";
+  const rows = c.prior.map(p=>`<tr><td>TY${String(p.tax_period).slice(0,4)}</td><td>${esc(PROG[p.program]||p.program)}<div class="lock">selected by ${esc(SEL[p.selection_source]||p.selection_source)}</div></td>
+     <td>${esc(p.outcome.replace(/_/g," ").toLowerCase())}${p.closing_tc?` <span class="lock">TC ${p.closing_tc}</span>`:""}<div class="lock">closed ${fmtD(p.closed_date)}</div></td>
+     <td class="n">${money(p.deficiency)}</td>
+     <td>${p.issues.map(i=>`<div><code style="font-family:var(--mono);font-size:11px">${esc(i.code)}</code> ${esc(i.name)} — <b>${esc(i.status.toLowerCase().replace(/_/g," "))}</b>${i.sustained!==""&&i.status==="ADJUSTED"?` ${signed(+i.sustained)}`:""} <span class="lock">· found by ${esc(HOW[i.how]||i.how)}</span></div>`).join("")}</td></tr>`).join("");
+  return `<div class="card"><h3>Prior audit history (closed cases)</h3><div class="tbl"><table><thead><tr><th>Year</th><th>Program</th><th>Outcome</th><th class="n">Deficiency</th><th>Issues — result — how found</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <p class="lock" style="margin:8px 0 0">AIMS holds the case-level columns. The issue, amount sustained and how-found detail is what the closed-case model adds.</p></div>`;
 }
 
 /* ---------- Stage 2 ---------- */
@@ -275,6 +291,7 @@ function s2(){
       <div class="metric"><div class="l">ASED</div><div class="v">${fmtD(ased.expiry_date)}</div><div class="s">IRC 6501(a)</div></div></div>
      <div class="card"><h3>Planned issues</h3><div class="tbl"><table><thead><tr><th>Item</th><th>Approach</th><th>Branch</th></tr></thead><tbody>${plan.map(p=>`<tr><td>${esc(p[0])}</td><td>${esc(p[1])}</td><td><span class="badge b-${p[2]}">${BRANCH[p[2]]}</span></td></tr>`).join("")}</tbody></table></div></div>
      <div class="card"><h3>Set aside before contact</h3><ul>${bItems.map(f=>`<li><b>${esc(f.item)}</b> — ${esc(f.note)}</li>`).join("")}</ul></div>
+     ${c.signals.includes("SG10_REPEAT_ISSUE")?`<div class="callout"><b>Repeat issue:</b> Schedule C other expenses (EX_SCHC_OTHER_EXP) were adjusted in the TY2019 field exam and are on the plan again for TY2024. The prior result, how it was found and what was sustained are in the closed-case record — not in a workpaper archive.</div>`:""}
      <div class="callout">${m.case_id==="A"
         ? "The exam owner is not the only reader. The offer examiner sees the plan in the same episode record, because the exam result will change the offer's liability and RCP."
         : "Without RVE the examiner would ask for 'all records supporting Schedule E'. With the gap identified up front, the IDR names three things: hours, any election statement, management agreements."}</div>`;
@@ -315,7 +332,7 @@ function s4(){
     const fs = c.findings.filter(f=>f.branch===b);
     if(!fs.length) return "";
     return `<div class="card"><h3><span class="badge b-${b}">${BRANCH[b]}</span></h3>${fs.map(f=>`<div class="finding"><div class="h"><b>${esc(f.item)}</b><span class="badge">${esc(f.disposition.replace(/_/g," ").toLowerCase())}</span></div>
-      <div class="amt">${f.irp!==null&&f.irp!==""?`IRP ${money(f.irp)} · `:""}return ${esc(f.ref)} ${money(f.ret)}${f.irp!==null&&f.irp!==""?` · delta ${signed(f.ret-f.irp)}`:""}</div><p>${esc(f.note)}</p></div>`).join("")}</div>`;
+      <div class="amt">${f.irp!==null&&f.irp!==""?`IRP ${money(f.irp)} · `:""}return ${esc(f.ref)} ${f.ret===null?"not used":money(f.ret)}${f.irp!==null&&f.irp!==""&&f.ret!==null?` · delta ${signed(f.ret-f.irp)}`:""}</div><p>${esc(f.note)}</p></div>`).join("")}</div>`;
   }).join("");
   const irp = c.irp.map(i=>`<tr><td>${esc(i.form_type)}</td><td>${esc(i.payer_name)}</td><td>${esc(i.box)}</td><td class="n">${money(i.amount)}</td><td class="lock">${esc(i.note)}</td></tr>`).join("");
   return head("Return Reconciliation Intelligence compares the return with every information return and with what the computation needs. Each finding gets a root cause and a branch.")

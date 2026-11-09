@@ -1,4 +1,4 @@
-# Taxpayer 360 + Return Viewer Editor (RVE) POC — v0.1
+# Taxpayer 360 + Return Viewer Editor (RVE) POC — v0.2
 
 Fictional taxpayers, synthetic data, no FTI. Table and column names are POC names (`tp_*`), not CDW names.
 Real CDW names never go in this repo.
@@ -15,6 +15,29 @@ This shows what the UCP canonical model on EDP lets the business do:
   taxpayer and goes into an IDR.
 - **Effects:** exam results flow back into the same tables, so the 360 view and the other episodes see
   them straight away.
+
+## v0.2 — closed cases, beyond AIMS
+
+About 300 synthetic closed AUR, correspondence and field cases (TY2019–2023) across ~260 more taxpayers.
+Each case has the AIMS-equivalent record (`tp_case_closure`) **plus** what AIMS doesn't hold:
+
+- **Issue level:** the issue code, amount proposed vs. sustained, status, how the adjustment was found, and hours.
+- **Line level:** every source-line adjustment tied to its issue.
+- **Tax computation:** filed vs. examined.
+
+The **issue → MeF line translation** sits in three reference tables:
+
+- `tp_issue_code` names the issue.
+- `tp_issue_line_map` says which source lines it adjusts.
+- `tp_line_catalog` says how each line rolls up to Form 1040.
+
+`v_issue_to_1040_trace` shows the whole path. New views answer "which lines are adjusted most often", "no-change rate by issue",
+"how adjustments were found", "most common variances and root causes" and "prior audit history". There is also a new signal,
+SG10 repeat issue. Marisol's 2019 field exam and 2021 AUR are now real closed cases, and the 2019 Schedule C other-expense
+adjustment repeats in 2024. The Thornburys have a prior no-change exam.
+
+See [`docs/TP360_Data_Model.md`](docs/TP360_Data_Model.md) for the ER diagram, every table's columns, and the AIMS-equivalent
+field list (SME to confirm). Closed-case figures are illustrative and computed with TY2024 parameters.
 
 ## The two hero cases (TY2024)
 
@@ -34,11 +57,15 @@ Points that need SME judgment are marked "SME to confirm" in the walkthrough. Th
 ```
 tp360/
 ├── setup_tp360.ipynb            run in Databricks: load, build views, validate, show heroes, GraphFrames (optional)
-├── data/                        23 CSVs (tp_*) — 154 taxpayers incl. ~120 fillers; tp_signal_answer_key; tp_run_params
-├── sql/tp360_views.sql          signals (9 rules), v_tp360_header, v_return_compare, v_related_parties_named, v_tp_timeline, v_exam_results
-├── genie/                       genie_instructions.md + 14 benchmark questions with SQL answers
+├── data/                        29 CSVs (tp_*) — ~410 taxpayers, ~300 closed cases, reference tables, answer key, run params
+├── docs/TP360_Data_Model.md     ER diagram, tables, the issue → line translation, AIMS-equivalent fields
+├── sql/tp360_views.sql          signals (10 rules), TP360 header, RVE compare, closed-case results and analytics views
+├── genie/                       genie_instructions.md + 22 benchmark questions with SQL answers
 ├── viewer/TP360_RVE_Walkthrough.html   the staged walkthrough (7 stages, both cases), open in any browser
 └── tools/                       generators — the single source for data, notebook and viewer
+    ├── reference_tables.py      issue codes, issue → line map, line catalog, root causes
+    ├── closed_cases.py          the closed-case population (runs every case through the tax engine)
+    ├── make_data_model_doc.py   writes docs/TP360_Data_Model.md from the CSV headers
     ├── hero_cases.py            both cases: return inputs, findings, IDRs, determinations, effects, SME flags
     ├── tax_engine_ty2024.py     simplified TY2024 1040 engine (illustrative; not the production calculator)
     ├── build_tp360_data.py      writes data/*.csv, the answer key and viewer/scenarios.json
@@ -51,8 +78,8 @@ tp360/
 
 1. Use the Git folder you already have for `passport_poc_kit` (pull), or create one.
 2. Open `tp360/setup_tp360.ipynb`. Set `catalog` / `schema` (default `workspace` / `tp360_poc`), attach
-   Serverless, and **Run all**. You should see `VALIDATION PASSED`: 0 signal mismatches and deficiencies of
-   2417 and 11000.
+   Serverless, and **Run all**. You should see `VALIDATION PASSED`: 0 signal mismatches, deficiencies of 2417 and
+   11000, and every closed case's deficiency matching its tax computation.
 3. **Genie:** create a space on the tables the last cell lists (never `tp_signal_answer_key`). Paste
    `genie/genie_instructions.md`, then add the benchmarks from the file the notebook writes to the `raw`
    volume.
@@ -66,6 +93,7 @@ python tp360/tools/build_tp360_data.py    # data + answer key + scenarios.json
 python tp360/tools/check_sql_local.py     # needs: pip install duckdb  -> LOCAL CHECK PASSED
 python tp360/tools/build_viewer.py         # walkthrough HTML
 python tp360/tools/make_notebook.py        # only if the notebook source changed
+python tp360/tools/make_data_model_doc.py  # if tables or columns changed
 ```
 
 ## Limits (v0.1)

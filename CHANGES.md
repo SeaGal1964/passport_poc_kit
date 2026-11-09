@@ -1,5 +1,14 @@
 # Changes
 
+## tp360 v0.2 (2026-11-09)
+
+- About 300 synthetic closed cases, beyond AIMS: case-level closure (AIMS-equivalent) plus issue-level detail (proposed vs. sustained, how found, hours), line adjustments tied to issues, and the tax computation filed vs. examined.
+- Issue → MeF line translation: `tp_issue_code`, `tp_issue_line_map`, `tp_line_catalog`, and `v_issue_to_1040_trace`.
+- Variance root causes on `tp_rri_finding`; signal SG10 repeat issue; 7 analytics views; Genie benchmarks Q15–Q22.
+- Hero back-fill: Marisol's TY2019 field exam and TY2021 AUR; the Thornburys' TY2021 no-change. The walkthrough shows prior audit history.
+- `docs/TP360_Data_Model.md` (generated).
+- Re-run `tp360/setup_tp360.ipynb`; it replaces the tables in `tp360_poc`. Add the new views to the Genie agent.
+
 ## tp360 v0.1 (2026-11-08)
 
 - New `tp360/` folder: TP360 + RVE POC with two hero cases (Vance, Thornbury), 23 synthetic tables, 9 signal rules validated against a Python answer key, 14 Genie benchmarks, setup notebook with optional GraphFrames, and a staged walkthrough viewer. Passport kit unchanged.

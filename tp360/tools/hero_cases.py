@@ -40,6 +40,8 @@ B_PENALTY_IF_ASSERTED = round(0.20 * B_DEFICIENCY)
 L1040 = [
     ("1z wages", "1040", "1z", "WagesAmt", "N"),
     ("2b taxable interest", "1040", "2b", "TaxableInterestAmt", "N"),
+    ("3b ordinary dividends", "1040", "3b", "OrdinaryDividendsAmt", "N"),
+    ("4b taxable IRA distributions", "1040", "4b", "TaxableIRAAmt", "N"),
     ("7 capital gain", "1040", "7", "CapitalGainLossAmt", "N"),
     ("8 Schedule 1 additional income", "1040", "8", "TotalAdditionalIncomeAmt", "N"),
     ("9 total income", "1040", "9", "TotalIncomeAmt", "N"),
@@ -137,8 +139,8 @@ A_FINDINGS = [  # finding_id, source, item, irp_amount, return_ref, return_amoun
      "MeF carries only the total. RVE captured the four Part V lines from the PDF statement, so the IDR asks for exactly those."),
     ("F-A5", "IRP", "Schedule K-1 (1065) · Latimer Grove Holdings LLC, box 2", 31800, "SCH_E 28", 31800, "A", "MATCHED",
      "Matched to Schedule E Part II. The entity is a related party in the TP360 graph — see the transfer signal."),
-    ("F-A6", "IRP", "1098 · Pinnacle Home Loans (residence)", 11260, "1040 12", 21900, "B", "NOT_A_TAXPAYER_ISSUE",
-     "Standard deduction claimed; mortgage interest not needed for the computation."),
+    ("F-A6", "IRP", "1098 · Pinnacle Home Loans (residence)", 11260, "SCH_A 8a", None, "B", "NOT_A_TAXPAYER_ISSUE",
+     "No Schedule A — standard deduction taken, so mortgage interest is not used in the computation. Not a mismatch."),
 ]
 
 A_IDR = [dict(idr_id="IDR-A1", form="Form 4564", issued="2026-08-17", due="2026-09-16", response="2026-09-12",

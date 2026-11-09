@@ -24,8 +24,31 @@ individual returns.
   A = resolved from data, B = not a taxpayer issue (never an IDR), C = needs the taxpayer (IDR).
 - **Exam:** `tp_idr`, `tp_adjustment`, `v_exam_results` (deficiency per exam), `tp_determination`.
 - **Relationships:** `v_related_parties_named` (one and two hops, with the related party's own signals).
+- **Closed cases (beyond AIMS):** `tp_case_closure` — one row per closed exam or AUR case, the AIMS-equivalent fields
+  (program, selection_source, outcome, closing TC, deficiency, penalty, agreed_ind, total_hours, appeals_outcome).
+  `tp_issue` — issue level: `issue_code`, `amount_proposed`, `amount_sustained`, `status` (ADJUSTED, CONCEDED,
+  NO_CHANGE, UNAGREED), `detection_source` (how it was found), `hours_charged`. `tp_issue_code` — the issue taxonomy.
+  Views: `v_case_results` (closure + tax computation filed vs examined), `v_line_adjustment_frequency`,
+  `v_issue_outcomes`, `v_detection_mix`, `v_variance_root_causes`, `v_prior_audit_history`, `v_issue_to_1040_trace`
+  (issue code → source line → rollup to Form 1040).
+- SG10 = the same issue code adjusted in two tax years within five years (repeat issue).
 
 ## How to answer
+
+- **Signals first.** When a question matches a signal (undisclosed accounts, related-party transfers, passport reversal,
+  levy barred, repeat IA default, unreported IRP income, REP without election, responsible persons for several entities,
+  entity interest not on the 433-A, repeat issue), answer from `v_tp_signals` filtered on that `signal_id`. Do not rebuild
+  the rule by hand.
+- **Never hard-code TIN tokens** found in an earlier step. Filter by `display_name` (via `tp_taxpayer`) or by the rule itself.
+- Get taxpayer names by joining `tp_taxpayer` on `tin_token`.
+- **Trust fund balance** = `tp_tax_module.assessed_balance` where `mft = 1` (Form 941). Not the entity's total balance.
+- **Never add a shared liability once per person.** When several responsible persons share an entity, total the distinct
+  entities' balances; the TFRP can be assessed against each person but is collected once.
+- **CSEDs:** check `tp_statutory_clock.suspended_ind`. When it is 'Y' (e.g. an offer is pending), say the CSED is suspended
+  rather than presenting the date as fixed.
+- **Data RVE added** = `tp_return_line.data_origin IN ('RVE_SUPPLEMENT', 'ATTACHMENT_EXTRACT')`.
+- Do not state documentation or legal requirements beyond what the data shows (e.g. do not say contemporaneous logs are
+  required for material participation). Describe the data; leave the law to the user.
 
 - Identify taxpayers by `display_name`; show `tin_token` alongside, never invent a TIN.
 - "Open" means `closed_date IS NULL`. "Pending offer" means an OIC episode that is open.
@@ -33,6 +56,11 @@ individual returns.
 - For "what changed on the return", use `v_return_compare` with `delta <> 0`.
 - `tax_period` is YYYYMM (202412 = tax year 2024).
 - Amounts are whole dollars.
+- "Most adjusted lines" means source lines: use `v_line_adjustment_frequency` (examiner adjustments only; Form 1040
+  lines are computed from them).
+- "Prior audit history" means `v_prior_audit_history` for that taxpayer. "No-change rate" is `v_issue_outcomes.no_change_pct`.
+- "Variances" means `tp_rri_finding` / `v_variance_root_causes`; group by `root_cause` for "why".
+- Closed-case figures are synthetic and illustrative, computed with TY2024 parameters; say so when presenting rates.
 - Do not use `tp_signal_answer_key` — it is the test key.
 
 ## Hero cases

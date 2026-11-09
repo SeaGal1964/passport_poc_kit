@@ -44,7 +44,8 @@
    "SG04_LEVY_BARRED_OIC_PENDING",
    "SG05_REPEAT_IA_DEFAULT",
    "SG06_IRP_INCOME_UNREPORTED",
-   "SG09_ENTITY_INTEREST_NOT_ON_433"
+   "SG09_ENTITY_INTEREST_NOT_ON_433",
+   "SG10_REPEAT_ISSUE"
   ],
   "findings": [
    {
@@ -107,11 +108,11 @@
     "source": "IRP",
     "item": "1098 \u00b7 Pinnacle Home Loans (residence)",
     "irp": 11260,
-    "ref": "1040 12",
-    "ret": 21900,
+    "ref": "SCH_A 8a",
+    "ret": null,
     "branch": "B",
     "disposition": "NOT_A_TAXPAYER_ISSUE",
-    "note": "Standard deduction claimed; mortgage interest not needed for the computation."
+    "note": "No Schedule A \u2014 standard deduction taken, so mortgage interest is not used in the computation. Not a mismatch."
    }
   ],
   "snapshots": [
@@ -186,6 +187,30 @@
      "line_desc": "taxable interest",
      "mef_element": "TaxableInterestAmt",
      "amount": 412,
+     "data_origin": "MEF",
+     "modifiable": "N",
+     "review_state": ""
+    },
+    {
+     "snapshot_id": "SN-A1",
+     "form": "1040",
+     "line": "3b",
+     "sub_id": "",
+     "line_desc": "ordinary dividends",
+     "mef_element": "OrdinaryDividendsAmt",
+     "amount": 0,
+     "data_origin": "MEF",
+     "modifiable": "N",
+     "review_state": ""
+    },
+    {
+     "snapshot_id": "SN-A1",
+     "form": "1040",
+     "line": "4b",
+     "sub_id": "",
+     "line_desc": "taxable IRA distributions",
+     "mef_element": "TaxableIRAAmt",
+     "amount": 0,
      "data_origin": "MEF",
      "modifiable": "N",
      "review_state": ""
@@ -716,6 +741,30 @@
      "line_desc": "taxable interest",
      "mef_element": "TaxableInterestAmt",
      "amount": 412,
+     "data_origin": "MEF",
+     "modifiable": "N",
+     "review_state": ""
+    },
+    {
+     "snapshot_id": "SN-A2",
+     "form": "1040",
+     "line": "3b",
+     "sub_id": "",
+     "line_desc": "ordinary dividends",
+     "mef_element": "OrdinaryDividendsAmt",
+     "amount": 0,
+     "data_origin": "MEF",
+     "modifiable": "N",
+     "review_state": ""
+    },
+    {
+     "snapshot_id": "SN-A2",
+     "form": "1040",
+     "line": "4b",
+     "sub_id": "",
+     "line_desc": "taxable IRA distributions",
+     "mef_element": "TaxableIRAAmt",
+     "amount": 0,
      "data_origin": "MEF",
      "modifiable": "N",
      "review_state": ""
@@ -1294,6 +1343,30 @@
      "line_desc": "taxable interest",
      "mef_element": "TaxableInterestAmt",
      "amount": 2252,
+     "data_origin": "COMPUTED",
+     "modifiable": "N",
+     "review_state": ""
+    },
+    {
+     "snapshot_id": "SN-A3",
+     "form": "1040",
+     "line": "3b",
+     "sub_id": "",
+     "line_desc": "ordinary dividends",
+     "mef_element": "OrdinaryDividendsAmt",
+     "amount": 0,
+     "data_origin": "COMPUTED",
+     "modifiable": "N",
+     "review_state": ""
+    },
+    {
+     "snapshot_id": "SN-A3",
+     "form": "1040",
+     "line": "4b",
+     "sub_id": "",
+     "line_desc": "taxable IRA distributions",
+     "mef_element": "TaxableIRAAmt",
+     "amount": 0,
      "data_origin": "COMPUTED",
      "modifiable": "N",
      "review_state": ""
@@ -1884,6 +1957,30 @@
      "line_desc": "taxable interest",
      "mef_element": "TaxableInterestAmt",
      "amount": 2252,
+     "data_origin": "COMPUTED",
+     "modifiable": "N",
+     "review_state": ""
+    },
+    {
+     "snapshot_id": "SN-A4",
+     "form": "1040",
+     "line": "3b",
+     "sub_id": "",
+     "line_desc": "ordinary dividends",
+     "mef_element": "OrdinaryDividendsAmt",
+     "amount": 0,
+     "data_origin": "COMPUTED",
+     "modifiable": "N",
+     "review_state": ""
+    },
+    {
+     "snapshot_id": "SN-A4",
+     "form": "1040",
+     "line": "4b",
+     "sub_id": "",
+     "line_desc": "taxable IRA distributions",
+     "mef_element": "TaxableIRAAmt",
+     "amount": 0,
      "data_origin": "COMPUTED",
      "modifiable": "N",
      "review_state": ""
@@ -2503,7 +2600,10 @@
     "as_filed": 412,
     "adjustment": 1840,
     "as_adjusted": 2252,
-    "adjustment_kind": "EXAMINER"
+    "adjustment_kind": "EXAMINER",
+    "issue_id": "I-A1",
+    "issue_code": "IR03",
+    "detection_source": "IRP_MATCH"
    },
    {
     "adjustment_id": "ADJ-A002",
@@ -2517,7 +2617,10 @@
     "as_filed": 41200,
     "adjustment": 6100,
     "as_adjusted": 47300,
-    "adjustment_kind": "EXAMINER"
+    "adjustment_kind": "EXAMINER",
+    "issue_id": "I-A2",
+    "issue_code": "EX_SCHC_OTHER_EXP",
+    "detection_source": "RVE_ATTACHMENT_EXTRACT"
    },
    {
     "adjustment_id": "ADJ-A003",
@@ -2531,7 +2634,10 @@
     "as_filed": 18400,
     "adjustment": -12700,
     "as_adjusted": 5700,
-    "adjustment_kind": "EXAMINER"
+    "adjustment_kind": "EXAMINER",
+    "issue_id": "I-A2",
+    "issue_code": "EX_SCHC_OTHER_EXP",
+    "detection_source": "RVE_ATTACHMENT_EXTRACT"
    },
    {
     "adjustment_id": "ADJ-A004",
@@ -2545,7 +2651,10 @@
     "as_filed": 88500,
     "adjustment": 6600,
     "as_adjusted": 95100,
-    "adjustment_kind": "EXAMINER"
+    "adjustment_kind": "EXAMINER",
+    "issue_id": "I-A2",
+    "issue_code": "EX_SCHC_OTHER_EXP",
+    "detection_source": "RVE_ATTACHMENT_EXTRACT"
    },
    {
     "adjustment_id": "ADJ-A005",
@@ -2700,6 +2809,414 @@
     "adjustment": 2417,
     "as_adjusted": 21305,
     "adjustment_kind": "COMPUTED"
+   },
+   {
+    "adjustment_id": "ADJ-CC00001",
+    "episode_id": "EP-A-EX19",
+    "snapshot_id": "",
+    "tin_token": "TK100001",
+    "tax_period": "201912",
+    "form": "SCH_C",
+    "line": "1",
+    "line_desc": "Gross receipts (bank deposits)",
+    "as_filed": 196000,
+    "adjustment": 58000,
+    "as_adjusted": 254000,
+    "adjustment_kind": "EXAMINER",
+    "issue_id": "I-CC00001",
+    "issue_code": "EX_SCHC_GROSS_RCPTS",
+    "detection_source": "BANK_DEPOSITS_ANALYSIS"
+   },
+   {
+    "adjustment_id": "ADJ-CC00002",
+    "episode_id": "EP-A-EX19",
+    "snapshot_id": "",
+    "tin_token": "TK100001",
+    "tax_period": "201912",
+    "form": "SCH_C",
+    "line": "27a",
+    "line_desc": "Other expenses",
+    "as_filed": 21400,
+    "adjustment": -14200,
+    "as_adjusted": 7200,
+    "adjustment_kind": "EXAMINER",
+    "issue_id": "I-CC00002",
+    "issue_code": "EX_SCHC_OTHER_EXP",
+    "detection_source": "IDR_RESPONSE"
+   },
+   {
+    "adjustment_id": "ADJ-CC00003",
+    "episode_id": "EP-A-EX19",
+    "snapshot_id": "",
+    "tin_token": "TK100001",
+    "tax_period": "201912",
+    "form": "1040",
+    "line": "8",
+    "line_desc": "Schedule 1 additional income",
+    "as_filed": 70400,
+    "adjustment": 72200,
+    "as_adjusted": 142600,
+    "adjustment_kind": "COMPUTED",
+    "issue_id": "",
+    "issue_code": "",
+    "detection_source": ""
+   },
+   {
+    "adjustment_id": "ADJ-CC00004",
+    "episode_id": "EP-A-EX19",
+    "snapshot_id": "",
+    "tin_token": "TK100001",
+    "tax_period": "201912",
+    "form": "1040",
+    "line": "9",
+    "line_desc": "total income",
+    "as_filed": 70780,
+    "adjustment": 72200,
+    "as_adjusted": 142980,
+    "adjustment_kind": "COMPUTED",
+    "issue_id": "",
+    "issue_code": "",
+    "detection_source": ""
+   },
+   {
+    "adjustment_id": "ADJ-CC00005",
+    "episode_id": "EP-A-EX19",
+    "snapshot_id": "",
+    "tin_token": "TK100001",
+    "tax_period": "201912",
+    "form": "1040",
+    "line": "10",
+    "line_desc": "adjustments (half SE tax)",
+    "as_filed": 4974,
+    "adjustment": 5101,
+    "as_adjusted": 10075,
+    "adjustment_kind": "COMPUTED",
+    "issue_id": "",
+    "issue_code": "",
+    "detection_source": ""
+   },
+   {
+    "adjustment_id": "ADJ-CC00006",
+    "episode_id": "EP-A-EX19",
+    "snapshot_id": "",
+    "tin_token": "TK100001",
+    "tax_period": "201912",
+    "form": "1040",
+    "line": "11",
+    "line_desc": "adjusted gross income",
+    "as_filed": 65806,
+    "adjustment": 67099,
+    "as_adjusted": 132905,
+    "adjustment_kind": "COMPUTED",
+    "issue_id": "",
+    "issue_code": "",
+    "detection_source": ""
+   },
+   {
+    "adjustment_id": "ADJ-CC00007",
+    "episode_id": "EP-A-EX19",
+    "snapshot_id": "",
+    "tin_token": "TK100001",
+    "tax_period": "201912",
+    "form": "1040",
+    "line": "13",
+    "line_desc": "qualified business income deduction",
+    "as_filed": 8781,
+    "adjustment": 13420,
+    "as_adjusted": 22201,
+    "adjustment_kind": "COMPUTED",
+    "issue_id": "",
+    "issue_code": "",
+    "detection_source": ""
+   },
+   {
+    "adjustment_id": "ADJ-CC00008",
+    "episode_id": "EP-A-EX19",
+    "snapshot_id": "",
+    "tin_token": "TK100001",
+    "tax_period": "201912",
+    "form": "1040",
+    "line": "15",
+    "line_desc": "taxable income",
+    "as_filed": 35125,
+    "adjustment": 53679,
+    "as_adjusted": 88804,
+    "adjustment_kind": "COMPUTED",
+    "issue_id": "",
+    "issue_code": "",
+    "detection_source": ""
+   },
+   {
+    "adjustment_id": "ADJ-CC00009",
+    "episode_id": "EP-A-EX19",
+    "snapshot_id": "",
+    "tin_token": "TK100001",
+    "tax_period": "201912",
+    "form": "1040",
+    "line": "16",
+    "line_desc": "tax",
+    "as_filed": 3884,
+    "adjustment": 9012,
+    "as_adjusted": 12896,
+    "adjustment_kind": "COMPUTED",
+    "issue_id": "",
+    "issue_code": "",
+    "detection_source": ""
+   },
+   {
+    "adjustment_id": "ADJ-CC00010",
+    "episode_id": "EP-A-EX19",
+    "snapshot_id": "",
+    "tin_token": "TK100001",
+    "tax_period": "201912",
+    "form": "1040",
+    "line": "23",
+    "line_desc": "other taxes (SE, Additional Medicare, NIIT)",
+    "as_filed": 9947,
+    "adjustment": 10202,
+    "as_adjusted": 20149,
+    "adjustment_kind": "COMPUTED",
+    "issue_id": "",
+    "issue_code": "",
+    "detection_source": ""
+   },
+   {
+    "adjustment_id": "ADJ-CC00011",
+    "episode_id": "EP-A-EX19",
+    "snapshot_id": "",
+    "tin_token": "TK100001",
+    "tax_period": "201912",
+    "form": "1040",
+    "line": "24",
+    "line_desc": "total tax",
+    "as_filed": 11331,
+    "adjustment": 19214,
+    "as_adjusted": 30545,
+    "adjustment_kind": "COMPUTED",
+    "issue_id": "",
+    "issue_code": "",
+    "detection_source": ""
+   },
+   {
+    "adjustment_id": "ADJ-CC00012",
+    "episode_id": "EP-A-EX19",
+    "snapshot_id": "",
+    "tin_token": "TK100001",
+    "tax_period": "201912",
+    "form": "1040",
+    "line": "37",
+    "line_desc": "amount owed",
+    "as_filed": 9131,
+    "adjustment": 19214,
+    "as_adjusted": 28345,
+    "adjustment_kind": "COMPUTED",
+    "issue_id": "",
+    "issue_code": "",
+    "detection_source": ""
+   },
+   {
+    "adjustment_id": "ADJ-CC00013",
+    "episode_id": "EP-A-AUR21",
+    "snapshot_id": "",
+    "tin_token": "TK100001",
+    "tax_period": "202112",
+    "form": "SCH_C",
+    "line": "1",
+    "line_desc": "Gross receipts (1099-NEC)",
+    "as_filed": 196000,
+    "adjustment": 23600,
+    "as_adjusted": 219600,
+    "adjustment_kind": "EXAMINER",
+    "issue_id": "I-CC00003",
+    "issue_code": "IR12",
+    "detection_source": "IRP_MATCH"
+   },
+   {
+    "adjustment_id": "ADJ-CC00014",
+    "episode_id": "EP-A-AUR21",
+    "snapshot_id": "",
+    "tin_token": "TK100001",
+    "tax_period": "202112",
+    "form": "1040",
+    "line": "8",
+    "line_desc": "Schedule 1 additional income",
+    "as_filed": 41300,
+    "adjustment": 23600,
+    "as_adjusted": 64900,
+    "adjustment_kind": "COMPUTED",
+    "issue_id": "",
+    "issue_code": "",
+    "detection_source": ""
+   },
+   {
+    "adjustment_id": "ADJ-CC00015",
+    "episode_id": "EP-A-AUR21",
+    "snapshot_id": "",
+    "tin_token": "TK100001",
+    "tax_period": "202112",
+    "form": "1040",
+    "line": "9",
+    "line_desc": "total income",
+    "as_filed": 41590,
+    "adjustment": 23600,
+    "as_adjusted": 65190,
+    "adjustment_kind": "COMPUTED",
+    "issue_id": "",
+    "issue_code": "",
+    "detection_source": ""
+   },
+   {
+    "adjustment_id": "ADJ-CC00016",
+    "episode_id": "EP-A-AUR21",
+    "snapshot_id": "",
+    "tin_token": "TK100001",
+    "tax_period": "202112",
+    "form": "1040",
+    "line": "10",
+    "line_desc": "adjustments (half SE tax)",
+    "as_filed": 2918,
+    "adjustment": 1667,
+    "as_adjusted": 4585,
+    "adjustment_kind": "COMPUTED",
+    "issue_id": "",
+    "issue_code": "",
+    "detection_source": ""
+   },
+   {
+    "adjustment_id": "ADJ-CC00017",
+    "episode_id": "EP-A-AUR21",
+    "snapshot_id": "",
+    "tin_token": "TK100001",
+    "tax_period": "202112",
+    "form": "1040",
+    "line": "11",
+    "line_desc": "adjusted gross income",
+    "as_filed": 38672,
+    "adjustment": 21933,
+    "as_adjusted": 60605,
+    "adjustment_kind": "COMPUTED",
+    "issue_id": "",
+    "issue_code": "",
+    "detection_source": ""
+   },
+   {
+    "adjustment_id": "ADJ-CC00018",
+    "episode_id": "EP-A-AUR21",
+    "snapshot_id": "",
+    "tin_token": "TK100001",
+    "tax_period": "202112",
+    "form": "1040",
+    "line": "13",
+    "line_desc": "qualified business income deduction",
+    "as_filed": 3354,
+    "adjustment": 4387,
+    "as_adjusted": 7741,
+    "adjustment_kind": "COMPUTED",
+    "issue_id": "",
+    "issue_code": "",
+    "detection_source": ""
+   },
+   {
+    "adjustment_id": "ADJ-CC00019",
+    "episode_id": "EP-A-AUR21",
+    "snapshot_id": "",
+    "tin_token": "TK100001",
+    "tax_period": "202112",
+    "form": "1040",
+    "line": "15",
+    "line_desc": "taxable income",
+    "as_filed": 13418,
+    "adjustment": 17546,
+    "as_adjusted": 30964,
+    "adjustment_kind": "COMPUTED",
+    "issue_id": "",
+    "issue_code": "",
+    "detection_source": ""
+   },
+   {
+    "adjustment_id": "ADJ-CC00020",
+    "episode_id": "EP-A-AUR21",
+    "snapshot_id": "",
+    "tin_token": "TK100001",
+    "tax_period": "202112",
+    "form": "1040",
+    "line": "16",
+    "line_desc": "tax",
+    "as_filed": 1342,
+    "adjustment": 2043,
+    "as_adjusted": 3385,
+    "adjustment_kind": "COMPUTED",
+    "issue_id": "",
+    "issue_code": "",
+    "detection_source": ""
+   },
+   {
+    "adjustment_id": "ADJ-CC00021",
+    "episode_id": "EP-A-AUR21",
+    "snapshot_id": "",
+    "tin_token": "TK100001",
+    "tax_period": "202112",
+    "form": "1040",
+    "line": "19",
+    "line_desc": "child tax credit / credit for other dependents",
+    "as_filed": 1342,
+    "adjustment": 1158,
+    "as_adjusted": 2500,
+    "adjustment_kind": "COMPUTED",
+    "issue_id": "",
+    "issue_code": "",
+    "detection_source": ""
+   },
+   {
+    "adjustment_id": "ADJ-CC00022",
+    "episode_id": "EP-A-AUR21",
+    "snapshot_id": "",
+    "tin_token": "TK100001",
+    "tax_period": "202112",
+    "form": "1040",
+    "line": "23",
+    "line_desc": "other taxes (SE, Additional Medicare, NIIT)",
+    "as_filed": 5835,
+    "adjustment": 3335,
+    "as_adjusted": 9170,
+    "adjustment_kind": "COMPUTED",
+    "issue_id": "",
+    "issue_code": "",
+    "detection_source": ""
+   },
+   {
+    "adjustment_id": "ADJ-CC00023",
+    "episode_id": "EP-A-AUR21",
+    "snapshot_id": "",
+    "tin_token": "TK100001",
+    "tax_period": "202112",
+    "form": "1040",
+    "line": "24",
+    "line_desc": "total tax",
+    "as_filed": 5835,
+    "adjustment": 4220,
+    "as_adjusted": 10055,
+    "adjustment_kind": "COMPUTED",
+    "issue_id": "",
+    "issue_code": "",
+    "detection_source": ""
+   },
+   {
+    "adjustment_id": "ADJ-CC00024",
+    "episode_id": "EP-A-AUR21",
+    "snapshot_id": "",
+    "tin_token": "TK100001",
+    "tax_period": "202112",
+    "form": "1040",
+    "line": "37",
+    "line_desc": "amount owed",
+    "as_filed": 3635,
+    "adjustment": 4220,
+    "as_adjusted": 7855,
+    "adjustment_kind": "COMPUTED",
+    "issue_id": "",
+    "issue_code": "",
+    "detection_source": ""
    }
   ],
   "timeline": [
@@ -2799,6 +3316,20 @@
     "filed": 412,
     "adjusted": 2252,
     "delta": 1840
+   },
+   {
+    "line": "3b",
+    "desc": "ordinary dividends",
+    "filed": 0,
+    "adjusted": 0,
+    "delta": 0
+   },
+   {
+    "line": "4b",
+    "desc": "taxable IRA distributions",
+    "filed": 0,
+    "adjusted": 0,
+    "delta": 0
    },
    {
     "line": "7",
@@ -2916,16 +3447,6 @@
   "deficiency": 2417,
   "episodes": [
    {
-    "episode_id": "EP-A-AUR21",
-    "tin_token": "TK100001",
-    "episode_type": "AUR",
-    "episode_subtype": "Underreporter",
-    "opened_date": "2023-03-06",
-    "closed_date": "2023-09-19",
-    "status": "CLOSED_ASSESSED",
-    "module_ids": "TK100001-30-202112"
-   },
-   {
     "episode_id": "EP-A-IA1",
     "tin_token": "TK100001",
     "episode_type": "IA",
@@ -2984,6 +3505,26 @@
     "closed_date": "2026-10-26",
     "status": "CLOSED_AGREED",
     "module_ids": "TK100001-30-202412"
+   },
+   {
+    "episode_id": "EP-A-EX19",
+    "tin_token": "TK100001",
+    "episode_type": "EXAM",
+    "episode_subtype": "Field",
+    "opened_date": "2021-03-15",
+    "closed_date": "2021-11-30",
+    "status": "AGREED",
+    "module_ids": "TK100001-30-201912"
+   },
+   {
+    "episode_id": "EP-A-AUR21",
+    "tin_token": "TK100001",
+    "episode_type": "AUR",
+    "episode_subtype": "Underreporter",
+    "opened_date": "2023-03-06",
+    "closed_date": "2023-09-19",
+    "status": "AGREED",
+    "module_ids": "TK100001-30-202112"
    }
   ],
   "modules": [
@@ -3237,7 +3778,8 @@
       "SG04_LEVY_BARRED_OIC_PENDING",
       "SG05_REPEAT_IA_DEFAULT",
       "SG06_IRP_INCOME_UNREPORTED",
-      "SG09_ENTITY_INTEREST_NOT_ON_433"
+      "SG09_ENTITY_INTEREST_NOT_ON_433",
+      "SG10_REPEAT_ISSUE"
      ]
     },
     {
@@ -3344,6 +3886,73 @@
     "Rentals treated as not QBI (no section 199A trade-or-business position taken)",
     "design"
    ]
+  ],
+  "prior": [
+   {
+    "episode_id": "EP-A-EX19",
+    "tin_token": "TK100001",
+    "tax_period": "201912",
+    "program": "FIELD",
+    "outcome": "AGREED",
+    "closed_date": "2021-11-30",
+    "closing_tc": "300",
+    "deficiency": 19214,
+    "penalty_code": "",
+    "penalty_amount": 0,
+    "appeals_outcome": "",
+    "agreed_ind": "Y",
+    "aims_disposal_code": "",
+    "selection_source": "DIF_SCORE",
+    "total_hours": 111.2,
+    "issue_count": 2,
+    "adjusted_issue_count": 2,
+    "computation_note": "Computed with TY2024 parameters for illustration",
+    "issues": [
+     {
+      "code": "EX_SCHC_GROSS_RCPTS",
+      "name": "Schedule C gross receipts understated (bank deposits)",
+      "status": "ADJUSTED",
+      "sustained": 58000,
+      "how": "BANK_DEPOSITS_ANALYSIS"
+     },
+     {
+      "code": "EX_SCHC_OTHER_EXP",
+      "name": "Other expenses not substantiated",
+      "status": "ADJUSTED",
+      "sustained": -14200,
+      "how": "IDR_RESPONSE"
+     }
+    ]
+   },
+   {
+    "episode_id": "EP-A-AUR21",
+    "tin_token": "TK100001",
+    "tax_period": "202112",
+    "program": "AUR",
+    "outcome": "AGREED",
+    "closed_date": "2023-09-19",
+    "closing_tc": "290",
+    "deficiency": 4220,
+    "penalty_code": "",
+    "penalty_amount": 0,
+    "appeals_outcome": "",
+    "agreed_ind": "Y",
+    "aims_disposal_code": "",
+    "selection_source": "IRP_MATCH",
+    "total_hours": 1.9,
+    "issue_count": 1,
+    "adjusted_issue_count": 1,
+    "computation_note": "Computed with TY2024 parameters for illustration",
+    "issues": [
+     {
+      "code": "IR12",
+      "name": "Nonemployee compensation \u2014 1099-NEC not reported",
+      "status": "ADJUSTED",
+      "sustained": 23600,
+      "how": "IRP_MATCH"
+     }
+    ]
+   }
   ],
   "accounts": [
    {
@@ -3629,6 +4238,30 @@
      "line_desc": "taxable interest",
      "mef_element": "TaxableInterestAmt",
      "amount": 1150,
+     "data_origin": "MEF",
+     "modifiable": "N",
+     "review_state": ""
+    },
+    {
+     "snapshot_id": "SN-B1",
+     "form": "1040",
+     "line": "3b",
+     "sub_id": "",
+     "line_desc": "ordinary dividends",
+     "mef_element": "OrdinaryDividendsAmt",
+     "amount": 0,
+     "data_origin": "MEF",
+     "modifiable": "N",
+     "review_state": ""
+    },
+    {
+     "snapshot_id": "SN-B1",
+     "form": "1040",
+     "line": "4b",
+     "sub_id": "",
+     "line_desc": "taxable IRA distributions",
+     "mef_element": "TaxableIRAAmt",
+     "amount": 0,
      "data_origin": "MEF",
      "modifiable": "N",
      "review_state": ""
@@ -4099,6 +4732,30 @@
      "line_desc": "taxable interest",
      "mef_element": "TaxableInterestAmt",
      "amount": 1150,
+     "data_origin": "MEF",
+     "modifiable": "N",
+     "review_state": ""
+    },
+    {
+     "snapshot_id": "SN-B2",
+     "form": "1040",
+     "line": "3b",
+     "sub_id": "",
+     "line_desc": "ordinary dividends",
+     "mef_element": "OrdinaryDividendsAmt",
+     "amount": 0,
+     "data_origin": "MEF",
+     "modifiable": "N",
+     "review_state": ""
+    },
+    {
+     "snapshot_id": "SN-B2",
+     "form": "1040",
+     "line": "4b",
+     "sub_id": "",
+     "line_desc": "taxable IRA distributions",
+     "mef_element": "TaxableIRAAmt",
+     "amount": 0,
      "data_origin": "MEF",
      "modifiable": "N",
      "review_state": ""
@@ -4629,6 +5286,30 @@
      "line_desc": "taxable interest",
      "mef_element": "TaxableInterestAmt",
      "amount": 1150,
+     "data_origin": "COMPUTED",
+     "modifiable": "N",
+     "review_state": ""
+    },
+    {
+     "snapshot_id": "SN-B3",
+     "form": "1040",
+     "line": "3b",
+     "sub_id": "",
+     "line_desc": "ordinary dividends",
+     "mef_element": "OrdinaryDividendsAmt",
+     "amount": 0,
+     "data_origin": "COMPUTED",
+     "modifiable": "N",
+     "review_state": ""
+    },
+    {
+     "snapshot_id": "SN-B3",
+     "form": "1040",
+     "line": "4b",
+     "sub_id": "",
+     "line_desc": "taxable IRA distributions",
+     "mef_element": "TaxableIRAAmt",
+     "amount": 0,
      "data_origin": "COMPUTED",
      "modifiable": "N",
      "review_state": ""
@@ -5173,7 +5854,10 @@
     "as_filed": -17000,
     "adjustment": 17000,
     "as_adjusted": 0,
-    "adjustment_kind": "EXAMINER"
+    "adjustment_kind": "EXAMINER",
+    "issue_id": "I-B1",
+    "issue_code": "EX_REP_469C7",
+    "detection_source": "RRI_RECOMPUTE_VARIANCE"
    },
    {
     "adjustment_id": "ADJ-B017",
@@ -5187,7 +5871,10 @@
     "as_filed": -33000,
     "adjustment": 33000,
     "as_adjusted": 0,
-    "adjustment_kind": "EXAMINER"
+    "adjustment_kind": "EXAMINER",
+    "issue_id": "I-B1",
+    "issue_code": "EX_REP_469C7",
+    "detection_source": "RRI_RECOMPUTE_VARIANCE"
    },
    {
     "adjustment_id": "ADJ-B018",
@@ -5201,7 +5888,10 @@
     "as_filed": -64000,
     "adjustment": 50000,
     "as_adjusted": -14000,
-    "adjustment_kind": "EXAMINER"
+    "adjustment_kind": "EXAMINER",
+    "issue_id": "I-B1",
+    "issue_code": "EX_REP_469C7",
+    "detection_source": "RRI_RECOMPUTE_VARIANCE"
    },
    {
     "adjustment_id": "ADJ-B019",
@@ -5215,7 +5905,10 @@
     "as_filed": -64000,
     "adjustment": 50000,
     "as_adjusted": -14000,
-    "adjustment_kind": "EXAMINER"
+    "adjustment_kind": "EXAMINER",
+    "issue_id": "I-B1",
+    "issue_code": "EX_REP_469C7",
+    "detection_source": "RRI_RECOMPUTE_VARIANCE"
    },
    {
     "adjustment_id": "ADJ-B020",
@@ -5229,7 +5922,10 @@
     "as_filed": 0,
     "adjustment": 50000,
     "as_adjusted": 50000,
-    "adjustment_kind": "EXAMINER"
+    "adjustment_kind": "EXAMINER",
+    "issue_id": "I-B1",
+    "issue_code": "EX_REP_469C7",
+    "detection_source": "RRI_RECOMPUTE_VARIANCE"
    },
    {
     "adjustment_id": "ADJ-B021",
@@ -5429,6 +6125,20 @@
     "delta": 0
    },
    {
+    "line": "3b",
+    "desc": "ordinary dividends",
+    "filed": 0,
+    "adjusted": 0,
+    "delta": 0
+   },
+   {
+    "line": "4b",
+    "desc": "taxable IRA distributions",
+    "filed": 0,
+    "adjusted": 0,
+    "delta": 0
+   },
+   {
     "line": "7",
     "desc": "capital gain",
     "filed": 0,
@@ -5552,6 +6262,16 @@
     "closed_date": "",
     "status": "UNAGREED_PROTEST",
     "module_ids": "TK200001-30-202412"
+   },
+   {
+    "episode_id": "EP-B-EX21",
+    "tin_token": "TK200001",
+    "episode_type": "EXAM",
+    "episode_subtype": "Correspondence",
+    "opened_date": "2023-02-01",
+    "closed_date": "2023-06-30",
+    "status": "NO_CHANGE",
+    "module_ids": "TK200001-30-202112"
    }
   ],
   "modules": [
@@ -5708,6 +6428,37 @@
     "design"
    ]
   ],
+  "prior": [
+   {
+    "episode_id": "EP-B-EX21",
+    "tin_token": "TK200001",
+    "tax_period": "202112",
+    "program": "CORRESPONDENCE",
+    "outcome": "NO_CHANGE",
+    "closed_date": "2023-06-30",
+    "closing_tc": "",
+    "deficiency": 0,
+    "penalty_code": "",
+    "penalty_amount": 0,
+    "appeals_outcome": "",
+    "agreed_ind": "N",
+    "aims_disposal_code": "",
+    "selection_source": "DIF_SCORE",
+    "total_hours": 3.3,
+    "issue_count": 1,
+    "adjusted_issue_count": 0,
+    "computation_note": "Computed with TY2024 parameters for illustration",
+    "issues": [
+     {
+      "code": "EX_CHARITABLE",
+      "name": "Charitable contributions not substantiated",
+      "status": "NO_CHANGE",
+      "sustained": 0,
+      "how": "IDR_RESPONSE"
+     }
+    ]
+   }
+  ],
   "props": [
    {
     "sub": "R1_ALKI",
@@ -5780,7 +6531,7 @@
   "agreed": false
  },
  "population": {
-  "taxpayers": 154,
-  "signals": 61
+  "taxpayers": 414,
+  "signals": 78
  }
 }

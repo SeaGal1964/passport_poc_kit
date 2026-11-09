@@ -1,0 +1,8 @@
+root_cause,branch,description
+TAXPAYER_ISSUE,A/C,The return is wrong; resolved from data (A) or needs the taxpayer (C)
+MEF_DATA_GAP,A/C,MeF lacks a field or carries only an aggregate; data sits on an attachment or nowhere
+CALCULATOR_DEFECT,B,The recompute engine handles the line incorrectly; never an IDR
+KEYING_ARTIFACT,B,"Data entry into the calculator (plug values, overrides) produces the variance"
+INTERPRETIVE_POSITION,B,A reasonable reporting position the calculator does not model
+IRP_LIMITATION,B,The information return itself is incomplete (e.g. basis not reported)
+MATCHED,A,No variance — information return and return agree

@@ -37,8 +37,10 @@ print("signal mismatches:", len(mm))
 for r in mm[:20]:
     print("  ", r)
 checks = {
-    "A deficiency": con.execute("SELECT deficiency FROM v_exam_results WHERE tin_token='TK100001'").fetchone()[0],
-    "B deficiency": con.execute("SELECT deficiency FROM v_exam_results WHERE tin_token='TK200001'").fetchone()[0],
+    "A deficiency": con.execute("SELECT deficiency FROM v_exam_results WHERE episode_id='EP-A-EX24'").fetchone()[0],
+    "B deficiency": con.execute("SELECT deficiency FROM v_exam_results WHERE episode_id='EP-B-EX24'").fetchone()[0],
+    "closed cases": con.execute("SELECT count(*) FROM tp_case_closure").fetchone()[0],
+    "case results = closure + tax comp": con.execute("SELECT count(*) FROM v_case_results WHERE total_tax_examined - total_tax_filed <> deficiency").fetchone()[0],
     "A 3-col rows": con.execute("SELECT count(*) FROM v_return_compare WHERE tin_token='TK100001'").fetchone()[0],
     "A changed rows": con.execute("SELECT count(*) FROM v_return_compare WHERE tin_token='TK100001' AND delta<>0").fetchone()[0],
     "B changed rows": con.execute("SELECT count(*) FROM v_return_compare WHERE tin_token='TK200001' AND delta<>0").fetchone()[0],
@@ -47,7 +49,8 @@ checks = {
 print(checks)
 print(con.execute("SELECT form,line,sub_id,line_desc,as_filed,as_adjusted,delta,data_origin FROM v_return_compare WHERE tin_token='TK100001' AND delta<>0 ORDER BY form,line").fetchall())
 print(con.execute("SELECT related_name, path, via_name, related_signals FROM v_related_parties_named WHERE tin_token='TK100001' AND hops=2").fetchall())
-bench = open(os.path.join(ROOT, "genie", "genie_benchmark_answers.sql")).read().replace("{{catalog}}.{{schema}}.", "")
+bench = (open(os.path.join(ROOT, "genie", "genie_benchmark_answers.sql")).read()
+         + "\n" + open(os.path.join(ROOT, "genie", "genie_example_sql.sql")).read()).replace("{{catalog}}.{{schema}}.", "")
 bench = "\n".join(l for l in bench.splitlines() if not l.strip().startswith("--"))
 bench_ok = True
 for i, st in enumerate([s for s in re.split(r";\s*\n", bench) if s.strip()], 1):
@@ -58,6 +61,6 @@ for i, st in enumerate([s for s in re.split(r";\s*\n", bench) if s.strip()], 1):
     except Exception as e:
         print(f"benchmark Q{i} FAILED: {e}")
         bench_ok = False
-ok = bench_ok and not mm and checks["A deficiency"] == 2417 and checks["B deficiency"] == 11000
+ok = bench_ok and not mm and checks["case results = closure + tax comp"] == 0 and checks["A deficiency"] == 2417 and checks["B deficiency"] == 11000
 print("LOCAL CHECK PASSED" if ok else "LOCAL CHECK FAILED")
 sys.exit(0 if ok else 1)
