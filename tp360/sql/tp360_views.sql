@@ -18,6 +18,11 @@ SELECT tin_token, CAST(opened_date AS DATE) AS oic_opened, episode_id
 FROM tp_compliance_episode
 WHERE episode_type = 'OIC' AND closed_date IS NULL;
 
+CREATE OR REPLACE VIEW v_adjusted_issue_years AS
+SELECT DISTINCT tin_token, issue_code, CAST(substr(CAST(tax_period AS STRING), 1, 4) AS INT) AS yr
+FROM tp_issue
+WHERE status = 'ADJUSTED' AND issue_code IS NOT NULL;
+
 CREATE OR REPLACE VIEW v_tp_signals AS
 SELECT b.tin_token, 'SG01_UNDISCLOSED_BANK_ACCOUNT' AS signal_id, 'HIGH' AS severity,
        concat(b.institution, ' ', b.account_type, ' ending ', CAST(b.acct_last4 AS STRING), ' — balance ', CAST(b.balance AS STRING), ' — source ', b.source) AS evidence,
@@ -66,7 +71,7 @@ UNION ALL
 SELECT DISTINCT f.tin_token, 'SG06_IRP_INCOME_UNREPORTED', 'HIGH',
        concat(f.item, ' — ', CAST(f.irp_amount AS STRING), ' not on ', f.return_ref), 'IRC 61; IRP match (RRI branch A)'
 FROM tp_rri_finding f
-WHERE f.disposition = 'UNREPORTED_INCOME'
+WHERE f.disposition = 'UNREPORTED_INCOME' AND f.tax_period >= 202412   -- current filing year only; closed cases are history
 
 UNION ALL
 SELECT DISTINCT s.tin_token, 'SG07_REP_CLAIM_NO_AGGREGATION_ELECTION', 'MEDIUM',
@@ -97,7 +102,14 @@ JOIN tp_relationship r ON r.rel_type = 'MEMBER' AND r.from_id = i.tin_token AND 
 WHERE i.form_type LIKE 'K-1%'
   AND NOT EXISTS (SELECT 1 FROM tp_asset a
                   WHERE a.owner_tin_token = i.tin_token AND a.asset_type = 'ENTITY_INTEREST'
-                    AND a.description = concat('Interest in ', i.payer_tin_token));
+                    AND a.description = concat('Interest in ', i.payer_tin_token))
+
+UNION ALL
+SELECT a.tin_token, 'SG10_REPEAT_ISSUE', 'MEDIUM',
+       concat(a.issue_code, ' adjusted in ', CAST(a.yr AS STRING), ' and ', CAST(b.yr AS STRING)),
+       'Prior audit history — same issue adjusted within five years'
+FROM v_adjusted_issue_years a
+JOIN v_adjusted_issue_years b ON b.tin_token = a.tin_token AND b.issue_code = a.issue_code AND b.yr > a.yr AND b.yr - a.yr <= 5;
 
 -- --------------------------------------------------------------------------------------------
 -- TP360 header: one row per taxpayer
@@ -217,3 +229,103 @@ SELECT a.episode_id, a.tin_token, a.tax_period,
        max(e.status) AS episode_status
 FROM tp_adjustment a JOIN tp_compliance_episode e ON e.episode_id = a.episode_id
 GROUP BY a.episode_id, a.tin_token, a.tax_period;
+
+-- ============================================================================================
+-- v0.2  Closed-case results: AIMS-equivalent case fields plus issue-level detail
+-- ============================================================================================
+
+-- One row per closed case: closure (AIMS-equivalent) + tax computation results
+CREATE OR REPLACE VIEW v_case_results AS
+SELECT c.episode_id, c.tin_token, t.display_name, c.tax_period, c.program, c.selection_source, c.outcome, c.appeals_outcome,
+       c.closed_date, c.closing_tc, c.deficiency, c.penalty_code, c.penalty_amount, c.agreed_ind, c.total_hours,
+       c.issue_count, c.adjusted_issue_count,
+       x.filing_status_filed, x.filing_status_examined, x.agi_filed, x.agi_examined, x.taxable_income_filed, x.taxable_income_examined,
+       x.total_tax_filed, x.total_tax_examined,
+       CASE WHEN c.total_hours > 0 THEN round(c.deficiency / c.total_hours, 0) END AS deficiency_per_hour
+FROM tp_case_closure c
+LEFT JOIN tp_tax_computation x ON x.episode_id = c.episode_id
+LEFT JOIN tp_taxpayer t ON t.tin_token = c.tin_token;
+
+-- Which return lines examiners adjust most often (source lines only; 1040 lines are computed)
+CREATE OR REPLACE VIEW v_line_adjustment_frequency AS
+SELECT a.form, a.line, coalesce(lc.line_desc, max(a.line_desc)) AS line_desc, lc.line_class,
+       count(*) AS adjustments, count(DISTINCT a.episode_id) AS cases,
+       sum(a.adjustment) AS net_adjustment, round(avg(abs(a.adjustment)), 0) AS avg_abs_adjustment
+FROM tp_adjustment a
+LEFT JOIN tp_line_catalog lc ON lc.form = a.form AND lc.line = a.line
+WHERE a.adjustment_kind = 'EXAMINER'
+GROUP BY a.form, a.line, lc.line_desc, lc.line_class;
+
+-- Issue outcomes: how often each issue is raised, sustained, conceded, no-changed
+CREATE OR REPLACE VIEW v_issue_outcomes AS
+SELECT i.issue_code, ic.issue_name, ic.category, ic.irc_reference,
+       count(*) AS times_raised,
+       count_if(i.status = 'ADJUSTED') AS adjusted,
+       count_if(i.status = 'CONCEDED') AS conceded,
+       count_if(i.status = 'NO_CHANGE') AS no_change,
+       round(100.0 * count_if(i.status = 'NO_CHANGE') / count(*), 1) AS no_change_pct,
+       round(avg(CASE WHEN i.status = 'ADJUSTED' THEN abs(i.amount_sustained) END), 0) AS avg_abs_sustained,
+       round(avg(CASE WHEN i.amount_proposed <> 0 AND i.status IN ('ADJUSTED', 'CONCEDED')
+                      THEN 100.0 * coalesce(i.amount_sustained, 0) / i.amount_proposed END), 1) AS avg_pct_sustained_of_proposed,
+       round(avg(i.hours_charged), 1) AS avg_hours,
+       round(sum(abs(coalesce(i.amount_sustained, 0))) / nullif(sum(i.hours_charged), 0), 0) AS sustained_per_hour
+FROM tp_issue i
+LEFT JOIN tp_issue_code ic ON ic.issue_code = i.issue_code
+JOIN tp_case_closure c ON c.episode_id = i.episode_id
+GROUP BY i.issue_code, ic.issue_name, ic.category, ic.irc_reference;
+
+-- How adjustments were found
+CREATE OR REPLACE VIEW v_detection_mix AS
+SELECT i.detection_source, count(*) AS issues, count_if(i.status = 'ADJUSTED') AS adjusted,
+       round(100.0 * count_if(i.status = 'ADJUSTED') / count(*), 1) AS adjusted_pct,
+       sum(abs(coalesce(i.amount_sustained, 0))) AS total_abs_sustained
+FROM tp_issue i JOIN tp_case_closure c ON c.episode_id = i.episode_id
+GROUP BY i.detection_source;
+
+-- Most common variances and their root causes
+CREATE OR REPLACE VIEW v_variance_root_causes AS
+SELECT f.variance_type, f.root_cause, rc.description AS root_cause_description, f.branch, f.return_ref,
+       count(*) AS findings, round(avg(abs(f.delta)), 0) AS avg_abs_delta
+FROM tp_rri_finding f LEFT JOIN tp_root_cause rc ON rc.root_cause = f.root_cause
+GROUP BY f.variance_type, f.root_cause, rc.description, f.branch, f.return_ref;
+
+-- Prior audit history per taxpayer: every closed case with its issues
+CREATE OR REPLACE VIEW v_prior_audit_history AS
+SELECT c.tin_token, t.display_name, c.tax_period, c.program, c.selection_source, c.outcome, c.appeals_outcome, c.closed_date,
+       c.deficiency, c.penalty_amount,
+       concat_ws('; ', collect_list(concat(i.issue_code, ' (', lower(i.status), ')'))) AS issues
+FROM tp_case_closure c
+JOIN tp_taxpayer t ON t.tin_token = c.tin_token
+LEFT JOIN tp_issue i ON i.episode_id = c.episode_id
+GROUP BY c.tin_token, t.display_name, c.tax_period, c.program, c.selection_source, c.outcome, c.appeals_outcome, c.closed_date,
+         c.deficiency, c.penalty_amount;
+
+-- The translation: issue code -> source line -> rollup chain to Form 1040
+CREATE OR REPLACE VIEW v_issue_to_1040_trace AS
+SELECT m.issue_code, ic.issue_name, m.role, m.effect,
+       concat(m.form, ' ', m.line) AS source_line, l0.line_desc AS source_desc,
+       concat_ws(' > ',
+         concat(m.form, ' ', m.line),
+         CASE WHEN l0.rolls_to_form IS NOT NULL AND l0.rolls_to_form <> '' THEN concat(l0.rolls_to_form, ' ', l0.rolls_to_line) END,
+         CASE WHEN l1.rolls_to_form IS NOT NULL AND l1.rolls_to_form <> '' THEN concat(l1.rolls_to_form, ' ', l1.rolls_to_line) END,
+         CASE WHEN l2.rolls_to_form IS NOT NULL AND l2.rolls_to_form <> '' THEN concat(l2.rolls_to_form, ' ', l2.rolls_to_line) END,
+         CASE WHEN l3.rolls_to_form IS NOT NULL AND l3.rolls_to_form <> '' THEN concat(l3.rolls_to_form, ' ', l3.rolls_to_line) END,
+         CASE WHEN l4.rolls_to_form IS NOT NULL AND l4.rolls_to_form <> '' THEN concat(l4.rolls_to_form, ' ', l4.rolls_to_line) END,
+         CASE WHEN l5.rolls_to_form IS NOT NULL AND l5.rolls_to_form <> '' THEN concat(l5.rolls_to_form, ' ', l5.rolls_to_line) END,
+         CASE WHEN l6.rolls_to_form IS NOT NULL AND l6.rolls_to_form <> '' THEN concat(l6.rolls_to_form, ' ', l6.rolls_to_line) END,
+         CASE WHEN l7.rolls_to_form IS NOT NULL AND l7.rolls_to_form <> '' THEN concat(l7.rolls_to_form, ' ', l7.rolls_to_line) END,
+         CASE WHEN l8.rolls_to_form IS NOT NULL AND l8.rolls_to_form <> '' THEN concat(l8.rolls_to_form, ' ', l8.rolls_to_line) END,
+         CASE WHEN l9.rolls_to_form IS NOT NULL AND l9.rolls_to_form <> '' THEN concat(l9.rolls_to_form, ' ', l9.rolls_to_line) END
+       ) AS rollup_path
+FROM tp_issue_line_map m
+JOIN tp_issue_code ic ON ic.issue_code = m.issue_code
+LEFT JOIN tp_line_catalog l0 ON l0.form = m.form AND l0.line = m.line
+LEFT JOIN tp_line_catalog l1 ON l1.form = l0.rolls_to_form AND l1.line = l0.rolls_to_line
+LEFT JOIN tp_line_catalog l2 ON l2.form = l1.rolls_to_form AND l2.line = l1.rolls_to_line
+LEFT JOIN tp_line_catalog l3 ON l3.form = l2.rolls_to_form AND l3.line = l2.rolls_to_line
+LEFT JOIN tp_line_catalog l4 ON l4.form = l3.rolls_to_form AND l4.line = l3.rolls_to_line
+LEFT JOIN tp_line_catalog l5 ON l5.form = l4.rolls_to_form AND l5.line = l4.rolls_to_line
+LEFT JOIN tp_line_catalog l6 ON l6.form = l5.rolls_to_form AND l6.line = l5.rolls_to_line
+LEFT JOIN tp_line_catalog l7 ON l7.form = l6.rolls_to_form AND l7.line = l6.rolls_to_line
+LEFT JOIN tp_line_catalog l8 ON l8.form = l7.rolls_to_form AND l8.line = l7.rolls_to_line
+LEFT JOIN tp_line_catalog l9 ON l9.form = l8.rolls_to_form AND l9.line = l8.rolls_to_line;

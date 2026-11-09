@@ -14,6 +14,8 @@ from datetime import date, timedelta
 
 sys.path.insert(0, os.path.dirname(__file__))
 import hero_cases as H
+import closed_cases
+from reference_tables import ISSUE_CODES, ISSUE_LINE_MAP, LINE_CATALOG, ROOT_CAUSES
 from tax_engine_ty2024 import compute
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -26,7 +28,8 @@ T = {k: [] for k in [
     "tp_taxpayer", "tp_tax_module", "tp_compliance_episode", "tp_treatment_assignment",
     "tp_procedural_overlay", "tp_contact_event", "tp_issue", "tp_determination", "tp_statutory_clock",
     "tp_financial_profile", "tp_asset", "tp_bank_account", "tp_information_return", "tp_relationship",
-    "tp_transfer", "tp_return_snapshot", "tp_return_line", "tp_rri_finding", "tp_idr", "tp_adjustment"]}
+    "tp_transfer", "tp_return_snapshot", "tp_return_line", "tp_rri_finding", "tp_idr", "tp_adjustment",
+    "tp_case_closure", "tp_tax_computation", "tp_issue_code", "tp_issue_line_map", "tp_line_catalog", "tp_root_cause"]}
 
 COLS = {
     "tp_taxpayer": "tin_token,tin_type,display_name,entity_type,filing_status,city,state,poa_on_file,case_group",
@@ -35,7 +38,7 @@ COLS = {
     "tp_treatment_assignment": "episode_id,function,assignee,start_date,end_date",
     "tp_procedural_overlay": "overlay_id,tin_token,episode_id,overlay_type,effect,authority,start_date,end_date",
     "tp_contact_event": "contact_id,tin_token,module_ids,episode_id,contact_type,item_code,source_system,statutory_flag,issued_date,delivery_status,response_due,response_received,recipient",
-    "tp_issue": "issue_id,episode_id,tin_token,tax_period,issue_code,description,return_ref,amount_claimed,status",
+    "tp_issue": "issue_id,episode_id,tin_token,tax_period,issue_code,description,return_ref,amount_claimed,amount_proposed,amount_sustained,status,detection_source,hours_charged",
     "tp_determination": "determination_id,episode_id,issue_id,tin_token,determination_type,outcome,amount,authority,decided_date,detail",
     "tp_statutory_clock": "clock_id,tin_token,module_id,episode_id,clock_type,start_date,expiry_date,suspended_ind,authority",
     "tp_financial_profile": "tin_token,as_of_date,gross_monthly_income,allowable_monthly_expenses,net_monthly_ability,net_realizable_equity,minimum_offer,offer_amount,source",
@@ -46,9 +49,15 @@ COLS = {
     "tp_transfer": "transfer_id,asset_id,from_tin_token,to_tin_token,transfer_date,fmv_at_transfer,consideration,source",
     "tp_return_snapshot": "snapshot_id,tin_token,mft,tax_period,version_type,basis_snapshot_id,source_tc,created_date,created_by,status",
     "tp_return_line": "snapshot_id,form,line,sub_id,line_desc,mef_element,amount,data_origin,modifiable,review_state",
-    "tp_rri_finding": "finding_id,snapshot_id,tin_token,tax_period,source,item,irp_amount,return_ref,return_amount,delta,branch,disposition,note",
+    "tp_rri_finding": "finding_id,snapshot_id,tin_token,tax_period,source,item,irp_amount,return_ref,return_amount,delta,branch,disposition,variance_type,root_cause,issue_code,note",
     "tp_idr": "idr_id,episode_id,tin_token,form,issued_date,due_date,response_date,recipient,status,item_count,items",
-    "tp_adjustment": "adjustment_id,episode_id,snapshot_id,tin_token,tax_period,form,line,line_desc,as_filed,adjustment,as_adjusted,adjustment_kind",
+    "tp_adjustment": "adjustment_id,episode_id,snapshot_id,tin_token,tax_period,form,line,line_desc,as_filed,adjustment,as_adjusted,adjustment_kind,issue_id,issue_code,detection_source",
+    "tp_case_closure": "episode_id,tin_token,tax_period,program,selection_source,outcome,closed_date,closing_tc,deficiency,penalty_code,penalty_amount,appeals_outcome,agreed_ind,total_hours,issue_count,adjusted_issue_count,aims_disposal_code,computation_note",
+    "tp_tax_computation": "episode_id,tin_token,tax_period,filing_status_filed,filing_status_examined,agi_filed,agi_examined,taxable_income_filed,taxable_income_examined,tax_filed,tax_examined,credits_filed,credits_examined,other_taxes_filed,other_taxes_examined,total_tax_filed,total_tax_examined,payments_filed,payments_examined,deficiency,penalty_amount,computation_engine,interest_note",
+    "tp_issue_code": "issue_code,issue_name,category,program,source_form,irc_reference,reference_note",
+    "tp_issue_line_map": "issue_code,seq,form,line,mef_element,effect,role,note",
+    "tp_line_catalog": "form,line,line_desc,mef_element,line_class,modifiable,rolls_to_form,rolls_to_line",
+    "tp_root_cause": "root_cause,branch,description",
 }
 
 
@@ -91,7 +100,6 @@ add("tp_tax_module", module_id=f"{A}-30-202412", tin_token=A, mft=30, tax_period
 mod_ids_a = ";".join(f"{A}-30-{y}12" for y, *_ in mods_a)
 
 for ep in [
-    ("EP-A-AUR21", "AUR", "Underreporter", "2023-03-06", "2023-09-19", "CLOSED_ASSESSED", f"{A}-30-202112"),
     ("EP-A-IA1", "IA", "Online Account", "2024-03-03", "2024-11-20", "DEFAULTED", mod_ids_a),
     ("EP-A-IA2", "IA", "Reinstated", "2025-02-10", "2025-10-17", "DEFAULTED", mod_ids_a),
     ("EP-A-ACS", "ACS", "Status 22", "2025-11-03", "", "SUSPENDED_OIC", mod_ids_a),
@@ -128,10 +136,12 @@ contact(A, f"{A}-30-202412", "EP-A-EX24", "IDR", "Form 4564", "EXAM", "N", "2026
 contact(A, f"{A}-30-202412", "EP-A-EX24", "REPORT", "Form 4549", "EXAM", "N", "2026-09-30", due="2026-10-30", recv="2026-10-09", to="POA")
 contact(A, f"{A}-30-202412", "EP-A-EX24", "NOTICE", "CP22E", "MASTER_FILE", "Y", "2026-10-26", to="TAXPAYER")
 
-add("tp_issue", issue_id="I-A1", episode_id="EP-A-EX24", tin_token=A, tax_period="202412", issue_code="UNREPORTED_INTEREST",
-    description="Interest reported by Harbor Trust Savings not on Schedule B", return_ref="SCH_B 2", amount_claimed=0, status="CLOSED")
-add("tp_issue", issue_id="I-A2", episode_id="EP-A-EX24", tin_token=A, tax_period="202412", issue_code="SCH_C_OTHER_EXPENSES",
-    description="Schedule C Part V other expenses supported only by a PDF statement", return_ref="SCH_C 27a", amount_claimed=18400, status="CLOSED")
+add("tp_issue", issue_id="I-A1", episode_id="EP-A-EX24", tin_token=A, tax_period="202412", issue_code="IR03",
+    description="Interest reported by Harbor Trust Savings not on Schedule B", return_ref="SCH_B 1", amount_claimed=0,
+    amount_proposed=1840, amount_sustained=1840, status="ADJUSTED", detection_source="IRP_MATCH", hours_charged=1.5)
+add("tp_issue", issue_id="I-A2", episode_id="EP-A-EX24", tin_token=A, tax_period="202412", issue_code="EX_SCHC_OTHER_EXP",
+    description="Schedule C Part V other expenses supported only by a PDF statement", return_ref="SCH_C 27a", amount_claimed=18400,
+    amount_proposed=-12300, amount_sustained=-6600, status="ADJUSTED", detection_source="RVE_ATTACHMENT_EXTRACT", hours_charged=6.5)
 for x in H.A_DETERMINATIONS:
     add("tp_determination", determination_id=x["det_id"], episode_id="EP-A-EX24", issue_id=x["issue_id"], tin_token=A,
         determination_type="EXAM_ISSUE", outcome=x["outcome"], amount=x["amount"], authority=x["authority"],
@@ -247,23 +257,33 @@ for sid in ["SN-A3", "SN-A4"]:
         allowed = {"48a": 0, "48b": 1400, "48c": 4300, "48d": 0}[ln]
         line(sid, f, ln, sub, desc + (" (moved to line 11)" if ln == "48a" else ""), "", allowed, "EXAMINER_ADJUSTMENT", "Y", "CONFIRMED")
 
+HERO_RC = {"F-A1": ("IRP_MISMATCH", "TAXPAYER_ISSUE", "IR03"), "F-A2": ("IRP_MISMATCH", "IRP_LIMITATION", "IR18"),
+           "F-A3": ("IRP_MISMATCH", "MATCHED", "IR12"), "F-A4": ("DATA_GAP", "MEF_DATA_GAP", "EX_SCHC_OTHER_EXP"),
+           "F-A5": ("IRP_MISMATCH", "MATCHED", "IR23"), "F-A6": ("IRP_MISMATCH", "MATCHED", ""),
+           "F-B1": ("DATA_GAP", "MEF_DATA_GAP", "EX_REP_469C7"), "F-B2": ("IRP_MISMATCH", "MATCHED", "IR21"),
+           "F-B3": ("IRP_MISMATCH", "MATCHED", "IR12"), "F-B4": ("IRP_MISMATCH", "MATCHED", "IR01"), "F-B5": ("IRP_MISMATCH", "MATCHED", "")}
 for fid, src, item, irp, ref, ret_amt, br, disp, note in H.A_FINDINGS:
+    vt, rc, ic = HERO_RC[fid]
     add("tp_rri_finding", finding_id=fid, snapshot_id="SN-A2", tin_token=A, tax_period="202412", source=src, item=item,
         irp_amount=irp if irp is not None else "", return_ref=ref, return_amount=ret_amt,
-        delta=(ret_amt - irp) if irp is not None else "", branch=br, disposition=disp, note=note)
+        delta=(ret_amt - irp) if irp is not None else "", branch=br, disposition=disp, note=note,
+        variance_type=vt, root_cause=rc, issue_code=ic)
 for x in H.A_IDR:
     add("tp_idr", idr_id=x["idr_id"], episode_id="EP-A-EX24", tin_token=A, form=x["form"], issued_date=x["issued"],
         due_date=x["due"], response_date=x["response"], recipient=x["to"], status=x["status"], item_count=len(x["items"]),
         items=" | ".join(x["items"]))
 
 adj_n = 0
+HERO_ADJ_ISSUE = {("SCH_B", "2"): ("I-A1", "IR03", "IRP_MATCH"), ("SCH_C", "11"): ("I-A2", "EX_SCHC_OTHER_EXP", "RVE_ATTACHMENT_EXTRACT"),
+                  ("SCH_C", "27a"): ("I-A2", "EX_SCHC_OTHER_EXP", "RVE_ATTACHMENT_EXTRACT"), ("SCH_C", "31"): ("I-A2", "EX_SCHC_OTHER_EXP", "RVE_ATTACHMENT_EXTRACT")}
 def adjustments(prefix, ep, sid, tin, schedule_adj, tax_f, tax_a):
     global adj_n
     for f, ln, desc, old, new in schedule_adj:
         adj_n += 1
+        iid, ic, how = HERO_ADJ_ISSUE.get((f, ln), ("I-B1", "EX_REP_469C7", "RRI_RECOMPUTE_VARIANCE") if tin == H.B["tin"] else ("", "", ""))
         add("tp_adjustment", adjustment_id=f"{prefix}{adj_n:03d}", episode_id=ep, snapshot_id=sid, tin_token=tin,
             tax_period="202412", form=f, line=ln, line_desc=desc, as_filed=old, adjustment=new - old, as_adjusted=new,
-            adjustment_kind="EXAMINER")
+            adjustment_kind="EXAMINER", issue_id=iid, issue_code=ic, detection_source=how)
     for key, form, ln, el, mod in H.L1040:
         if tax_f[key] != tax_a[key]:
             adj_n += 1
@@ -296,9 +316,9 @@ contact(B, mb, "EP-B-EX24", "LETTER", "Letter 2205", "EXAM", "N", "2026-05-04")
 contact(B, mb, "EP-B-EX24", "IDR", "Form 4564", "EXAM", "N", "2026-05-11", due="2026-06-10", recv="2026-06-08")
 contact(B, mb, "EP-B-EX24", "IDR", "Form 4564", "EXAM", "N", "2026-06-22", due="2026-07-13", recv="2026-07-10")
 contact(B, mb, "EP-B-EX24", "LETTER", "Letter 950", "EXAM", "N", "2026-09-28", due="2026-10-28", recv="2026-10-26")
-add("tp_issue", issue_id="I-B1", episode_id="EP-B-EX24", tin_token=B, tax_period="202412", issue_code="REP_469C7",
+add("tp_issue", issue_id="I-B1", episode_id="EP-B-EX24", tin_token=B, tax_period="202412", issue_code="EX_REP_469C7",
     description="Rental losses claimed as nonpassive under the real estate professional rule", return_ref="SCH_E 43",
-    amount_claimed=-64000, status="UNAGREED")
+    amount_claimed=-64000, amount_proposed=50000, amount_sustained="", status="UNAGREED", detection_source="RRI_RECOMPUTE_VARIANCE", hours_charged=34.0)
 for x in H.B_DETERMINATIONS:
     add("tp_determination", determination_id=x["det_id"], episode_id="EP-B-EX24", issue_id=x["issue_id"], tin_token=B,
         determination_type="EXAM_ISSUE", outcome=x["outcome"], amount=x["amount"], authority=x["authority"],
@@ -338,9 +358,11 @@ for f, ln, desc, el, amt, mod, sub in H.B_SCH["filed"]:
 line("SN-B3", "F8582", "CARRYOVER", "R2_DELRIDGE", "Suspended passive loss to 2025 — Delridge", "", 17000, "EXAMINER_ADJUSTMENT", "Y")
 line("SN-B3", "F8582", "CARRYOVER", "R3_BURIEN", "Suspended passive loss to 2025 — Burien", "", 33000, "EXAMINER_ADJUSTMENT", "Y")
 for fid, src, item, irp, ref, ret_amt, br, disp, note in H.B_FINDINGS:
+    vt, rc, ic = HERO_RC[fid]
     add("tp_rri_finding", finding_id=fid, snapshot_id="SN-B2", tin_token=B, tax_period="202412", source=src, item=item,
         irp_amount=irp if irp is not None else "", return_ref=ref, return_amount=ret_amt,
-        delta=(ret_amt - irp) if irp is not None else "", branch=br, disposition=disp, note=note)
+        delta=(ret_amt - irp) if irp is not None else "", branch=br, disposition=disp, note=note,
+        variance_type=vt, root_cause=rc, issue_code=ic)
 for x in H.B_IDR:
     add("tp_idr", idr_id=x["idr_id"], episode_id="EP-B-EX24", tin_token=B, form=x["form"], issued_date=x["issued"],
         due_date=x["due"], response_date=x["response"], recipient=x["to"], status=x["status"], item_count=len(x["items"]),
@@ -457,11 +479,32 @@ for i in range(1, n_ind + 1):
             amt = rng.randrange(300, 9000, 10)
             add("tp_rri_finding", finding_id=f"F-{tok}-1", snapshot_id=sid, tin_token=tok, tax_period="202412", source="IRP",
                 item="1099-INT · Credit union", irp_amount=amt, return_ref="SCH_B 2", return_amount=0, delta=-amt, branch="A",
-                disposition="UNREPORTED_INCOME", note="Payer not on Schedule B")
+                disposition="UNREPORTED_INCOME", note="Payer not on Schedule B", variance_type="IRP_MISMATCH", root_cause="TAXPAYER_ISSUE", issue_code="IR03")
         else:
             add("tp_rri_finding", finding_id=f"F-{tok}-1", snapshot_id=sid, tin_token=tok, tax_period="202412", source="IRP",
                 item="1099-B · Brokerage (noncovered)", irp_amount=12000, return_ref="F8949 1d", return_amount=12000, delta=0, branch="B",
-                disposition="NOT_A_TAXPAYER_ISSUE", note="Basis reported on 8949")
+                disposition="NOT_A_TAXPAYER_ISSUE", note="Basis reported on 8949", variance_type="IRP_MISMATCH", root_cause="IRP_LIMITATION", issue_code="IR18")
+
+# ==============================================================================================
+# CLOSED CASES (v0.2) + hero A 2024 closure + reference tables
+# ==============================================================================================
+add("tp_case_closure", episode_id="EP-A-EX24", tin_token=A, tax_period="202412", program="CORRESPONDENCE", selection_source="REFERRAL",
+    outcome="AGREED", closed_date="2026-10-26", closing_tc="300", deficiency=H.A_DEFICIENCY, penalty_code="", penalty_amount=0,
+    appeals_outcome="", agreed_ind="Y", total_hours=8.0, issue_count=2, adjusted_issue_count=2, aims_disposal_code="",
+    computation_note="POC simplified engine, TY2024")
+add("tp_tax_computation", episode_id="EP-A-EX24", tin_token=A, tax_period="202412", filing_status_filed="HOH", filing_status_examined="HOH",
+    **{f"{k}_{v}": t[key] for v, t in (("filed", H.A_TAX_FILED), ("examined", H.A_TAX_ADJ)) for k, key in closed_cases.TAXCOMP},
+    deficiency=H.A_DEFICIENCY, penalty_amount=0, computation_engine="POC simplified engine, TY2024 parameters",
+    interest_note="Interest computed at assessment; not modeled")
+cc_counts = closed_cases.generate(dict(add=add, rng=rng, AS_OF=AS_OF, iso=iso))
+for code, v in ISSUE_CODES.items():
+    add("tp_issue_code", issue_code=code, issue_name=v[0], category=v[1], program=v[2], source_form=v[3], irc_reference=v[4], reference_note=v[5])
+    for i, (f, ln, el, eff, role, note) in enumerate(ISSUE_LINE_MAP[code], 1):
+        add("tp_issue_line_map", issue_code=code, seq=i, form=f, line=ln, mef_element=el, effect=eff, role=role, note=note)
+for r in LINE_CATALOG:
+    add("tp_line_catalog", **dict(zip(COLS["tp_line_catalog"].split(","), r)))
+for rc, (br, desc) in ROOT_CAUSES.items():
+    add("tp_root_cause", root_cause=rc, branch=br, description=desc)
 
 # ==============================================================================================
 # ANSWER KEY: expected signals computed in Python (independent of the SQL rules)
@@ -493,7 +536,7 @@ def signals():
         if n >= 2:
             out.add((t, "SG05_REPEAT_IA_DEFAULT"))
     for f in T["tp_rri_finding"]:
-        if f["disposition"] == "UNREPORTED_INCOME":
+        if f["disposition"] == "UNREPORTED_INCOME" and int(f["tax_period"]) >= 202412:
             out.add((f["tin_token"], "SG06_IRP_INCOME_UNREPORTED"))
     snaps = {s["snapshot_id"]: s for s in T["tp_return_snapshot"]}
     rep = {snaps[l["snapshot_id"]]["tin_token"] for l in T["tp_return_line"]
@@ -520,6 +563,14 @@ def signals():
         if i["form_type"].startswith("K-1") and i["tin_token"] in open_oic and (i["tin_token"], i["payer_tin_token"]) in members \
                 and (i["tin_token"], i["payer_tin_token"]) not in entity_assets:
             out.add((i["tin_token"], "SG09_ENTITY_INTEREST_NOT_ON_433"))
+    yrs = {}
+    for i in T["tp_issue"]:
+        if i["status"] == "ADJUSTED" and i["issue_code"]:
+            yrs.setdefault((i["tin_token"], i["issue_code"]), set()).add(int(str(i["tax_period"])[:4]))
+    for (t, code), ys in yrs.items():
+        ys = sorted(ys)
+        if any(b - a <= 5 for a, b in zip(ys, ys[1:])):
+            out.add((t, "SG10_REPEAT_ISSUE"))
     return sorted(out)
 
 SIG = signals()
@@ -589,7 +640,12 @@ def case_json(meta, tin, ep, sch, findings, idrs, dets, adjs, timeline, effects,
         tax=tax_table(tf, ta), deficiency=deficiency, episodes=rows("tp_compliance_episode", tin_token=tin),
         modules=rows("tp_tax_module", tin_token=tin), irp=rows("tp_information_return", tin_token=tin) + (rows("tp_information_return", tin_token="TK200002") if tin == B else []),
         clocks=rows("tp_statutory_clock", tin_token=tin), graph=neighborhood(tin, 3 if tin == A else 2),
-        flags=[f for f in H.SME_FLAGS if meta["case_id"] in f[0]], **extra)
+        flags=[f for f in H.SME_FLAGS if meta["case_id"] in f[0]],
+        prior=[dict(c, issues=[dict(code=i["issue_code"], name=ISSUE_CODES[i["issue_code"]][0], status=i["status"],
+                                    sustained=i.get("amount_sustained", ""), how=i.get("detection_source", ""))
+                               for i in rows("tp_issue", episode_id=c["episode_id"])])
+               for c in sorted(rows("tp_case_closure", tin_token=tin), key=lambda c: str(c["tax_period"])) if c["episode_id"] not in (ep,)],
+        **extra)
 
 scen = dict(
     as_of=H.AS_OF,
@@ -614,4 +670,5 @@ print("signals:", Counter(s for _, s in SIG))
 print("hero A:", [s for t, s in SIG if t == A])
 print("hero B:", [s for t, s in SIG if t == B])
 print("R. Latimer:", [s for t, s in SIG if t == "TK100050"])
+print("closed cases:", cc_counts)
 print("deficiency A", H.A_DEFICIENCY, "B", H.B_DEFICIENCY, "B substantial", H.B_SUBSTANTIAL)

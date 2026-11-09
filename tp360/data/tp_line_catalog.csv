@@ -1,0 +1,65 @@
+form,line,line_desc,mef_element,line_class,modifiable,rolls_to_form,rolls_to_line
+1040,FS,Filing status,IndividualReturnFilingStatusCd,SOURCE,Y,,
+1040,DEP,Dependents,DependentDetail,SOURCE,Y,SCH_8812,14
+1040,1a,W-2 wages,WagesAmt,SOURCE,Y,1040,1z
+1040,1z,Total wages,TotalWagesAmt,CALCULATED,N,1040,9
+1040,2b,Taxable interest,TaxableInterestAmt,CALCULATED,N,1040,9
+1040,3b,Ordinary dividends,OrdinaryDividendsAmt,CALCULATED,N,1040,9
+1040,4b,"IRA distributions, taxable",TaxableIRAAmt,SOURCE,Y,1040,9
+1040,7,Capital gain or loss,CapitalGainLossAmt,CALCULATED,N,1040,9
+1040,8,Additional income from Schedule 1,TotalAdditionalIncomeAmt,CALCULATED,N,1040,9
+1040,9,Total income,TotalIncomeAmt,CALCULATED,N,1040,11
+1040,10,Adjustments to income,TotalAdjustmentsAmt,CALCULATED,N,1040,11
+1040,11,Adjusted gross income,AdjustedGrossIncomeAmt,CALCULATED,N,1040,15
+1040,12,Standard or itemized deduction,TotalItemizedOrStandardDedAmt,CALCULATED,N,1040,15
+1040,13,Qualified business income deduction,QualifiedBusinessIncomeDedAmt,CALCULATED,N,1040,15
+1040,15,Taxable income,TaxableIncomeAmt,CALCULATED,N,1040,16
+1040,16,Tax,TaxAmt,CALCULATED,N,1040,24
+1040,19,Child tax credit / credit for other dependents,CTCODCAmt,CALCULATED,N,1040,24
+1040,23,Other taxes,TotalOtherTaxesAmt,CALCULATED,N,1040,24
+1040,24,Total tax,TotalTaxAmt,CALCULATED,N,,
+1040,25d,Federal income tax withheld,WithholdingTaxAmt,CALCULATED,N,1040,33
+1040,26,Estimated tax payments,EstimatedTaxPaymentsAmt,SOURCE,Y,1040,33
+1040,33,Total payments,TotalPaymentsAmt,CALCULATED,N,1040,37
+1040,37,Amount owed,OwedAmt,CALCULATED,N,,
+SCH_1,3,Business income or loss,BusinessIncomeLossAmt,CALCULATED,N,SCH_1,10
+SCH_1,5,"Rental real estate, royalties, partnerships",RentalRealEstateIncomeLossAmt,CALCULATED,N,SCH_1,10
+SCH_1,10,Total additional income,TotalAdditionalIncomeAmt,CALCULATED,N,1040,8
+SCH_1,15,Deductible part of SE tax,DeductibleSelfEmploymentTaxAmt,CALCULATED,N,1040,10
+SCH_B,1,Interest by payer,InterestAmt,SOURCE,Y,SCH_B,2
+SCH_B,2,Total interest,TotalInterestAmt,CALCULATED,N,1040,2b
+SCH_B,5,Dividends by payer,OrdinaryDividendsAmt,SOURCE,Y,SCH_B,6
+SCH_B,6,Total ordinary dividends,TotalOrdinaryDividendsAmt,CALCULATED,N,1040,3b
+F8949,1d,Proceeds,ProceedsSalesPriceAmt,SOURCE,Y,SCH_D,7
+F8949,1e,Cost or other basis,CostOrOtherBasisAmt,SOURCE,Y,SCH_D,7
+SCH_D,7,Net short-term gain or loss,NetSTCapitalGainOrLossAmt,CALCULATED,N,SCH_D,16
+SCH_D,16,Net gain or loss,NetCapitalGainOrLossAmt,CALCULATED,N,1040,7
+SCH_C,1,Gross receipts,GrossReceiptsAmt,SOURCE,Y,SCH_C,7
+SCH_C,7,Gross income,GrossIncomeAmt,CALCULATED,N,SCH_C,29
+SCH_C,9,Car and truck expenses,CarAndTruckExpensesAmt,SOURCE,Y,SCH_C,28
+SCH_C,11,Contract labor,ContractLaborAmt,SOURCE,Y,SCH_C,28
+SCH_C,13,Depreciation and section 179,DepreciationAmt,SOURCE,Y,SCH_C,28
+SCH_C,22,Supplies,SuppliesAmt,SOURCE,Y,SCH_C,28
+SCH_C,24a,Travel,TravelAmt,SOURCE,Y,SCH_C,28
+SCH_C,24b,Deductible meals,DeductibleMealsAmt,SOURCE,Y,SCH_C,28
+SCH_C,27a,Other expenses,OtherExpensesAmt,SOURCE,Y,SCH_C,28
+SCH_C,28,Total expenses,TotalExpensesAmt,CALCULATED,N,SCH_C,29
+SCH_C,29,Tentative profit,TentativeProfitOrLossAmt,CALCULATED,N,SCH_C,31
+SCH_C,30,Business use of home,HomeBusinessExpenseAmt,SOURCE,Y,SCH_C,31
+SCH_C,31,Net profit or loss,NetProfitOrLossAmt,CALCULATED,N,SCH_1,3
+SCH_E,3,Rents received,RentsReceivedAmt,SOURCE,Y,SCH_E,21
+SCH_E,18,Depreciation,DepreciationOrDepletionAmt,SOURCE,Y,SCH_E,20
+SCH_E,20,Total expenses,TotalExpensesAmt,SOURCE,Y,SCH_E,21
+SCH_E,21,Income or loss per property,RentalIncomeOrLossAmt,CALCULATED,N,SCH_E,26
+SCH_E,26,Total rental real estate income or loss,TotalRentalRealEstateIncmAmt,CALCULATED,N,SCH_E,41
+SCH_E,28,Partnership and S corporation income,PassiveIncomeAmt,SOURCE,Y,SCH_E,41
+SCH_E,41,Total Schedule E income,TotalSupplementalIncomeAmt,CALCULATED,N,SCH_1,5
+SCH_E,43,Real estate professional reconciliation,RealEstateProfessionalAmt,SOURCE,Y,,
+F8582,CARRYOVER,Suspended passive loss carried forward,,CALCULATED,N,,
+SCH_A,8a,Home mortgage interest,HomeMortgageInterestAmt,SOURCE,Y,SCH_A,17
+SCH_A,11,Gifts by cash or check,GiftsByCashOrCheckAmt,SOURCE,Y,SCH_A,17
+SCH_A,12,Gifts other than by cash or check,OtherThanCashContributionAmt,SOURCE,Y,SCH_A,17
+SCH_A,17,Total itemized deductions,TotalItemizedDeductionsAmt,CALCULATED,N,1040,12
+SCH_SE,12,Self-employment tax,SelfEmploymentTaxAmt,CALCULATED,N,SCH_2,4
+SCH_2,4,Self-employment tax,SelfEmploymentTaxAmt,CALCULATED,N,1040,23
+SCH_8812,14,Child tax credit and credit for other dependents,CTCODCAmt,CALCULATED,N,1040,19

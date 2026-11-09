@@ -24,6 +24,14 @@ individual returns.
   A = resolved from data, B = not a taxpayer issue (never an IDR), C = needs the taxpayer (IDR).
 - **Exam:** `tp_idr`, `tp_adjustment`, `v_exam_results` (deficiency per exam), `tp_determination`.
 - **Relationships:** `v_related_parties_named` (one and two hops, with the related party's own signals).
+- **Closed cases (beyond AIMS):** `tp_case_closure` — one row per closed exam or AUR case, the AIMS-equivalent fields
+  (program, selection_source, outcome, closing TC, deficiency, penalty, agreed_ind, total_hours, appeals_outcome).
+  `tp_issue` — issue level: `issue_code`, `amount_proposed`, `amount_sustained`, `status` (ADJUSTED, CONCEDED,
+  NO_CHANGE, UNAGREED), `detection_source` (how it was found), `hours_charged`. `tp_issue_code` — the issue taxonomy.
+  Views: `v_case_results` (closure + tax computation filed vs examined), `v_line_adjustment_frequency`,
+  `v_issue_outcomes`, `v_detection_mix`, `v_variance_root_causes`, `v_prior_audit_history`, `v_issue_to_1040_trace`
+  (issue code → source line → rollup to Form 1040).
+- SG10 = the same issue code adjusted in two tax years within five years (repeat issue).
 
 ## How to answer
 
@@ -33,6 +41,11 @@ individual returns.
 - For "what changed on the return", use `v_return_compare` with `delta <> 0`.
 - `tax_period` is YYYYMM (202412 = tax year 2024).
 - Amounts are whole dollars.
+- "Most adjusted lines" means source lines: use `v_line_adjustment_frequency` (examiner adjustments only; Form 1040
+  lines are computed from them).
+- "Prior audit history" means `v_prior_audit_history` for that taxpayer. "No-change rate" is `v_issue_outcomes.no_change_pct`.
+- "Variances" means `tp_rri_finding` / `v_variance_root_causes`; group by `root_cause` for "why".
+- Closed-case figures are synthetic and illustrative, computed with TY2024 parameters; say so when presenting rates.
 - Do not use `tp_signal_answer_key` — it is the test key.
 
 ## Hero cases

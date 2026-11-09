@@ -1,0 +1,24 @@
+issue_code,issue_name,category,program,source_form,irc_reference,reference_note
+IR01,Wages — W-2 box 1 not reported,UNREPORTED_INCOME,AUR,W-2,IRC 61(a)(1),IRM 4.19.3 Exh. 4.19.3-9 pattern
+IR03,Interest — 1099-INT not reported,UNREPORTED_INCOME,AUR,1099-INT,IRC 61(a)(4),IRM 4.19.3 Exh. 4.19.3-9 pattern
+IR04,Dividends — 1099-DIV not reported,UNREPORTED_INCOME,AUR,1099-DIV,IRC 61(a)(7); IRC 316,IRM 4.19.3 Exh. 4.19.3-9 pattern
+IR10,Retirement distribution — 1099-R not reported,UNREPORTED_INCOME,AUR,1099-R,IRC 72; IRC 402,IRM 4.19.3 Exh. 4.19.3-9 pattern
+IR12,Nonemployee compensation — 1099-NEC not reported,UNREPORTED_INCOME,AUR,1099-NEC,IRC 61(a); IRC 1402,IRM 4.19.3 Exh. 4.19.3-9 pattern
+IR18,Securities sales — 1099-B not reported,UNREPORTED_INCOME,AUR,1099-B,IRC 1001; IRC 1012,IRM 4.19.3 Exh. 4.19.3-9 pattern
+IR21,Rents — 1099-MISC not reported,UNREPORTED_INCOME,AUR,1099-MISC,IRC 61(a)(5),IRM 4.19.3 Exh. 4.19.3-9 pattern
+IR23,K-1 income not reported,UNREPORTED_INCOME,AUR,K-1,IRC 702; IRC 1366,IRM 4.19.3 Exh. 4.19.3-9 pattern
+IR30,Payment card / network — 1099-K not reported,UNREPORTED_INCOME,AUR,1099-K,IRC 61(a); IRC 6050W,IRM 4.19.3 Exh. 4.19.3-9 pattern
+EX_SCHC_GROSS_RCPTS,Schedule C gross receipts understated (bank deposits),UNREPORTED_INCOME,EXAM,,IRC 61(a)(2); IRC 6001,Indirect method
+EX_SCHC_VEHICLE,Car and truck expenses not substantiated,DEDUCTION,EXAM,,IRC 162; IRC 274(d),
+EX_SCHC_TRAVEL_MEALS,Travel and meals not substantiated or limited,DEDUCTION,EXAM,,"IRC 162; IRC 274(d), (n)",
+EX_SCHC_OTHER_EXP,Other expenses not substantiated,DEDUCTION,EXAM,,IRC 162(a); IRC 6001,
+EX_SCHC_DEPR_179,Depreciation / section 179 overstated,DEDUCTION,EXAM,Form 4562,IRC 167; IRC 168; IRC 179,
+EX_HOME_OFFICE,Business use of home not allowed or limited,DEDUCTION,EXAM,Form 8829,IRC 280A(c),
+EX_HOBBY_LOSS,Activity not engaged in for profit — loss disallowed,DEDUCTION,EXAM,,IRC 183,
+EX_RENTAL_EXP,Rental expenses not substantiated,DEDUCTION,EXAM,,IRC 162; IRC 212; IRC 6001,
+EX_PAL_469,Passive activity loss limitation,DEDUCTION,EXAM,Form 8582,"IRC 469(a), (i)",
+EX_REP_469C7,Real estate professional / material participation not established,DEDUCTION,EXAM,Form 8582,IRC 469(c)(7); Treas. Reg. 1.469-9,
+EX_FILING_STATUS,Head of household status not established,STATUS,EXAM,,IRC 2(b),
+EX_DEPENDENT_CTC,Qualifying child / dependent not established,CREDIT,EXAM,Schedule 8812,IRC 24; IRC 152,
+EX_CHARITABLE,Charitable contributions not substantiated,DEDUCTION,EXAM,Form 8283,"IRC 170(f)(8), (11)",
+EX_MORTGAGE_INT,Home mortgage interest overstated,DEDUCTION,EXAM,1098,IRC 163(h),

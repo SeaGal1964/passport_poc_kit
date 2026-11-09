@@ -1,0 +1,152 @@
+"""Reference tables for the TP360 / RVE POC (v0.2): issue taxonomy, the issue -> MeF line
+translation, and the line catalog with rollups.
+
+Design: an issue (rule break) never adjusts a calculated line directly. It adjusts one or more
+SOURCE lines (tp_issue_line_map); the line catalog says where each source line rolls up
+(tp_line_catalog.rolls_to_*), and the recompute produces the calculated lines. So every 1040 change
+traces back: 1040 line <- rollup chain <- source line <- issue code <- issue / IDR / determination.
+
+IR codes and names follow the UCP_POC issue builder (pattern of IRM 4.19.3 Exhibit 4.19.3-9; the
+authoritative list is the Exhibit itself). EX_ codes are POC codes for exam issues. MeF element names
+are illustrative; verify against the IRS1040 schema before reuse.
+"""
+
+# issue_code: (issue_name, category, program, source_form, irc_reference, irm_or_note)
+ISSUE_CODES = {
+    "IR01": ("Wages — W-2 box 1 not reported", "UNREPORTED_INCOME", "AUR", "W-2", "IRC 61(a)(1)", "IRM 4.19.3 Exh. 4.19.3-9 pattern"),
+    "IR03": ("Interest — 1099-INT not reported", "UNREPORTED_INCOME", "AUR", "1099-INT", "IRC 61(a)(4)", "IRM 4.19.3 Exh. 4.19.3-9 pattern"),
+    "IR04": ("Dividends — 1099-DIV not reported", "UNREPORTED_INCOME", "AUR", "1099-DIV", "IRC 61(a)(7); IRC 316", "IRM 4.19.3 Exh. 4.19.3-9 pattern"),
+    "IR10": ("Retirement distribution — 1099-R not reported", "UNREPORTED_INCOME", "AUR", "1099-R", "IRC 72; IRC 402", "IRM 4.19.3 Exh. 4.19.3-9 pattern"),
+    "IR12": ("Nonemployee compensation — 1099-NEC not reported", "UNREPORTED_INCOME", "AUR", "1099-NEC", "IRC 61(a); IRC 1402", "IRM 4.19.3 Exh. 4.19.3-9 pattern"),
+    "IR18": ("Securities sales — 1099-B not reported", "UNREPORTED_INCOME", "AUR", "1099-B", "IRC 1001; IRC 1012", "IRM 4.19.3 Exh. 4.19.3-9 pattern"),
+    "IR21": ("Rents — 1099-MISC not reported", "UNREPORTED_INCOME", "AUR", "1099-MISC", "IRC 61(a)(5)", "IRM 4.19.3 Exh. 4.19.3-9 pattern"),
+    "IR23": ("K-1 income not reported", "UNREPORTED_INCOME", "AUR", "K-1", "IRC 702; IRC 1366", "IRM 4.19.3 Exh. 4.19.3-9 pattern"),
+    "IR30": ("Payment card / network — 1099-K not reported", "UNREPORTED_INCOME", "AUR", "1099-K", "IRC 61(a); IRC 6050W", "IRM 4.19.3 Exh. 4.19.3-9 pattern"),
+    "EX_SCHC_GROSS_RCPTS": ("Schedule C gross receipts understated (bank deposits)", "UNREPORTED_INCOME", "EXAM", "", "IRC 61(a)(2); IRC 6001", "Indirect method"),
+    "EX_SCHC_VEHICLE": ("Car and truck expenses not substantiated", "DEDUCTION", "EXAM", "", "IRC 162; IRC 274(d)", ""),
+    "EX_SCHC_TRAVEL_MEALS": ("Travel and meals not substantiated or limited", "DEDUCTION", "EXAM", "", "IRC 162; IRC 274(d), (n)", ""),
+    "EX_SCHC_OTHER_EXP": ("Other expenses not substantiated", "DEDUCTION", "EXAM", "", "IRC 162(a); IRC 6001", ""),
+    "EX_SCHC_DEPR_179": ("Depreciation / section 179 overstated", "DEDUCTION", "EXAM", "Form 4562", "IRC 167; IRC 168; IRC 179", ""),
+    "EX_HOME_OFFICE": ("Business use of home not allowed or limited", "DEDUCTION", "EXAM", "Form 8829", "IRC 280A(c)", ""),
+    "EX_HOBBY_LOSS": ("Activity not engaged in for profit — loss disallowed", "DEDUCTION", "EXAM", "", "IRC 183", ""),
+    "EX_RENTAL_EXP": ("Rental expenses not substantiated", "DEDUCTION", "EXAM", "", "IRC 162; IRC 212; IRC 6001", ""),
+    "EX_PAL_469": ("Passive activity loss limitation", "DEDUCTION", "EXAM", "Form 8582", "IRC 469(a), (i)", ""),
+    "EX_REP_469C7": ("Real estate professional / material participation not established", "DEDUCTION", "EXAM", "Form 8582", "IRC 469(c)(7); Treas. Reg. 1.469-9", ""),
+    "EX_FILING_STATUS": ("Head of household status not established", "STATUS", "EXAM", "", "IRC 2(b)", ""),
+    "EX_DEPENDENT_CTC": ("Qualifying child / dependent not established", "CREDIT", "EXAM", "Schedule 8812", "IRC 24; IRC 152", ""),
+    "EX_CHARITABLE": ("Charitable contributions not substantiated", "DEDUCTION", "EXAM", "Form 8283", "IRC 170(f)(8), (11)", ""),
+    "EX_MORTGAGE_INT": ("Home mortgage interest overstated", "DEDUCTION", "EXAM", "1098", "IRC 163(h)", ""),
+}
+
+# issue_code -> list of (form, line, mef_element, effect, role, note)
+ISSUE_LINE_MAP = {
+    "IR01": [("1040", "1a", "WagesAmt", "INCREASE_INCOME", "PRIMARY", "W-2 box 1")],
+    "IR03": [("SCH_B", "1", "InterestAmt", "INCREASE_INCOME", "PRIMARY", "New payer line; Sch B 2 total recomputes")],
+    "IR04": [("SCH_B", "5", "OrdinaryDividendsAmt", "INCREASE_INCOME", "PRIMARY", "New payer line")],
+    "IR10": [("1040", "4b", "TaxableIRAAmt", "INCREASE_INCOME", "PRIMARY", "or 5b for pensions")],
+    "IR12": [("SCH_C", "1", "GrossReceiptsAmt", "INCREASE_INCOME", "PRIMARY", "Also drives SE tax via rollup")],
+    "IR18": [("F8949", "1d", "ProceedsSalesPriceAmt", "INCREASE_INCOME", "PRIMARY", "Proceeds; basis on 1e"),
+             ("F8949", "1e", "CostOrOtherBasisAmt", "ESTABLISH_BASIS", "SECONDARY", "Unreported proceeds are not unreported gain")],
+    "IR21": [("SCH_E", "3", "RentsReceivedAmt", "INCREASE_INCOME", "PRIMARY", "")],
+    "IR23": [("SCH_E", "28", "PassiveIncomeAmt", "INCREASE_INCOME", "PRIMARY", "Column by passive / nonpassive")],
+    "IR30": [("SCH_C", "1", "GrossReceiptsAmt", "INCREASE_INCOME", "PRIMARY", "Reconcile to receipts before adjusting")],
+    "EX_SCHC_GROSS_RCPTS": [("SCH_C", "1", "GrossReceiptsAmt", "INCREASE_INCOME", "PRIMARY", "")],
+    "EX_SCHC_VEHICLE": [("SCH_C", "9", "CarAndTruckExpensesAmt", "DECREASE_DEDUCTION", "PRIMARY", "")],
+    "EX_SCHC_TRAVEL_MEALS": [("SCH_C", "24a", "TravelAmt", "DECREASE_DEDUCTION", "PRIMARY", ""),
+                             ("SCH_C", "24b", "DeductibleMealsAmt", "DECREASE_DEDUCTION", "SECONDARY", "")],
+    "EX_SCHC_OTHER_EXP": [("SCH_C", "27a", "OtherExpensesAmt", "DECREASE_DEDUCTION", "PRIMARY", "Part V detail (line 48) often only on an attachment")],
+    "EX_SCHC_DEPR_179": [("SCH_C", "13", "DepreciationAmt", "DECREASE_DEDUCTION", "PRIMARY", "Form 4562 detail")],
+    "EX_HOME_OFFICE": [("SCH_C", "30", "HomeBusinessExpenseAmt", "DECREASE_DEDUCTION", "PRIMARY", "Form 8829")],
+    "EX_HOBBY_LOSS": [("SCH_C", "31", "NetProfitOrLossAmt", "DISALLOW_LOSS", "PRIMARY", "Loss removed; income stays taxable")],
+    "EX_RENTAL_EXP": [("SCH_E", "20", "TotalExpensesAmt", "DECREASE_DEDUCTION", "PRIMARY", "Per property")],
+    "EX_PAL_469": [("SCH_E", "21", "RentalIncomeOrLossAmt", "DISALLOW_LOSS", "PRIMARY", "Loss allowed reduced"),
+                   ("F8582", "CARRYOVER", "", "SUSPEND_LOSS", "SECONDARY", "Suspended loss carries forward")],
+    "EX_REP_469C7": [("SCH_E", "43", "RealEstateProfessionalAmt", "DISALLOW_LOSS", "PRIMARY", ""),
+                     ("SCH_E", "21", "RentalIncomeOrLossAmt", "DISALLOW_LOSS", "SECONDARY", "Per property"),
+                     ("F8582", "CARRYOVER", "", "SUSPEND_LOSS", "SECONDARY", "")],
+    "EX_FILING_STATUS": [("1040", "FS", "IndividualReturnFilingStatusCd", "CHANGE_STATUS", "PRIMARY", "HOH -> Single changes std deduction and brackets")],
+    "EX_DEPENDENT_CTC": [("1040", "DEP", "DependentDetail", "REMOVE_DEPENDENT", "PRIMARY", ""),
+                         ("SCH_8812", "14", "CTCODCAmt", "DECREASE_CREDIT", "SECONDARY", "")],
+    "EX_CHARITABLE": [("SCH_A", "12", "OtherThanCashContributionAmt", "DECREASE_DEDUCTION", "PRIMARY", "or line 11 for cash")],
+    "EX_MORTGAGE_INT": [("SCH_A", "8a", "HomeMortgageInterestAmt", "DECREASE_DEDUCTION", "PRIMARY", "")],
+}
+
+# form, line, line_desc, mef_element, line_class, modifiable, rolls_to_form, rolls_to_line
+LINE_CATALOG = [
+    ("1040", "FS", "Filing status", "IndividualReturnFilingStatusCd", "SOURCE", "Y", "", ""),
+    ("1040", "DEP", "Dependents", "DependentDetail", "SOURCE", "Y", "SCH_8812", "14"),
+    ("1040", "1a", "W-2 wages", "WagesAmt", "SOURCE", "Y", "1040", "1z"),
+    ("1040", "1z", "Total wages", "TotalWagesAmt", "CALCULATED", "N", "1040", "9"),
+    ("1040", "2b", "Taxable interest", "TaxableInterestAmt", "CALCULATED", "N", "1040", "9"),
+    ("1040", "3b", "Ordinary dividends", "OrdinaryDividendsAmt", "CALCULATED", "N", "1040", "9"),
+    ("1040", "4b", "IRA distributions, taxable", "TaxableIRAAmt", "SOURCE", "Y", "1040", "9"),
+    ("1040", "7", "Capital gain or loss", "CapitalGainLossAmt", "CALCULATED", "N", "1040", "9"),
+    ("1040", "8", "Additional income from Schedule 1", "TotalAdditionalIncomeAmt", "CALCULATED", "N", "1040", "9"),
+    ("1040", "9", "Total income", "TotalIncomeAmt", "CALCULATED", "N", "1040", "11"),
+    ("1040", "10", "Adjustments to income", "TotalAdjustmentsAmt", "CALCULATED", "N", "1040", "11"),
+    ("1040", "11", "Adjusted gross income", "AdjustedGrossIncomeAmt", "CALCULATED", "N", "1040", "15"),
+    ("1040", "12", "Standard or itemized deduction", "TotalItemizedOrStandardDedAmt", "CALCULATED", "N", "1040", "15"),
+    ("1040", "13", "Qualified business income deduction", "QualifiedBusinessIncomeDedAmt", "CALCULATED", "N", "1040", "15"),
+    ("1040", "15", "Taxable income", "TaxableIncomeAmt", "CALCULATED", "N", "1040", "16"),
+    ("1040", "16", "Tax", "TaxAmt", "CALCULATED", "N", "1040", "24"),
+    ("1040", "19", "Child tax credit / credit for other dependents", "CTCODCAmt", "CALCULATED", "N", "1040", "24"),
+    ("1040", "23", "Other taxes", "TotalOtherTaxesAmt", "CALCULATED", "N", "1040", "24"),
+    ("1040", "24", "Total tax", "TotalTaxAmt", "CALCULATED", "N", "", ""),
+    ("1040", "25d", "Federal income tax withheld", "WithholdingTaxAmt", "CALCULATED", "N", "1040", "33"),
+    ("1040", "26", "Estimated tax payments", "EstimatedTaxPaymentsAmt", "SOURCE", "Y", "1040", "33"),
+    ("1040", "33", "Total payments", "TotalPaymentsAmt", "CALCULATED", "N", "1040", "37"),
+    ("1040", "37", "Amount owed", "OwedAmt", "CALCULATED", "N", "", ""),
+    ("SCH_1", "3", "Business income or loss", "BusinessIncomeLossAmt", "CALCULATED", "N", "SCH_1", "10"),
+    ("SCH_1", "5", "Rental real estate, royalties, partnerships", "RentalRealEstateIncomeLossAmt", "CALCULATED", "N", "SCH_1", "10"),
+    ("SCH_1", "10", "Total additional income", "TotalAdditionalIncomeAmt", "CALCULATED", "N", "1040", "8"),
+    ("SCH_1", "15", "Deductible part of SE tax", "DeductibleSelfEmploymentTaxAmt", "CALCULATED", "N", "1040", "10"),
+    ("SCH_B", "1", "Interest by payer", "InterestAmt", "SOURCE", "Y", "SCH_B", "2"),
+    ("SCH_B", "2", "Total interest", "TotalInterestAmt", "CALCULATED", "N", "1040", "2b"),
+    ("SCH_B", "5", "Dividends by payer", "OrdinaryDividendsAmt", "SOURCE", "Y", "SCH_B", "6"),
+    ("SCH_B", "6", "Total ordinary dividends", "TotalOrdinaryDividendsAmt", "CALCULATED", "N", "1040", "3b"),
+    ("F8949", "1d", "Proceeds", "ProceedsSalesPriceAmt", "SOURCE", "Y", "SCH_D", "7"),
+    ("F8949", "1e", "Cost or other basis", "CostOrOtherBasisAmt", "SOURCE", "Y", "SCH_D", "7"),
+    ("SCH_D", "7", "Net short-term gain or loss", "NetSTCapitalGainOrLossAmt", "CALCULATED", "N", "SCH_D", "16"),
+    ("SCH_D", "16", "Net gain or loss", "NetCapitalGainOrLossAmt", "CALCULATED", "N", "1040", "7"),
+    ("SCH_C", "1", "Gross receipts", "GrossReceiptsAmt", "SOURCE", "Y", "SCH_C", "7"),
+    ("SCH_C", "7", "Gross income", "GrossIncomeAmt", "CALCULATED", "N", "SCH_C", "29"),
+    ("SCH_C", "9", "Car and truck expenses", "CarAndTruckExpensesAmt", "SOURCE", "Y", "SCH_C", "28"),
+    ("SCH_C", "11", "Contract labor", "ContractLaborAmt", "SOURCE", "Y", "SCH_C", "28"),
+    ("SCH_C", "13", "Depreciation and section 179", "DepreciationAmt", "SOURCE", "Y", "SCH_C", "28"),
+    ("SCH_C", "22", "Supplies", "SuppliesAmt", "SOURCE", "Y", "SCH_C", "28"),
+    ("SCH_C", "24a", "Travel", "TravelAmt", "SOURCE", "Y", "SCH_C", "28"),
+    ("SCH_C", "24b", "Deductible meals", "DeductibleMealsAmt", "SOURCE", "Y", "SCH_C", "28"),
+    ("SCH_C", "27a", "Other expenses", "OtherExpensesAmt", "SOURCE", "Y", "SCH_C", "28"),
+    ("SCH_C", "28", "Total expenses", "TotalExpensesAmt", "CALCULATED", "N", "SCH_C", "29"),
+    ("SCH_C", "29", "Tentative profit", "TentativeProfitOrLossAmt", "CALCULATED", "N", "SCH_C", "31"),
+    ("SCH_C", "30", "Business use of home", "HomeBusinessExpenseAmt", "SOURCE", "Y", "SCH_C", "31"),
+    ("SCH_C", "31", "Net profit or loss", "NetProfitOrLossAmt", "CALCULATED", "N", "SCH_1", "3"),
+    ("SCH_E", "3", "Rents received", "RentsReceivedAmt", "SOURCE", "Y", "SCH_E", "21"),
+    ("SCH_E", "18", "Depreciation", "DepreciationOrDepletionAmt", "SOURCE", "Y", "SCH_E", "20"),
+    ("SCH_E", "20", "Total expenses", "TotalExpensesAmt", "SOURCE", "Y", "SCH_E", "21"),
+    ("SCH_E", "21", "Income or loss per property", "RentalIncomeOrLossAmt", "CALCULATED", "N", "SCH_E", "26"),
+    ("SCH_E", "26", "Total rental real estate income or loss", "TotalRentalRealEstateIncmAmt", "CALCULATED", "N", "SCH_E", "41"),
+    ("SCH_E", "28", "Partnership and S corporation income", "PassiveIncomeAmt", "SOURCE", "Y", "SCH_E", "41"),
+    ("SCH_E", "41", "Total Schedule E income", "TotalSupplementalIncomeAmt", "CALCULATED", "N", "SCH_1", "5"),
+    ("SCH_E", "43", "Real estate professional reconciliation", "RealEstateProfessionalAmt", "SOURCE", "Y", "", ""),
+    ("F8582", "CARRYOVER", "Suspended passive loss carried forward", "", "CALCULATED", "N", "", ""),
+    ("SCH_A", "8a", "Home mortgage interest", "HomeMortgageInterestAmt", "SOURCE", "Y", "SCH_A", "17"),
+    ("SCH_A", "11", "Gifts by cash or check", "GiftsByCashOrCheckAmt", "SOURCE", "Y", "SCH_A", "17"),
+    ("SCH_A", "12", "Gifts other than by cash or check", "OtherThanCashContributionAmt", "SOURCE", "Y", "SCH_A", "17"),
+    ("SCH_A", "17", "Total itemized deductions", "TotalItemizedDeductionsAmt", "CALCULATED", "N", "1040", "12"),
+    ("SCH_SE", "12", "Self-employment tax", "SelfEmploymentTaxAmt", "CALCULATED", "N", "SCH_2", "4"),
+    ("SCH_2", "4", "Self-employment tax", "SelfEmploymentTaxAmt", "CALCULATED", "N", "1040", "23"),
+    ("SCH_8812", "14", "Child tax credit and credit for other dependents", "CTCODCAmt", "CALCULATED", "N", "1040", "19"),
+]
+
+# Variance root causes (illustrative categories from the RVE variance work; swap for the
+# RVE Variance Defect Triage categories when available): root_cause -> (branch, description)
+ROOT_CAUSES = {
+    "TAXPAYER_ISSUE": ("A/C", "The return is wrong; resolved from data (A) or needs the taxpayer (C)"),
+    "MEF_DATA_GAP": ("A/C", "MeF lacks a field or carries only an aggregate; data sits on an attachment or nowhere"),
+    "CALCULATOR_DEFECT": ("B", "The recompute engine handles the line incorrectly; never an IDR"),
+    "KEYING_ARTIFACT": ("B", "Data entry into the calculator (plug values, overrides) produces the variance"),
+    "INTERPRETIVE_POSITION": ("B", "A reasonable reporting position the calculator does not model"),
+    "IRP_LIMITATION": ("B", "The information return itself is incomplete (e.g. basis not reported)"),
+    "MATCHED": ("A", "No variance — information return and return agree"),
+}

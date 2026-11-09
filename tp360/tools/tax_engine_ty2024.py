@@ -41,7 +41,7 @@ def bracket_tax(ti, status):
 def compute(ret):
     """ret keys: status, wages[{owner,amount,ss_wages,fed_wh}], interest, stcg,
     sch_c[{owner,net,qbi}], sch_e_allowed, passive_income_in_e, itemized,
-    ctc_children, odc_dependents, est_payments.  Returns an ordered dict of 1040 lines."""
+    ctc_children, odc_dependents, est_payments; optional dividends (nonqualified), ira_taxable.  Returns an ordered dict of 1040 lines."""
     st = ret["status"]
     wages = sum(w["amount"] for w in ret.get("wages", []))
     fed_wh = sum(w["fed_wh"] for w in ret.get("wages", []))
@@ -64,7 +64,8 @@ def compute(ret):
     sch_c_net = sum(c["net"] for c in ret.get("sch_c", []))
     sch_e = ret.get("sch_e_allowed", 0)
     sch1_additional = sch_c_net + sch_e
-    total_income = wages + ret.get("interest", 0) + ret.get("stcg", 0) + sch1_additional
+    dividends, ira = ret.get("dividends", 0), ret.get("ira_taxable", 0)
+    total_income = wages + ret.get("interest", 0) + dividends + ira + ret.get("stcg", 0) + sch1_additional
     agi = total_income - half_se
 
     deduction = max(STD[st], ret.get("itemized", 0))
@@ -85,7 +86,7 @@ def compute(ret):
     # Other taxes
     se_earnings = sum(r(c["net"] * 0.9235) for c in ret.get("sch_c", []) if c["net"] * 0.9235 >= 400)
     addl_med = r(0.009 * max(0, wages + se_earnings - ADDL_MED_THRESHOLD[st]))
-    nii = ret.get("interest", 0) + ret.get("stcg", 0) + ret.get("passive_income_in_e", 0)
+    nii = ret.get("interest", 0) + dividends + ret.get("stcg", 0) + ret.get("passive_income_in_e", 0)
     niit = r(0.038 * min(max(0, nii), max(0, agi - NIIT_THRESHOLD[st])))
     other_taxes = se_total + addl_med + niit
 
@@ -94,6 +95,8 @@ def compute(ret):
     return {
         "1z wages": wages,
         "2b taxable interest": ret.get("interest", 0),
+        "3b ordinary dividends": dividends,
+        "4b taxable IRA distributions": ira,
         "7 capital gain": ret.get("stcg", 0),
         "8 Schedule 1 additional income": sch1_additional,
         "9 total income": total_income,

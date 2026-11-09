@@ -40,6 +40,8 @@ B_PENALTY_IF_ASSERTED = round(0.20 * B_DEFICIENCY)
 L1040 = [
     ("1z wages", "1040", "1z", "WagesAmt", "N"),
     ("2b taxable interest", "1040", "2b", "TaxableInterestAmt", "N"),
+    ("3b ordinary dividends", "1040", "3b", "OrdinaryDividendsAmt", "N"),
+    ("4b taxable IRA distributions", "1040", "4b", "TaxableIRAAmt", "N"),
     ("7 capital gain", "1040", "7", "CapitalGainLossAmt", "N"),
     ("8 Schedule 1 additional income", "1040", "8", "TotalAdditionalIncomeAmt", "N"),
     ("9 total income", "1040", "9", "TotalIncomeAmt", "N"),
