@@ -108,11 +108,11 @@
     "source": "IRP",
     "item": "1098 \u00b7 Pinnacle Home Loans (residence)",
     "irp": 11260,
-    "ref": "1040 12",
-    "ret": 21900,
+    "ref": "SCH_A 8a",
+    "ret": null,
     "branch": "B",
     "disposition": "NOT_A_TAXPAYER_ISSUE",
-    "note": "Standard deduction claimed; mortgage interest not needed for the computation."
+    "note": "No Schedule A \u2014 standard deduction taken, so mortgage interest is not used in the computation. Not a mismatch."
    }
   ],
   "snapshots": [

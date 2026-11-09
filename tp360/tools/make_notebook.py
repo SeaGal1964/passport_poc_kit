@@ -173,6 +173,11 @@ out = f"{VOLUME_DIR}/genie_benchmark_answers_{CATALOG}_{SCHEMA}.sql"
 with open(out, "w") as fh:
     fh.write(bench)
 print("wrote", out)
+ex = open(os.path.join(os.path.dirname(BENCH_SQL), "genie_example_sql.sql")).read().replace("{{catalog}}", CATALOG).replace("{{schema}}", SCHEMA)
+out2 = f"{VOLUME_DIR}/genie_example_sql_{CATALOG}_{SCHEMA}.sql"
+with open(out2, "w") as fh:
+    fh.write(ex)
+print("wrote", out2, "(add E1-E8 under Configure -> Instructions -> SQL queries)")
 print(\"\"\"Genie agent data (25): v_tp360_header, v_tp_signals, v_return_compare, v_exam_results, v_related_parties_named,
 v_tp_timeline, v_case_results, v_line_adjustment_frequency, v_issue_outcomes, v_detection_mix, v_variance_root_causes,
 v_prior_audit_history, v_issue_to_1040_trace, tp_taxpayer, tp_tax_module, tp_compliance_episode, tp_case_closure,

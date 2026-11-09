@@ -1,0 +1,80 @@
+-- TP360 / RVE POC — example SQL queries for the Genie agent (Configure -> Instructions -> SQL queries)
+-- Add each as an example: the question goes in the title, the SQL as the query. {{catalog}}.{{schema}} is filled in by the
+-- setup notebook (file genie_example_sql_<catalog>_<schema>.sql in the raw volume).
+-- These teach patterns (joins, columns, rules), not answers to specific benchmarks.
+
+-- E1. Show me everything open for Marisol Vance.
+SELECT 'OPEN_EPISODE' AS section, e.episode_id AS ref,
+       concat(e.episode_type, ' — ', e.episode_subtype, ' (', e.status, ')') AS detail, CAST(NULL AS BIGINT) AS amount
+FROM {{catalog}}.{{schema}}.tp_compliance_episode e JOIN {{catalog}}.{{schema}}.tp_taxpayer t USING (tin_token)
+WHERE t.display_name = 'Marisol T. Vance' AND e.closed_date IS NULL
+UNION ALL
+SELECT 'MODULE_BALANCE', m.module_id,
+       concat('CSED ', CAST(m.csed AS STRING), CASE WHEN c.suspended_ind = 'Y' THEN ' (suspended)' ELSE '' END),
+       CAST(m.assessed_balance AS BIGINT)
+FROM {{catalog}}.{{schema}}.tp_tax_module m JOIN {{catalog}}.{{schema}}.tp_taxpayer t USING (tin_token)
+LEFT JOIN {{catalog}}.{{schema}}.tp_statutory_clock c ON c.module_id = m.module_id AND c.clock_type = 'CSED'
+WHERE t.display_name = 'Marisol T. Vance' AND m.assessed_balance > 0
+UNION ALL
+SELECT 'SIGNAL', s.signal_id, concat(s.severity, ' — ', s.evidence), CAST(NULL AS BIGINT)
+FROM {{catalog}}.{{schema}}.v_tp_signals s JOIN {{catalog}}.{{schema}}.tp_taxpayer t USING (tin_token)
+WHERE t.display_name = 'Marisol T. Vance'
+ORDER BY section, ref;
+
+-- E2. For responsible persons tied to more than one entity with a trust fund balance, show each entity and the distinct total.
+WITH rp AS (
+  SELECT DISTINCT s.tin_token FROM {{catalog}}.{{schema}}.v_tp_signals s
+  WHERE s.signal_id = 'SG08_RESPONSIBLE_PERSON_MULTIPLE_ENTITIES'),
+tf AS (
+  SELECT tin_token, sum(assessed_balance) AS trust_fund_balance
+  FROM {{catalog}}.{{schema}}.tp_tax_module WHERE mft = 1 AND assessed_balance > 0 GROUP BY tin_token),
+links AS (
+  SELECT r.from_id AS person, r.to_id AS entity, tf.trust_fund_balance
+  FROM {{catalog}}.{{schema}}.tp_relationship r JOIN rp ON rp.tin_token = r.from_id JOIN tf ON tf.tin_token = r.to_id
+  WHERE r.rel_type = 'RESPONSIBLE_PERSON')
+SELECT p.display_name AS responsible_person, e.display_name AS entity, l.trust_fund_balance,
+       (SELECT sum(trust_fund_balance) FROM (SELECT DISTINCT entity, trust_fund_balance FROM links)) AS distinct_entities_total
+FROM links l
+JOIN {{catalog}}.{{schema}}.tp_taxpayer p ON p.tin_token = l.person
+JOIN {{catalog}}.{{schema}}.tp_taxpayer e ON e.tin_token = l.entity
+ORDER BY responsible_person, l.trust_fund_balance DESC;
+
+-- E3. Which taxpayers with a pending offer have a bank account not on the Form 433-A?  (pattern: answer from the signal)
+SELECT t.display_name, s.tin_token, s.evidence
+FROM {{catalog}}.{{schema}}.v_tp_signals s JOIN {{catalog}}.{{schema}}.tp_taxpayer t USING (tin_token)
+WHERE s.signal_id = 'SG01_UNDISCLOSED_BANK_ACCOUNT'
+ORDER BY t.display_name;
+
+-- E4. What changed on Marisol Vance's 2024 return after the exam?
+SELECT c.form, c.line, c.line_desc, c.as_filed, c.as_adjusted, c.delta, c.data_origin
+FROM {{catalog}}.{{schema}}.v_return_compare c JOIN {{catalog}}.{{schema}}.tp_taxpayer t USING (tin_token)
+WHERE t.display_name = 'Marisol T. Vance' AND c.tax_period = 202412 AND c.delta <> 0
+ORDER BY CASE WHEN c.form = '1040' THEN 2 ELSE 1 END, c.form, c.line;
+
+-- E5. List each IDR with its taxpayer, issued, due and response dates, and whether it was answered on time.
+SELECT t.display_name, i.idr_id, i.issued_date, i.due_date, i.response_date,
+       CASE WHEN i.response_date IS NULL THEN 'OPEN'
+            WHEN CAST(i.response_date AS DATE) <= CAST(i.due_date AS DATE) THEN 'ON TIME' ELSE 'LATE' END AS timeliness,
+       i.item_count
+FROM {{catalog}}.{{schema}}.tp_idr i JOIN {{catalog}}.{{schema}}.tp_taxpayer t USING (tin_token)
+ORDER BY i.issued_date;
+
+-- E6. List each information-return match that was not a taxpayer issue, with the taxpayer, item, amounts and note.
+SELECT t.display_name, f.item, f.irp_amount, f.return_ref, f.return_amount, f.note
+FROM {{catalog}}.{{schema}}.tp_rri_finding f JOIN {{catalog}}.{{schema}}.tp_taxpayer t USING (tin_token)
+WHERE f.branch = 'B'
+ORDER BY t.display_name, f.item;
+
+-- E7. Which data on a return did RVE add that MeF could not carry?
+SELECT l.form, l.line, l.sub_id, l.line_desc, l.amount, l.data_origin
+FROM {{catalog}}.{{schema}}.tp_return_line l
+JOIN {{catalog}}.{{schema}}.tp_return_snapshot s USING (snapshot_id)
+JOIN {{catalog}}.{{schema}}.tp_taxpayer t ON t.tin_token = s.tin_token
+WHERE t.display_name = 'Marcus Thornbury' AND l.data_origin IN ('RVE_SUPPLEMENT', 'ATTACHMENT_EXTRACT')
+ORDER BY l.line, l.sub_id;
+
+-- E8. What is the deficiency and status for each 2024 exam?
+SELECT t.display_name, r.tax_period, r.deficiency, r.taxable_income_change, r.episode_status
+FROM {{catalog}}.{{schema}}.v_exam_results r JOIN {{catalog}}.{{schema}}.tp_taxpayer t USING (tin_token)
+WHERE r.tax_period = 202412
+ORDER BY r.deficiency DESC;

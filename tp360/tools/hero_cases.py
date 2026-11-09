@@ -139,8 +139,8 @@ A_FINDINGS = [  # finding_id, source, item, irp_amount, return_ref, return_amoun
      "MeF carries only the total. RVE captured the four Part V lines from the PDF statement, so the IDR asks for exactly those."),
     ("F-A5", "IRP", "Schedule K-1 (1065) · Latimer Grove Holdings LLC, box 2", 31800, "SCH_E 28", 31800, "A", "MATCHED",
      "Matched to Schedule E Part II. The entity is a related party in the TP360 graph — see the transfer signal."),
-    ("F-A6", "IRP", "1098 · Pinnacle Home Loans (residence)", 11260, "1040 12", 21900, "B", "NOT_A_TAXPAYER_ISSUE",
-     "Standard deduction claimed; mortgage interest not needed for the computation."),
+    ("F-A6", "IRP", "1098 · Pinnacle Home Loans (residence)", 11260, "SCH_A 8a", None, "B", "NOT_A_TAXPAYER_ISSUE",
+     "No Schedule A — standard deduction taken, so mortgage interest is not used in the computation. Not a mismatch."),
 ]
 
 A_IDR = [dict(idr_id="IDR-A1", form="Form 4564", issued="2026-08-17", due="2026-09-16", response="2026-09-12",

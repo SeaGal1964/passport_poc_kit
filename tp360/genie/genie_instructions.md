@@ -35,6 +35,21 @@ individual returns.
 
 ## How to answer
 
+- **Signals first.** When a question matches a signal (undisclosed accounts, related-party transfers, passport reversal,
+  levy barred, repeat IA default, unreported IRP income, REP without election, responsible persons for several entities,
+  entity interest not on the 433-A, repeat issue), answer from `v_tp_signals` filtered on that `signal_id`. Do not rebuild
+  the rule by hand.
+- **Never hard-code TIN tokens** found in an earlier step. Filter by `display_name` (via `tp_taxpayer`) or by the rule itself.
+- Get taxpayer names by joining `tp_taxpayer` on `tin_token`.
+- **Trust fund balance** = `tp_tax_module.assessed_balance` where `mft = 1` (Form 941). Not the entity's total balance.
+- **Never add a shared liability once per person.** When several responsible persons share an entity, total the distinct
+  entities' balances; the TFRP can be assessed against each person but is collected once.
+- **CSEDs:** check `tp_statutory_clock.suspended_ind`. When it is 'Y' (e.g. an offer is pending), say the CSED is suspended
+  rather than presenting the date as fixed.
+- **Data RVE added** = `tp_return_line.data_origin IN ('RVE_SUPPLEMENT', 'ATTACHMENT_EXTRACT')`.
+- Do not state documentation or legal requirements beyond what the data shows (e.g. do not say contemporaneous logs are
+  required for material participation). Describe the data; leave the law to the user.
+
 - Identify taxpayers by `display_name`; show `tin_token` alongside, never invent a TIN.
 - "Open" means `closed_date IS NULL`. "Pending offer" means an OIC episode that is open.
 - The deficiency for an exam is `v_exam_results.deficiency` (the change in Form 1040 line 24).

@@ -332,7 +332,7 @@ function s4(){
     const fs = c.findings.filter(f=>f.branch===b);
     if(!fs.length) return "";
     return `<div class="card"><h3><span class="badge b-${b}">${BRANCH[b]}</span></h3>${fs.map(f=>`<div class="finding"><div class="h"><b>${esc(f.item)}</b><span class="badge">${esc(f.disposition.replace(/_/g," ").toLowerCase())}</span></div>
-      <div class="amt">${f.irp!==null&&f.irp!==""?`IRP ${money(f.irp)} · `:""}return ${esc(f.ref)} ${money(f.ret)}${f.irp!==null&&f.irp!==""?` · delta ${signed(f.ret-f.irp)}`:""}</div><p>${esc(f.note)}</p></div>`).join("")}</div>`;
+      <div class="amt">${f.irp!==null&&f.irp!==""?`IRP ${money(f.irp)} · `:""}return ${esc(f.ref)} ${f.ret===null?"not used":money(f.ret)}${f.irp!==null&&f.irp!==""&&f.ret!==null?` · delta ${signed(f.ret-f.irp)}`:""}</div><p>${esc(f.note)}</p></div>`).join("")}</div>`;
   }).join("");
   const irp = c.irp.map(i=>`<tr><td>${esc(i.form_type)}</td><td>${esc(i.payer_name)}</td><td>${esc(i.box)}</td><td class="n">${money(i.amount)}</td><td class="lock">${esc(i.note)}</td></tr>`).join("");
   return head("Return Reconciliation Intelligence compares the return with every information return and with what the computation needs. Each finding gets a root cause and a branch.")

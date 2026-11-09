@@ -49,7 +49,8 @@ checks = {
 print(checks)
 print(con.execute("SELECT form,line,sub_id,line_desc,as_filed,as_adjusted,delta,data_origin FROM v_return_compare WHERE tin_token='TK100001' AND delta<>0 ORDER BY form,line").fetchall())
 print(con.execute("SELECT related_name, path, via_name, related_signals FROM v_related_parties_named WHERE tin_token='TK100001' AND hops=2").fetchall())
-bench = open(os.path.join(ROOT, "genie", "genie_benchmark_answers.sql")).read().replace("{{catalog}}.{{schema}}.", "")
+bench = (open(os.path.join(ROOT, "genie", "genie_benchmark_answers.sql")).read()
+         + "\n" + open(os.path.join(ROOT, "genie", "genie_example_sql.sql")).read()).replace("{{catalog}}.{{schema}}.", "")
 bench = "\n".join(l for l in bench.splitlines() if not l.strip().startswith("--"))
 bench_ok = True
 for i, st in enumerate([s for s in re.split(r";\s*\n", bench) if s.strip()], 1):

@@ -265,8 +265,8 @@ HERO_RC = {"F-A1": ("IRP_MISMATCH", "TAXPAYER_ISSUE", "IR03"), "F-A2": ("IRP_MIS
 for fid, src, item, irp, ref, ret_amt, br, disp, note in H.A_FINDINGS:
     vt, rc, ic = HERO_RC[fid]
     add("tp_rri_finding", finding_id=fid, snapshot_id="SN-A2", tin_token=A, tax_period="202412", source=src, item=item,
-        irp_amount=irp if irp is not None else "", return_ref=ref, return_amount=ret_amt,
-        delta=(ret_amt - irp) if irp is not None else "", branch=br, disposition=disp, note=note,
+        irp_amount=irp if irp is not None else "", return_ref=ref, return_amount=ret_amt if ret_amt is not None else "",
+        delta=(ret_amt - irp) if (irp is not None and ret_amt is not None) else "", branch=br, disposition=disp, note=note,
         variance_type=vt, root_cause=rc, issue_code=ic)
 for x in H.A_IDR:
     add("tp_idr", idr_id=x["idr_id"], episode_id="EP-A-EX24", tin_token=A, form=x["form"], issued_date=x["issued"],
@@ -360,8 +360,8 @@ line("SN-B3", "F8582", "CARRYOVER", "R3_BURIEN", "Suspended passive loss to 2025
 for fid, src, item, irp, ref, ret_amt, br, disp, note in H.B_FINDINGS:
     vt, rc, ic = HERO_RC[fid]
     add("tp_rri_finding", finding_id=fid, snapshot_id="SN-B2", tin_token=B, tax_period="202412", source=src, item=item,
-        irp_amount=irp if irp is not None else "", return_ref=ref, return_amount=ret_amt,
-        delta=(ret_amt - irp) if irp is not None else "", branch=br, disposition=disp, note=note,
+        irp_amount=irp if irp is not None else "", return_ref=ref, return_amount=ret_amt if ret_amt is not None else "",
+        delta=(ret_amt - irp) if (irp is not None and ret_amt is not None) else "", branch=br, disposition=disp, note=note,
         variance_type=vt, root_cause=rc, issue_code=ic)
 for x in H.B_IDR:
     add("tp_idr", idr_id=x["idr_id"], episode_id="EP-B-EX24", tin_token=B, form=x["form"], issued_date=x["issued"],
