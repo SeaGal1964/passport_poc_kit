@@ -38,19 +38,54 @@ hero cases, Genie benchmarks, a staged HTML walkthrough). It has its own setup n
 
 ## Quick start (Databricks, Unity Catalog workspace)
 
-1. **Get the kit into the workspace:** Workspace → Create → **Git folder** → this repo. (Or import the folder.)
-2. **Run `setup_passport_poc`:** set the `catalog` and `schema` widgets (e.g. `workspace` / `passport_poc`), attach
-   Serverless, **Run all**. Expect `VALIDATION PASSED` and every finding count "same".
+**Connecting GitHub to Databricks is not required.** There are two ways to get the kit into a workspace; the
+upload route is the one tested end to end (Databricks Free Edition, Nov 2026).
+
+### Step 1 — get the files into the workspace (pick one)
+
+**Option A — Upload (tested; no GitHub connection needed)**
+
+1. Unzip the kit (or download the repo as a zip) on your computer.
+2. In a SQL editor tab (SQL warehouse compute), create the schema and a volume for the files, using your own names:
+   ```sql
+   CREATE SCHEMA IF NOT EXISTS workspace.passport_poc;
+   CREATE VOLUME IF NOT EXISTS workspace.passport_poc.raw;
+   ```
+3. Catalog → *your catalog* → *your schema* → Volumes → **raw** → **Upload to this volume**: upload all 13
+   `data/*.csv` files, the three `sql/*.sql` files and `genie/genie_benchmark_answers.sql`.
+4. Workspace → Home → ⋮ → **Import**: import `setup_passport_poc.ipynb` (and `cdw_demo_passport_poc.ipynb` if you
+   want the CDW demo). Importing doesn't open them; find them in Home.
+5. Open a notebook, attach **Serverless**, and run **only the first code cell** — the input boxes then appear at
+   the top. Fill them in as below (shown for `workspace` / `passport_poc`; use your names), then **Run all**.
+
+| Notebook | Box | Value |
+|---|---|---|
+| `setup_passport_poc` | catalog / schema | `workspace` / `passport_poc` |
+| | data_dir | `/Volumes/workspace/passport_poc/raw` |
+| | rules_sql | `/Volumes/workspace/passport_poc/raw/passport_rules.sql` |
+| | benchmark_sql | `/Volumes/workspace/passport_poc/raw/genie_benchmark_answers.sql` |
+| `cdw_demo_passport_poc` | catalog | `workspace` |
+| | source_schema / cdw_schema / target_schema | `passport_poc` / `cdw_sim` / `passport_poc_cdw` |
+| | extract_sql | `/Volumes/workspace/passport_poc/raw/cdw_extract_passport.sql` |
+| | rules_sql | `/Volumes/workspace/passport_poc/raw/passport_rules.sql` |
+
+**Option B — Git folder (convenient for ongoing team use)**
+
+Link your GitHub account once (User settings → Linked accounts; a personal access token is needed because the repo
+is private), then Workspace → Create → **Git folder** with the repo URL. The notebooks' default paths (`./data`,
+`./sql`, `./genie`) then work as-is — set only catalog and schema — and `git pull` brings in updates.
+Some enterprise workspaces don't allow Git folders; use Option A there.
+
+### Steps 2–4 — run, then add Genie
+
+2. **Run `setup_passport_poc`.** Expect `VALIDATION PASSED` and every finding count "same".
 3. **Genie:** create a space on the 9 tables (`v_findings`, `v_taxpayer_eval`, `v_module_eval`,
    `v_module_reversal_reason`, `v_appeals_cdp`, `pp_entity`, `pp_module`, `ref_threshold`, `ref_indicator`) —
    never `pp_answer_key`. Paste `genie/genie_instructions.md`. Add benchmarks from the file the setup notebook
-   writes to the `raw` volume. All should be Good.
+   writes to the `raw` volume (`genie_benchmark_answers_<catalog>_<schema>.sql`). All should be Good.
 4. **Optional — start from CDW:** run `cdw_demo_passport_poc` with `source_schema` = the schema from step 2.
    It builds `cdw_sim`, runs the extract into `passport_poc_cdw`, checks the round trip, and validates.
    Expect `ROUND TRIP PASSED` and `VALIDATION PASSED`. See `docs/README_cdw_demo.md`.
-
-Widgets default to this folder layout, so in a Git folder no paths need changing. If the notebook can't read the
-kit folder, upload the files to the schema's `raw` volume and point the path widgets at `/Volumes/...`.
 
 ## Setting up in a team or enterprise workspace (e.g. a BAH Databricks dev workspace)
 
@@ -58,14 +93,11 @@ Everything above was tested on Databricks Free Edition (serverless, single user)
 access controls and shared schemas. **This path is untested**: whoever goes first, please note anything that differs
 and update this section.
 
-### 1. Get the repo
+### 1. Get the files
 
-- This repo is private to SeaGal1964. For team use it should live in a BAH-controlled repo; until it moves, ask
-  Colleen Newman for collaborator access.
-- In Databricks: link your Git account (User settings → Linked accounts), then Workspace → Create → **Git folder**
-  with the repo URL. Both notebooks then find `data/`, `sql/` and `genie/` with no path changes.
-- If your workspace doesn't allow Git folders: import the two `.ipynb` files, upload `data/*.csv`, `sql/*.sql` and
-  `genie/genie_benchmark_answers.sql` to a volume, and point the notebooks' path widgets at `/Volumes/...`.
+- Either route in Quick start step 1 works. **Option A (upload) needs no GitHub connection** and is the tested path.
+- For Option B, the repo must be reachable: it is private to SeaGal1964, so ask Colleen Newman for collaborator
+  access until it moves to a BAH-controlled repo, and check that your workspace allows Git folders.
 
 ### 2. Ask your workspace admin for
 
