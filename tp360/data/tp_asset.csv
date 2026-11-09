@@ -1,0 +1,19 @@
+asset_id,owner_tin_token,asset_type,description,fmv,encumbrance,equity,disclosed_on_433,source,verified
+AS-A1,TK100001,REAL_PROPERTY,Residence · 1412 Larkspur Way,412000,338000,74000,Y,County assessor; 1098; Accurint,Verified
+AS-A2,TK100001,REAL_PROPERTY,Rental · 88 Ferncroft Rd (transferred 2025-09-22),268000,241000,27000,N,County assessor; Accurint,Verified
+AS-A3,TK100001,VEHICLE,2022 pickup truck,31400,18900,12500,Y,NADA; DMV,Verified
+AS-A4,TK100001,BUSINESS_ASSET,Business equipment,22000,0,22000,Y,Depreciation schedule,Unverified
+AS-A5,TK100001,RETIREMENT,Retirement account,26900,0,26900,Y,Taxpayer statement,Unverified
+AS-A6,TK100001,BROKERAGE,Pinnacle Brokerage,18700,0,18700,Y,1099-B; statement,Partial
+AS-B1,TK200001,RENTAL_PROPERTY,Alki duplex,612000,401000,211000,,County assessor,Verified
+AS-B2,TK200001,RENTAL_PROPERTY,Delridge single-family,455000,322000,133000,,County assessor,Verified
+AS-B3,TK200001,RENTAL_PROPERTY,Burien triplex,780000,590000,190000,,County assessor,Verified
+AS-TK300009-T,TK300009,REAL_PROPERTY,Transferred parcel,387000,0,387000,N,County records,Verified
+AS-TK300009-EI,TK300009,ENTITY_INTEREST,Interest in TK800014,54500,0,0,Y,Form 433-A,Unverified
+AS-TK300030-T,TK300030,REAL_PROPERTY,Transferred parcel,353000,0,353000,N,County records,Verified
+AS-TK300034-T,TK300034,REAL_PROPERTY,Transferred parcel,255000,0,255000,N,County records,Verified
+AS-TK300042-T,TK300042,REAL_PROPERTY,Transferred parcel,263000,0,263000,N,County records,Verified
+AS-TK300045-EI,TK300045,ENTITY_INTEREST,Interest in TK800016,39000,0,0,Y,Form 433-A,Unverified
+AS-TK300059-T,TK300059,REAL_PROPERTY,Transferred parcel,247000,0,247000,N,County records,Verified
+AS-TK300068-T,TK300068,REAL_PROPERTY,Transferred parcel,111000,0,111000,N,County records,Verified
+AS-TK300106-T,TK300106,REAL_PROPERTY,Transferred parcel,314000,0,314000,N,County records,Verified

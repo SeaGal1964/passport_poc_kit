@@ -1,0 +1,30 @@
+finding_id,snapshot_id,tin_token,tax_period,source,item,irp_amount,return_ref,return_amount,delta,branch,disposition,note
+F-A1,SN-A2,TK100001,202412,IRP,1099-INT · Harbor Trust Savings,1840,SCH_B 1,0,-1840,A,UNREPORTED_INCOME,Payer not on Schedule B. Resolved from data: propose the adjustment; the IDR asks for an explanation.
+F-A2,SN-A2,TK100001,202412,IRP,1099-B · Pinnacle Brokerage (noncovered),26400,F8949 1d,26400,0,B,NOT_A_TAXPAYER_ISSUE,"Gross proceeds match. Basis was not reported to the IRS (noncovered), so an IRP-only check would overstate the gain. Never an IDR."
+F-A3,SN-A2,TK100001,202412,IRP,1099-NEC (4 payers) + 1099-K · Schedule C receipts,241500,SCH_C 1,246900,5400,B,NOT_A_TAXPAYER_ISSUE,"Reported receipts exceed information returns by $5,400. No underreporting indicated."
+F-A4,SN-A2,TK100001,202412,RVE,Schedule C line 27a · other expenses,,SCH_C 27a,18400,,C,IDR_REQUIRED,"MeF carries only the total. RVE captured the four Part V lines from the PDF statement, so the IDR asks for exactly those."
+F-A5,SN-A2,TK100001,202412,IRP,"Schedule K-1 (1065) · Latimer Grove Holdings LLC, box 2",31800,SCH_E 28,31800,0,A,MATCHED,Matched to Schedule E Part II. The entity is a related party in the TP360 graph — see the transfer signal.
+F-A6,SN-A2,TK100001,202412,IRP,1098 · Pinnacle Home Loans (residence),11260,1040 12,21900,10640,B,NOT_A_TAXPAYER_ISSUE,Standard deduction claimed; mortgage interest not needed for the computation.
+F-B1,SN-B2,TK200001,202412,RVE,Schedule E line 43 · real estate professional claim,,SCH_E 43,-64000,,C,IDR_REQUIRED,"No Form 8582, no aggregation election in MeF or attachments, and no hours data anywhere in MeF. Each rental must be tested separately unless an election exists, so the IDR asks for hours and any election."
+F-B2,SN-B2,TK200001,202412,IRP,"1099-MISC · Pugetview Property Management (rents, R2 + R3)",69000,SCH_E 3,69000,0,A,MATCHED,Rents for the two managed properties match Schedule E.
+F-B3,SN-B2,TK200001,202412,IRP,1099-NEC · Northbeam Realty,96000,SCH_C 1,96000,0,A,MATCHED,Commissions match Schedule C gross receipts.
+F-B4,SN-B2,TK200001,202412,IRP,W-2 · Lumenfield Software,182000,1040 1z,182000,0,A,MATCHED,Wages and withholding match.
+F-B5,SN-B2,TK200001,202412,IRP,1098 · residence mortgage interest,18600,SCH_A 8a,18600,0,B,NOT_A_TAXPAYER_ISSUE,"Matches; SALT correctly capped at $10,000."
+F-TK300006-1,SN-TK300006-1,TK300006,202412,IRP,1099-B · Brokerage (noncovered),12000,F8949 1d,12000,0,B,NOT_A_TAXPAYER_ISSUE,Basis reported on 8949
+F-TK300010-1,SN-TK300010-1,TK300010,202412,IRP,1099-B · Brokerage (noncovered),12000,F8949 1d,12000,0,B,NOT_A_TAXPAYER_ISSUE,Basis reported on 8949
+F-TK300012-1,SN-TK300012-1,TK300012,202412,IRP,1099-B · Brokerage (noncovered),12000,F8949 1d,12000,0,B,NOT_A_TAXPAYER_ISSUE,Basis reported on 8949
+F-TK300022-1,SN-TK300022-1,TK300022,202412,IRP,1099-INT · Credit union,3560,SCH_B 2,0,-3560,A,UNREPORTED_INCOME,Payer not on Schedule B
+F-TK300027-1,SN-TK300027-1,TK300027,202412,IRP,1099-B · Brokerage (noncovered),12000,F8949 1d,12000,0,B,NOT_A_TAXPAYER_ISSUE,Basis reported on 8949
+F-TK300032-1,SN-TK300032-1,TK300032,202412,IRP,1099-B · Brokerage (noncovered),12000,F8949 1d,12000,0,B,NOT_A_TAXPAYER_ISSUE,Basis reported on 8949
+F-TK300034-1,SN-TK300034-1,TK300034,202412,IRP,1099-B · Brokerage (noncovered),12000,F8949 1d,12000,0,B,NOT_A_TAXPAYER_ISSUE,Basis reported on 8949
+F-TK300044-1,SN-TK300044-1,TK300044,202412,IRP,1099-B · Brokerage (noncovered),12000,F8949 1d,12000,0,B,NOT_A_TAXPAYER_ISSUE,Basis reported on 8949
+F-TK300046-1,SN-TK300046-1,TK300046,202412,IRP,1099-INT · Credit union,7040,SCH_B 2,0,-7040,A,UNREPORTED_INCOME,Payer not on Schedule B
+F-TK300050-1,SN-TK300050-1,TK300050,202412,IRP,1099-B · Brokerage (noncovered),12000,F8949 1d,12000,0,B,NOT_A_TAXPAYER_ISSUE,Basis reported on 8949
+F-TK300074-1,SN-TK300074-1,TK300074,202412,IRP,1099-B · Brokerage (noncovered),12000,F8949 1d,12000,0,B,NOT_A_TAXPAYER_ISSUE,Basis reported on 8949
+F-TK300078-1,SN-TK300078-1,TK300078,202412,IRP,1099-B · Brokerage (noncovered),12000,F8949 1d,12000,0,B,NOT_A_TAXPAYER_ISSUE,Basis reported on 8949
+F-TK300080-1,SN-TK300080-1,TK300080,202412,IRP,1099-B · Brokerage (noncovered),12000,F8949 1d,12000,0,B,NOT_A_TAXPAYER_ISSUE,Basis reported on 8949
+F-TK300086-1,SN-TK300086-1,TK300086,202412,IRP,1099-INT · Credit union,950,SCH_B 2,0,-950,A,UNREPORTED_INCOME,Payer not on Schedule B
+F-TK300087-1,SN-TK300087-1,TK300087,202412,IRP,1099-B · Brokerage (noncovered),12000,F8949 1d,12000,0,B,NOT_A_TAXPAYER_ISSUE,Basis reported on 8949
+F-TK300109-1,SN-TK300109-1,TK300109,202412,IRP,1099-B · Brokerage (noncovered),12000,F8949 1d,12000,0,B,NOT_A_TAXPAYER_ISSUE,Basis reported on 8949
+F-TK300117-1,SN-TK300117-1,TK300117,202412,IRP,1099-INT · Credit union,4280,SCH_B 2,0,-4280,A,UNREPORTED_INCOME,Payer not on Schedule B
+F-TK300118-1,SN-TK300118-1,TK300118,202412,IRP,1099-INT · Credit union,8510,SCH_B 2,0,-8510,A,UNREPORTED_INCOME,Payer not on Schedule B

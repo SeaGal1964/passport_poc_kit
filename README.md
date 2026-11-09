@@ -30,6 +30,12 @@ passport_poc_kit/
     └── README_cdw_demo.md           detail on the CDW demo
 ```
 
+## Also in this repo: `tp360/` — Taxpayer 360 + Return Viewer Editor POC
+
+A second, separate POC: a TP360 view on the UCP canonical model plus individual returns through RVE (two TY2024
+hero cases, Genie benchmarks, a staged HTML walkthrough). It has its own setup notebook and schema
+(`tp360_poc`). See [`tp360/README.md`](tp360/README.md).
+
 ## Quick start (Databricks, Unity Catalog workspace)
 
 1. **Get the kit into the workspace:** Workspace → Create → **Git folder** → this repo. (Or import the folder.)

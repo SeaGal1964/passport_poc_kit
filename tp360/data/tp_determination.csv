@@ -1,0 +1,7 @@
+determination_id,episode_id,issue_id,tin_token,determination_type,outcome,amount,authority,decided_date,detail
+D-A1,EP-A-EX24,I-A1,TK100001,EXAM_ISSUE,ADJUSTED,1840,IRC 61(a)(4),2026-10-09,Representative confirmed the account; interest omitted in error.
+D-A2,EP-A-EX24,I-A2,TK100001,EXAM_ISSUE,PARTIALLY_ALLOWED,-6600,IRC 162(a); IRC 274(d); IRC 6001,2026-10-09,"Conference travel substantiated ($4,300). Cell phone 70% business use: $1,400 allowed, $600 disallowed. Miscellaneous: no records, $6,000 disallowed. Subcontract labor moved to line 11 — no tax effect."
+D-A0,EP-A-PP,,TK100001,PASSPORT_CERTIFICATION,CERTIFIED,184310,IRC 7345,2026-03-12,Certified to the Department of State (TC 971 AC 641)
+D-B1,EP-B-EX24,I-B1,TK200001,EXAM_ISSUE,SUSTAINED,0,IRC 469(c)(7)(B),2026-09-28,"1,450 hours in real estate brokerage, her only work: more than half her personal services and more than 750 hours."
+D-B2,EP-B-EX24,I-B1,TK200001,EXAM_ISSUE,PARTIALLY_ALLOWED,50000,"IRC 469(c)(7)(A); Treas. Reg. 1.469-9(e), (g); Treas. Reg. 1.469-5T(a)",2026-09-28,"No aggregation election on file, so each rental is a separate activity. Alki 520 hours — material participation. Delridge 90 hours and Burien 60 hours, with the property manager doing more — not material participation. $50,000 of losses are passive."
+D-B3,EP-B-EX24,I-B1,TK200001,EXAM_ISSUE,SUSPENDED,50000,"IRC 469(a), (b), (i)",2026-09-28,"No passive income. Modified AGI above $150,000, so no $25,000 allowance. $50,000 suspended and carried to 2025 (Delridge $17,000, Burien $33,000)."

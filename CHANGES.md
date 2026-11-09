@@ -1,5 +1,9 @@
 # Changes
 
+## tp360 v0.1 (2026-11-08)
+
+- New `tp360/` folder: TP360 + RVE POC with two hero cases (Vance, Thornbury), 23 synthetic tables, 9 signal rules validated against a Python answer key, 14 Genie benchmarks, setup notebook with optional GraphFrames, and a staged walkthrough viewer. Passport kit unchanged.
+
 ## v0.5.3 docs update — 2026-11-06
 - README: "Setting up in a team or enterprise workspace" (repo access, admin asks, per-person schema names, troubleshooting).
 - `docs/Passport_Certification_Analytics_POC_User_Guide.pdf` added (export of the live User Guide).
