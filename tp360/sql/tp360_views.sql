@@ -23,7 +23,7 @@ SELECT DISTINCT tin_token, issue_code, CAST(substr(CAST(tax_period AS STRING), 1
 FROM tp_issue
 WHERE status = 'ADJUSTED' AND issue_code IS NOT NULL;
 
-CREATE OR REPLACE VIEW v_tp_signals AS
+CREATE OR REPLACE VIEW v_tp_signal_evidence AS
 SELECT b.tin_token, 'SG01_UNDISCLOSED_BANK_ACCOUNT' AS signal_id, 'HIGH' AS severity,
        concat(b.institution, ' ', b.account_type, ' ending ', CAST(b.acct_last4 AS STRING), ' — balance ', CAST(b.balance AS STRING), ' — source ', b.source) AS evidence,
        'Form 433-A (OIC) completeness; reasonable collection potential' AS basis
@@ -110,6 +110,14 @@ SELECT a.tin_token, 'SG10_REPEAT_ISSUE', 'MEDIUM',
        'Prior audit history — same issue adjusted within five years'
 FROM v_adjusted_issue_years a
 JOIN v_adjusted_issue_years b ON b.tin_token = a.tin_token AND b.issue_code = a.issue_code AND b.yr > a.yr AND b.yr - a.yr <= 5;
+
+-- One row per taxpayer per signal (evidence combined). Use this for counts and joins; v_tp_signal_evidence keeps
+-- one row per piece of evidence (e.g. each undisclosed account).
+CREATE OR REPLACE VIEW v_tp_signals AS
+SELECT tin_token, signal_id, max(severity) AS severity,
+       concat_ws(' | ', collect_set(evidence)) AS evidence, max(basis) AS basis, count(*) AS evidence_count
+FROM v_tp_signal_evidence
+GROUP BY tin_token, signal_id;
 
 -- --------------------------------------------------------------------------------------------
 -- TP360 header: one row per taxpayer

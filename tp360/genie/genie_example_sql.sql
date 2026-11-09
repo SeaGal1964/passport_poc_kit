@@ -39,7 +39,7 @@ JOIN {{catalog}}.{{schema}}.tp_taxpayer p ON p.tin_token = l.person
 JOIN {{catalog}}.{{schema}}.tp_taxpayer e ON e.tin_token = l.entity
 ORDER BY responsible_person, l.trust_fund_balance DESC;
 
--- E3. Which taxpayers with a pending offer have a bank account not on the Form 433-A?  (pattern: answer from the signal)
+-- E3. Which taxpayers with a pending offer have a bank account not on the Form 433-A?
 SELECT t.display_name, s.tin_token, s.evidence
 FROM {{catalog}}.{{schema}}.v_tp_signals s JOIN {{catalog}}.{{schema}}.tp_taxpayer t USING (tin_token)
 WHERE s.signal_id = 'SG01_UNDISCLOSED_BANK_ACCOUNT'
@@ -78,3 +78,21 @@ SELECT t.display_name, r.tax_period, r.deficiency, r.taxable_income_change, r.ep
 FROM {{catalog}}.{{schema}}.v_exam_results r JOIN {{catalog}}.{{schema}}.tp_taxpayer t USING (tin_token)
 WHERE r.tax_period = 202412
 ORDER BY r.deficiency DESC;
+
+-- E9. Which of Marisol Vance's related parties have signals of their own?
+SELECT DISTINCT r.related_name, r.hops, r.path, r.via_name, r.related_signals
+FROM {{catalog}}.{{schema}}.v_related_parties_named r
+JOIN {{catalog}}.{{schema}}.tp_taxpayer t ON t.tin_token = r.tin_token
+WHERE t.display_name = 'Marisol T. Vance' AND r.related_signals IS NOT NULL;
+
+-- E10. Which responsible persons are tied to more than one entity with a trust fund balance?
+SELECT t.display_name, s.tin_token, s.evidence
+FROM {{catalog}}.{{schema}}.v_tp_signals s JOIN {{catalog}}.{{schema}}.tp_taxpayer t USING (tin_token)
+WHERE s.signal_id = 'SG08_RESPONSIBLE_PERSON_MULTIPLE_ENTITIES'
+ORDER BY t.display_name;
+
+-- E11. How many taxpayers with a pending offer have bank accounts not disclosed on the Form 433-A, and what is the total balance?
+SELECT count(DISTINCT b.tin_token) AS taxpayers, sum(b.balance) AS undisclosed_balance
+FROM {{catalog}}.{{schema}}.tp_bank_account b
+WHERE b.disclosed_on_433 = 'N'
+  AND b.tin_token IN (SELECT tin_token FROM {{catalog}}.{{schema}}.tp_compliance_episode WHERE episode_type = 'OIC' AND closed_date IS NULL);
