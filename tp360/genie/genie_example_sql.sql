@@ -115,3 +115,8 @@ SELECT program, outcome, count(*) AS cases, round(avg(deficiency), 0) AS avg_def
 FROM {{catalog}}.{{schema}}.v_case_results
 GROUP BY program, outcome
 ORDER BY program, cases DESC;
+
+-- E15. List each taxpayer who had the same issue adjusted in more than one year, with the issue and the tax years.
+SELECT display_name, tin_token, issue_code, issue_name, years_adjusted, tax_years
+FROM {{catalog}}.{{schema}}.v_repeat_issues
+ORDER BY display_name, issue_code;
