@@ -60,11 +60,13 @@ tp360/
 ├── data/                        29 CSVs (tp_*) — ~410 taxpayers, ~300 closed cases, reference tables, answer key, run params
 ├── docs/TP360_Data_Model.md     ER diagram, tables, the issue → line translation, AIMS-equivalent fields
 ├── sql/tp360_views.sql          signals (10 rules), TP360 header, RVE compare, closed-case results and analytics views
+├── dashboards/TP360_RVE_POC.lvdash.json   AI/BI dashboard, 4 pages
 ├── genie/                       genie_instructions.md + 22 benchmark questions with SQL answers
 ├── viewer/TP360_RVE_Walkthrough.html   the staged walkthrough (7 stages, both cases), open in any browser
 └── tools/                       generators — the single source for data, notebook and viewer
     ├── reference_tables.py      issue codes, issue → line map, line catalog, root causes
     ├── closed_cases.py          the closed-case population (runs every case through the tax engine)
+    ├── make_dashboard.py        writes the AI/BI dashboard file
     ├── make_data_model_doc.py   writes docs/TP360_Data_Model.md from the CSV headers
     ├── hero_cases.py            both cases: return inputs, findings, IDRs, determinations, effects, SME flags
     ├── tax_engine_ty2024.py     simplified TY2024 1040 engine (illustrative; not the production calculator)
@@ -85,6 +87,14 @@ tp360/
    volume.
 4. **Graph:** section 6 tries GraphFrames, which comes with Databricks Runtime ML. On Serverless or Free
    Edition it probably isn't available, so the cell falls back to `v_related_parties_named` (SQL, two hops).
+
+## AI/BI dashboard
+
+`dashboards/TP360_RVE_POC.lvdash.json` has four pages: Taxpayer 360 (Marisol T. Vance), Return Viewer Editor,
+Signals, and Closed cases — beyond AIMS. In your Databricks Git folder, open the file. It opens as a draft dashboard.
+Pick your SQL warehouse, check the pages, then **Publish**. If it opens as plain JSON, go to **Dashboards → Create ▾ →
+Import dashboard from file** and choose the file instead. It reads `workspace.tp360_poc`; for another catalog or
+schema, run `python tp360/tools/make_dashboard.py <catalog> <schema>`.
 
 ## Rebuild after changing a case
 
