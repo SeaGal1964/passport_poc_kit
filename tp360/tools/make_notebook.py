@@ -121,7 +121,7 @@ code("""
 display(spark.sql(\"\"\"
   SELECT tin_token, form, line, sub_id, line_desc, as_filed, as_adjusted, delta, data_origin
   FROM v_return_compare WHERE tin_token IN ('TK100001','TK200001') AND delta <> 0
-  ORDER BY tin_token, CASE WHEN form = '1040' THEN 2 ELSE 1 END, form, line\"\"\"))
+  ORDER BY tin_token, form_sort, line_sort, line, sub_id\"\"\"))
 """)
 code("""
 # Reconciliation findings by branch: A resolved from data, B not a taxpayer issue, C needs the taxpayer (IDR)

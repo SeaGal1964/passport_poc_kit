@@ -170,7 +170,20 @@ SELECT coalesce(c.tin_token, f.tin_token) AS tin_token, coalesce(c.tax_period, f
        coalesce(c.form, f.form) AS form, coalesce(c.line, f.line) AS line, coalesce(c.sub_id, f.sub_id) AS sub_id,
        coalesce(f.line_desc, c.line_desc) AS line_desc, c.version_type AS compared_to,
        coalesce(f.amount, 0) AS as_filed, coalesce(c.amount, f.amount) AS as_adjusted,
-       coalesce(c.amount, f.amount) - coalesce(f.amount, 0) AS delta, c.data_origin
+       coalesce(c.amount, f.amount) - coalesce(f.amount, 0) AS delta, c.data_origin,
+       -- display order: Form 1040, Schedules 1-3, lettered schedules (A, B, C ... SE), numbered schedules
+       -- (8812), then forms by number (8582, 8949 ...), then W-2s and RVE supplements; lines by number
+       CASE WHEN coalesce(c.form, f.form) = '1040' THEN 0
+            WHEN regexp_extract(coalesce(c.form, f.form), '^SCH_([0-9])$', 1) <> ''
+                 THEN 100 + try_cast(regexp_extract(coalesce(c.form, f.form), '^SCH_([0-9])$', 1) AS INT)
+            WHEN regexp_extract(coalesce(c.form, f.form), '^SCH_([A-Z]+)$', 1) <> ''
+                 THEN 200 + (ascii(substr(coalesce(c.form, f.form), 5, 1)) - 64) * 2 + length(coalesce(c.form, f.form)) - 5
+            WHEN regexp_extract(coalesce(c.form, f.form), '^SCH_([0-9]+)$', 1) <> '' THEN 300
+            WHEN regexp_extract(coalesce(c.form, f.form), '^F([0-9]+)', 1) <> ''
+                 THEN 1000 + try_cast(regexp_extract(coalesce(c.form, f.form), '^F([0-9]+)', 1) AS INT)
+            WHEN coalesce(c.form, f.form) = 'RVE_SUPP' THEN 999999
+            ELSE 900000 END AS form_sort,
+       coalesce(try_cast(regexp_extract(coalesce(c.line, f.line), '^([0-9]+)', 1) AS INT), 9999) AS line_sort
 FROM f FULL OUTER JOIN c
   ON c.tin_token = f.tin_token AND c.tax_period = f.tax_period AND c.form = f.form AND c.line = f.line AND c.sub_id = f.sub_id;
 

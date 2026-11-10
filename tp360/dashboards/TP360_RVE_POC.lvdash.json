@@ -293,7 +293,7 @@
         "SELECT t.display_name AS taxpayer, c.form, c.line, c.line_desc, c.as_filed, c.as_adjusted, c.delta, c.data_origin\n",
         "FROM workspace.tp360_poc.v_return_compare c JOIN workspace.tp360_poc.tp_taxpayer t USING (tin_token)\n",
         "WHERE c.tax_period = 202412 AND c.delta <> 0 AND t.case_group IN ('HERO_A', 'HERO_B')\n",
-        "ORDER BY taxpayer, CASE WHEN c.form = '1040' THEN 2 ELSE 1 END, c.form, c.line\n"
+        "ORDER BY taxpayer, c.form_sort, c.line_sort, c.line, c.sub_id\n"
       ]
     },
     {

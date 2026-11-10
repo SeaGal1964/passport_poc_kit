@@ -165,7 +165,7 @@ const SIG_TEXT = {
 const SEV = {SG10_REPEAT_ISSUE:"MEDIUM",SG04_LEVY_BARRED_OIC_PENDING:"MEDIUM",SG05_REPEAT_IA_DEFAULT:"MEDIUM",SG07_REP_CLAIM_NO_AGGREGATION_ELECTION:"MEDIUM",SG09_ENTITY_INTEREST_NOT_ON_433:"MEDIUM"};
 const ORIGIN = {MEF:"MeF",ATTACHMENT_EXTRACT:"Attachment extract",RVE_SUPPLEMENT:"RVE supplement",EXAMINER_ADJUSTMENT:"Examiner adjustment",COMPUTED:"Computed"};
 const BRANCH = {A:"A · resolved from data",B:"B · not a taxpayer issue",C:"C · needs the taxpayer"};
-const FORM_ORDER = ["W2","SCH_B","F8949","SCH_D","SCH_C","SCH_E","F8582","SCH_A","SCH_SE","SCH_8812","RVE_SUPP","1040"];
+const FORM_ORDER = ["1040","SCH_1","SCH_2","SCH_3","SCH_A","SCH_B","SCH_C","SCH_D","SCH_E","SCH_SE","SCH_8812","F8582","F8949","W2","RVE_SUPP"];
 const FORM_NAME = {W2:"W-2",SCH_B:"Schedule B",F8949:"Form 8949",SCH_D:"Schedule D",SCH_C:"Schedule C",SCH_E:"Schedule E",F8582:"Form 8582",SCH_A:"Schedule A",SCH_SE:"Schedule SE",SCH_8812:"Schedule 8812",RVE_SUPP:"RVE supplements (not in MeF)","1040":"Form 1040"};
 
 let cur = "A", stage = 0, snapSel = {};
@@ -361,7 +361,8 @@ function s5(){
 /* ---------- Stage 6 ---------- */
 function s6(){
   const c = C(), m = c.meta;
-  const ex = c.adjustments.filter(a=>a.adjustment_kind==="EXAMINER"), co = c.adjustments.filter(a=>a.adjustment_kind==="COMPUTED");
+  const byFormLine = (a,b)=>FORM_ORDER.indexOf(a.form)-FORM_ORDER.indexOf(b.form) || lineKey(a.line)-lineKey(b.line);
+  const ex = c.adjustments.filter(a=>a.adjustment_kind==="EXAMINER").sort(byFormLine), co = c.adjustments.filter(a=>a.adjustment_kind==="COMPUTED").sort(byFormLine);
   const row = a => `<tr><td>${esc(FORM_NAME[a.form]||a.form)} ${esc(a.line)}</td><td>${esc(a.line_desc)}</td><td class="n">${money(a.as_filed)}</td><td class="n">${signed(a.adjustment)}</td><td class="n"><b>${money(a.as_adjusted)}</b></td></tr>`;
   const taxRows = c.tax.map(t=>`<tr class="${t.delta?'chg':''}"><td>${esc(t.line)}</td><td>${esc(t.desc)}</td><td class="n">${money(t.filed)}</td><td class="n">${signed(t.delta)}</td><td class="n">${money(t.adjusted)}</td></tr>`).join("");
   const effects = c.effects.map(e=>`<tr><td><b>${esc(e[0])}</b></td><td>${esc(e[1])}</td><td>${status(e[2])}</td></tr>`).join("");
