@@ -323,7 +323,7 @@ def generate(ctx):
                     item=f"{ISSUE_CODES[cd][3]} · {ISSUE_CODES[cd][0].split(' — ')[0]}", irp_amount=irp, return_ref=f"{form} {ln}",
                     return_amount=0, delta=-irp, branch="A" if after != before else "B", disposition=disp,
                     note="Closed case" + ("" if after != before else " — taxpayer explained; reported elsewhere"),
-                    variance_type="IRP_MISMATCH", root_cause="TAXPAYER_ISSUE" if after != before else "IRP_LIMITATION", issue_code=cd)
+                    variance_type="IRP_MISMATCH", root_cause="TAXPAYER_ISSUE" if after != before else "REPORTED_ELSEWHERE", issue_code=cd)
         for key, form, ln in [(k, f, l) for k, f, l in L1040_KEYS]:
             if final[key] != filed[key]:
                 n["adj"] += 1

@@ -66,7 +66,8 @@ individual returns.
 - "Most adjusted lines" means source lines: use `v_line_adjustment_frequency` (examiner adjustments only; Form 1040
   lines are computed from them).
 - "Prior audit history" means `v_prior_audit_history` for that taxpayer. "No-change rate" is `v_issue_outcomes.no_change_pct`.
-- "Variances" means `tp_rri_finding` / `v_variance_root_causes`; group by `root_cause` for "why".
+- "Variances" means `tp_rri_finding` / `v_variance_root_causes`; group by `root_cause` for "why". Root-cause meanings are in
+  `tp_root_cause`. Form 8949 line 1d is proceeds and line 1e is basis.
 - **Rates and small samples:** when ranking rates (no-change %, adjusted %, sustained %), include only groups with at least
   10 cases unless the user asks otherwise, and always show the counts next to the rate.
 - **Closed-case figures are synthetic and illustrative** (computed with TY2024 parameters). Say so in one line whenever you

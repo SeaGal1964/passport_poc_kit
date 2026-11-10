@@ -5,4 +5,5 @@ CALCULATOR_DEFECT,B,The recompute engine handles the line incorrectly; never an 
 KEYING_ARTIFACT,B,"Data entry into the calculator (plug values, overrides) produces the variance"
 INTERPRETIVE_POSITION,B,A reasonable reporting position the calculator does not model
 IRP_LIMITATION,B,The information return itself is incomplete (e.g. basis not reported)
+REPORTED_ELSEWHERE,B,"The income is on the return under another line, schedule or payer name"
 MATCHED,A,No variance — information return and return agree

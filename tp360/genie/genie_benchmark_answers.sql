@@ -99,7 +99,7 @@ FROM {{catalog}}.{{schema}}.v_issue_outcomes
 WHERE times_raised >= 10
 ORDER BY no_change_pct DESC;
 
--- Q17. What are the most common variances on Form 1040 cases and their root causes?
+-- Q17. Group the variances on Form 1040 cases by root cause and variance type, with the number of findings in each.
 SELECT root_cause, variance_type, sum(findings) AS findings
 FROM {{catalog}}.{{schema}}.v_variance_root_causes
 GROUP BY root_cause, variance_type
