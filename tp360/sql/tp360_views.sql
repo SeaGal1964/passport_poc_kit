@@ -343,7 +343,7 @@ LEFT JOIN tp_line_catalog l9 ON l9.form = l8.rolls_to_form AND l9.line = l8.roll
 CREATE OR REPLACE VIEW v_repeat_issues AS
 SELECT y.tin_token, t.display_name, y.issue_code, ic.issue_name,
        count(*) AS years_adjusted, min(y.yr) AS first_year, max(y.yr) AS last_year,
-       concat_ws(', ', collect_list(CAST(y.yr AS STRING))) AS tax_years
+       concat_ws('; ', collect_list(CAST(y.yr AS STRING))) AS tax_years
 FROM v_adjusted_issue_years y
 JOIN tp_taxpayer t ON t.tin_token = y.tin_token
 LEFT JOIN tp_issue_code ic ON ic.issue_code = y.issue_code
