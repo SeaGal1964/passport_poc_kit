@@ -23,12 +23,12 @@
       "name": "ds_hero_modules",
       "displayName": "Modules \u2014 hero",
       "queryLines": [
-        "SELECT substr(CAST(m.tax_period AS STRING), 1, 4) AS tax_year, m.assessed_balance AS balance,\n",
+        "SELECT CAST(m.tax_period AS STRING) AS tax_period, m.assessed_balance AS balance,\n",
         "       CAST(m.csed AS STRING) AS csed, CASE WHEN c.suspended_ind = 'Y' THEN 'Suspended' ELSE 'Running' END AS csed_status\n",
         "FROM workspace.tp360_poc.tp_tax_module m JOIN workspace.tp360_poc.tp_taxpayer t USING (tin_token)\n",
         "LEFT JOIN workspace.tp360_poc.tp_statutory_clock c ON c.module_id = m.module_id AND c.clock_type = 'CSED'\n",
         "WHERE t.display_name = 'Marisol T. Vance' AND m.assessed_balance > 0\n",
-        "ORDER BY tax_year\n"
+        "ORDER BY tax_period\n"
       ]
     },
     {
@@ -45,10 +45,10 @@
       "name": "ds_hero_history",
       "displayName": "Prior audit history \u2014 hero",
       "queryLines": [
-        "SELECT substr(CAST(tax_period AS STRING), 1, 4) AS tax_year, program, outcome,\n",
+        "SELECT CAST(tax_period AS STRING) AS tax_period, program, outcome,\n",
         "       CAST(closed_date AS STRING) AS closed, deficiency, issues\n",
         "FROM workspace.tp360_poc.v_prior_audit_history WHERE display_name = 'Marisol T. Vance'\n",
-        "ORDER BY tax_year\n"
+        "ORDER BY tax_period\n"
       ]
     },
     {
@@ -639,8 +639,8 @@
                   "datasetName": "ds_hero_modules",
                   "fields": [
                     {
-                      "name": "tax_year",
-                      "expression": "`tax_year`"
+                      "name": "tax_period",
+                      "expression": "`tax_period`"
                     },
                     {
                       "name": "balance",
@@ -665,7 +665,7 @@
               "encodings": {
                 "columns": [
                   {
-                    "fieldName": "tax_year",
+                    "fieldName": "tax_period",
                     "booleanValues": [
                       "false",
                       "true"
@@ -682,14 +682,14 @@
                     "displayAs": "string",
                     "visible": true,
                     "order": 100000,
-                    "title": "tax year",
+                    "title": "tax period",
                     "allowSearch": false,
                     "alignContent": "left",
                     "allowHTML": false,
                     "highlightLinks": false,
                     "useMonospaceFont": false,
                     "preserveWhitespace": false,
-                    "displayName": "tax year"
+                    "displayName": "tax period"
                   },
                   {
                     "fieldName": "balance",
@@ -804,8 +804,8 @@
                   "datasetName": "ds_hero_history",
                   "fields": [
                     {
-                      "name": "tax_year",
-                      "expression": "`tax_year`"
+                      "name": "tax_period",
+                      "expression": "`tax_period`"
                     },
                     {
                       "name": "program",
@@ -838,7 +838,7 @@
               "encodings": {
                 "columns": [
                   {
-                    "fieldName": "tax_year",
+                    "fieldName": "tax_period",
                     "booleanValues": [
                       "false",
                       "true"
@@ -855,14 +855,14 @@
                     "displayAs": "string",
                     "visible": true,
                     "order": 100000,
-                    "title": "tax year",
+                    "title": "tax period",
                     "allowSearch": false,
                     "alignContent": "left",
                     "allowHTML": false,
                     "highlightLinks": false,
                     "useMonospaceFont": false,
                     "preserveWhitespace": false,
-                    "displayName": "tax year"
+                    "displayName": "tax period"
                   },
                   {
                     "fieldName": "program",
