@@ -96,3 +96,9 @@ SELECT count(DISTINCT b.tin_token) AS taxpayers, sum(b.balance) AS undisclosed_b
 FROM {{catalog}}.{{schema}}.tp_bank_account b
 WHERE b.disclosed_on_433 = 'N'
   AND b.tin_token IN (SELECT tin_token FROM {{catalog}}.{{schema}}.tp_compliance_episode WHERE episode_type = 'OIC' AND closed_date IS NULL);
+
+-- E12. By form, how many adjustments are there and what is the average adjustment?
+SELECT form, sum(adjustments) AS adjustments, round(sum(total_abs_adjustment) / sum(adjustments), 0) AS avg_abs_adjustment
+FROM {{catalog}}.{{schema}}.v_line_adjustment_frequency
+GROUP BY form
+ORDER BY adjustments DESC;

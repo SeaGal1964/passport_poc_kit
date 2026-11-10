@@ -43,6 +43,8 @@ individual returns.
   accounts) from the source tables such as `tp_bank_account`, never by joining to signal rows.
   `v_tp_signal_evidence` lists each piece of evidence separately.
 - Answer in **one query** where possible. Do not run a lookup and then a second query with the tokens it returned.
+- **Averages across groups:** weight by count (sum of totals ÷ sum of counts, e.g. `sum(total_abs_adjustment) / sum(adjustments)`).
+  Never average the averages.
 - `v_related_parties_named.related_balance` is the related party's **total** balance, not its trust fund balance.
 - **Never hard-code TIN tokens** found in an earlier step. Filter by `display_name` (via `tp_taxpayer`) or by the rule itself.
 - Get taxpayer names by joining `tp_taxpayer` on `tin_token`.

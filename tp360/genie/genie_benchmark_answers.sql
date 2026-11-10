@@ -87,7 +87,7 @@ FROM {{catalog}}.{{schema}}.v_tp_signals
 GROUP BY signal_id
 ORDER BY signal_id;
 
--- Q15. Which return lines are adjusted most often in closed cases?
+-- Q15. List the 10 return lines adjusted most often in closed cases, with adjustments, cases and average adjustment.
 SELECT form, line, line_desc, adjustments, cases, avg_abs_adjustment
 FROM {{catalog}}.{{schema}}.v_line_adjustment_frequency
 ORDER BY adjustments DESC
