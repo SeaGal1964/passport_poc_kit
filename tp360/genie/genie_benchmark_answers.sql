@@ -44,9 +44,11 @@ ORDER BY h.display_name, f.item;
 
 -- Q8. Which data on the Thornbury return did RVE add that MeF could not carry?
 SELECT l.form, l.line, l.sub_id, l.line_desc, l.amount, l.data_origin
-FROM {{catalog}}.{{schema}}.tp_return_line l JOIN {{catalog}}.{{schema}}.tp_return_snapshot s USING (snapshot_id)
-WHERE s.tin_token = 'TK200001' AND l.data_origin IN ('RVE_SUPPLEMENT', 'ATTACHMENT_EXTRACT')
-ORDER BY l.line, l.sub_id;
+FROM {{catalog}}.{{schema}}.tp_return_line l
+JOIN {{catalog}}.{{schema}}.tp_return_snapshot s USING (snapshot_id)
+JOIN {{catalog}}.{{schema}}.tp_taxpayer t ON t.tin_token = s.tin_token
+WHERE t.display_name = 'Marcus Thornbury' AND l.data_origin IN ('RVE_SUPPLEMENT', 'ATTACHMENT_EXTRACT')
+ORDER BY l.form, l.line, l.sub_id;
 
 -- Q9. List each IDR with its taxpayer, issued, due and response dates, and whether it was answered on time.
 SELECT h.display_name, i.idr_id, i.issued_date, i.due_date, i.response_date,
@@ -85,19 +87,19 @@ FROM {{catalog}}.{{schema}}.v_tp_signals
 GROUP BY signal_id
 ORDER BY signal_id;
 
--- Q15. Which return lines are adjusted most often in closed cases?
+-- Q15. List the 10 return lines adjusted most often in closed cases, with adjustments, cases and average adjustment.
 SELECT form, line, line_desc, adjustments, cases, avg_abs_adjustment
 FROM {{catalog}}.{{schema}}.v_line_adjustment_frequency
 ORDER BY adjustments DESC
 LIMIT 10;
 
--- Q16. Which issues have the highest no-change rate?
+-- Q16. Among issues raised at least 10 times, which have the highest no-change rate?
 SELECT issue_code, issue_name, times_raised, no_change, no_change_pct
 FROM {{catalog}}.{{schema}}.v_issue_outcomes
 WHERE times_raised >= 10
 ORDER BY no_change_pct DESC;
 
--- Q17. What are the most common variances on Form 1040 cases and their root causes?
+-- Q17. Group the variances on Form 1040 cases by root cause and variance type, with the number of findings in each.
 SELECT root_cause, variance_type, sum(findings) AS findings
 FROM {{catalog}}.{{schema}}.v_variance_root_causes
 GROUP BY root_cause, variance_type

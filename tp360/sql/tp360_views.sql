@@ -258,7 +258,8 @@ LEFT JOIN tp_taxpayer t ON t.tin_token = c.tin_token;
 CREATE OR REPLACE VIEW v_line_adjustment_frequency AS
 SELECT a.form, a.line, coalesce(lc.line_desc, max(a.line_desc)) AS line_desc, lc.line_class,
        count(*) AS adjustments, count(DISTINCT a.episode_id) AS cases,
-       sum(a.adjustment) AS net_adjustment, round(avg(abs(a.adjustment)), 0) AS avg_abs_adjustment
+       sum(a.adjustment) AS net_adjustment, sum(abs(a.adjustment)) AS total_abs_adjustment,
+       round(avg(abs(a.adjustment)), 0) AS avg_abs_adjustment
 FROM tp_adjustment a
 LEFT JOIN tp_line_catalog lc ON lc.form = a.form AND lc.line = a.line
 WHERE a.adjustment_kind = 'EXAMINER'

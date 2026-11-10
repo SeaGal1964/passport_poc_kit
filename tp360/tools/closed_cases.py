@@ -126,6 +126,7 @@ def profile(rng, tin):
 
 
 OVERRIDE = {}  # issue_code -> fixed proposed amount (hero back-fill)
+SCALE = {"v": 1.0}  # field exams develop larger issues than correspondence / AUR
 
 
 def apply_issue(rng, p, src, code, tin, frac=1.0):
@@ -139,6 +140,7 @@ def apply_issue(rng, p, src, code, tin, frac=1.0):
     if code in ("IR03", "IR04", "IR10", "IR01", "IR21", "IR23"):
         amt = {"IR03": rng.randrange(300, 6000, 10), "IR04": rng.randrange(400, 8000, 10), "IR10": rng.randrange(3000, 30000, 100),
                "IR01": rng.randrange(4000, 26000, 100), "IR21": rng.randrange(3000, 18000, 100), "IR23": rng.randrange(2000, 25000, 100)}[code]
+        amt = round(amt * SCALE["v"])
         a = sc(amt)
         if code == "IR03": p["interest"] += a
         if code == "IR04": p["dividends"] = p.get("dividends", 0) + a
@@ -148,12 +150,12 @@ def apply_issue(rng, p, src, code, tin, frac=1.0):
             p["sch_e_allowed"] += a; p["passive_income_in_e"] += a
         return form, line, 0, a, amt
     if code == "IR18":
-        proceeds = rng.randrange(2000, 30000, 100)
+        proceeds = round(rng.randrange(2000, 30000, 100) * SCALE["v"])
         gain = round(proceeds * rng.uniform(0.1, 0.6))
         p["stcg"] += sc(gain)
         return form, line, 0, sc(proceeds), proceeds
     if code in ("IR12", "IR30", "EX_SCHC_GROSS_RCPTS"):
-        amt = OVERRIDE.get(code, rng.randrange(3000, 40000, 100))
+        amt = OVERRIDE.get(code, round(rng.randrange(3000, 40000, 100) * SCALE["v"]))
         c["net"] += sc(amt)
         return form, line, src["sch_c_gross"], src["sch_c_gross"] + sc(amt), (amt if code != "EX_SCHC_GROSS_RCPTS" else None)
     key = {"EX_SCHC_VEHICLE": "vehicle", "EX_SCHC_TRAVEL_MEALS": "travel", "EX_SCHC_OTHER_EXP": "other",
@@ -165,7 +167,7 @@ def apply_issue(rng, p, src, code, tin, frac=1.0):
         return form, line, claimed, claimed - dis, None
     if code == "EX_HOBBY_LOSS":
         if c["net"] >= 0:
-            c["net"] = -rng.randrange(6000, 30000, 100)
+            c["net"] = -round(rng.randrange(6000, 30000, 100) * SCALE["v"])
         loss = c["net"]
         c["net"] = loss - sc(loss)
         return form, line, loss, c["net"], None
@@ -176,7 +178,7 @@ def apply_issue(rng, p, src, code, tin, frac=1.0):
         return form, line, claimed, claimed - dis, None
     if code in ("EX_PAL_469", "EX_REP_469C7"):
         if p["sch_e_allowed"] >= -5000:
-            p["sch_e_allowed"] = -rng.randrange(15000, 70000, 100)
+            p["sch_e_allowed"] = -round(rng.randrange(15000, 70000, 100) * SCALE["v"])
         loss = p["sch_e_allowed"]
         allowed = 0 if code == "EX_PAL_469" else round(loss * rng.uniform(0, 0.5), -2)
         p["sch_e_allowed"] = loss + sc(allowed - loss)
@@ -210,8 +212,16 @@ def generate(ctx):
     LAST = "Alder Birch Cove Dell Esker Fenn Glade Holt Isle Jett Knoll Lark Moss Nettle Orr Pike Quarry Reed Sage Thorne Upton Vale Wynn".split()
 
     def run_case(tin, ty, program, outcome=None, issues=None, prof=None, opened=None, closed=None, ep_id=None, selection_src=None, detect=None):
+        SCALE["v"] = 4.0 if (program == "FIELD" and not ep_id) else 1.0
         for attempt in range(25):
             p0, src = prof if (prof and attempt == 0) else (prof if prof else profile(rng, tin))
+            if SCALE["v"] != 1.0 and not prof:
+                src = {k: round(v * SCALE["v"]) for k, v in src.items()}
+                for w in p0["wages"]:
+                    w["amount"] = round(w["amount"] * 2); w["ss_wages"] = min(w["amount"], 168600); w["fed_wh"] = round(w["fed_wh"] * 2.4)
+                for c in p0["sch_c"]:
+                    c["net"] = round(c["net"] * 2.5)
+                p0["est_payments"] = round(p0["est_payments"] * 2.5)
             p0 = copy.deepcopy(p0)
             codes = list(issues or [])
             if not codes:
@@ -323,7 +333,7 @@ def generate(ctx):
                     item=f"{ISSUE_CODES[cd][3]} · {ISSUE_CODES[cd][0].split(' — ')[0]}", irp_amount=irp, return_ref=f"{form} {ln}",
                     return_amount=0, delta=-irp, branch="A" if after != before else "B", disposition=disp,
                     note="Closed case" + ("" if after != before else " — taxpayer explained; reported elsewhere"),
-                    variance_type="IRP_MISMATCH", root_cause="TAXPAYER_ISSUE" if after != before else "IRP_LIMITATION", issue_code=cd)
+                    variance_type="IRP_MISMATCH", root_cause="TAXPAYER_ISSUE" if after != before else "REPORTED_ELSEWHERE", issue_code=cd)
         for key, form, ln in [(k, f, l) for k, f, l in L1040_KEYS]:
             if final[key] != filed[key]:
                 n["adj"] += 1
@@ -388,7 +398,7 @@ def generate(ctx):
             prog2 = prog if rng.random() < 0.7 else pick(rng, [("CORRESPONDENCE", 50), ("FIELD", 50)])
             repeat = [c for c in r["codes"] if c in dict(MIX[prog2])]
             issues2 = [repeat[0]] if repeat and rng.random() < 0.75 else None
-            run_case(tok, ty2, prog2, issues=issues2, selection_src="PRIOR_EXAM_REPEAT" if issues2 and prog2 != "AUR" else None, outcome=None if issues2 is None else pick(rng, [("AGREED", 60), ("DEFAULTED_SNOD", 20), ("UNAGREED_APPEALS", 20)]))
+            run_case(tok, ty2, prog2, issues=issues2, selection_src="PRIOR_EXAM_REPEAT" if issues2 and prog2 != "AUR" else None, outcome=None if issues2 is None else pick(rng, [("AGREED", 60), ("DEFAULTED_SNOD", 20)] + ([] if prog2 == "AUR" else [("UNAGREED_APPEALS", 20)])))
     return n
 
 
