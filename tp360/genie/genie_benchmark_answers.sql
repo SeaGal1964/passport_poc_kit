@@ -93,7 +93,7 @@ FROM {{catalog}}.{{schema}}.v_line_adjustment_frequency
 ORDER BY adjustments DESC
 LIMIT 10;
 
--- Q16. Which issues have the highest no-change rate?
+-- Q16. Among issues raised at least 10 times, which have the highest no-change rate?
 SELECT issue_code, issue_name, times_raised, no_change, no_change_pct
 FROM {{catalog}}.{{schema}}.v_issue_outcomes
 WHERE times_raised >= 10

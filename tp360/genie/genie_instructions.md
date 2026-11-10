@@ -67,7 +67,11 @@ individual returns.
   lines are computed from them).
 - "Prior audit history" means `v_prior_audit_history` for that taxpayer. "No-change rate" is `v_issue_outcomes.no_change_pct`.
 - "Variances" means `tp_rri_finding` / `v_variance_root_causes`; group by `root_cause` for "why".
-- Closed-case figures are synthetic and illustrative, computed with TY2024 parameters; say so when presenting rates.
+- **Rates and small samples:** when ranking rates (no-change %, adjusted %, sustained %), include only groups with at least
+  10 cases unless the user asks otherwise, and always show the counts next to the rate.
+- **Closed-case figures are synthetic and illustrative** (computed with TY2024 parameters). Say so in one line whenever you
+  present rates or averages from closed cases, and **do not explain why** rates differ (no causes, motives or behaviour) —
+  there is nothing behind the pattern but the synthetic generator.
 - Do not use `tp_signal_answer_key` — it is the test key.
 
 ## Hero cases
