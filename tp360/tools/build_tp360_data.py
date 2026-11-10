@@ -485,6 +485,10 @@ for i in range(1, n_ind + 1):
                 item="1099-B · Brokerage (noncovered)", irp_amount=12000, return_ref="F8949 1d", return_amount=12000, delta=0, branch="B",
                 disposition="NOT_A_TAXPAYER_ISSUE", note="Basis reported on 8949", variance_type="IRP_MISMATCH", root_cause="IRP_LIMITATION", issue_code="IR18")
 
+for b in T["tp_bank_account"]:
+    if b["disclosed_on_433"] == "N" and "433" in b["source"]:
+        b["source"] = "1099-INT"
+
 # ==============================================================================================
 # CLOSED CASES (v0.2) + hero A 2024 closure + reference tables
 # ==============================================================================================

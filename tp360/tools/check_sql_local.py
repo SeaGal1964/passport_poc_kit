@@ -19,6 +19,7 @@ sql = open(os.path.join(ROOT, "sql", "tp360_views.sql")).read()
 sql = "\n".join(l for l in sql.splitlines() if not l.strip().startswith("--"))
 con.execute("CREATE MACRO datediff(a, b) AS date_diff('day', CAST(b AS DATE), CAST(a AS DATE))")
 sql = re.sub(r"concat_ws\('; ', collect_list\((.+?)\)\)(\s+AS)", r"string_agg(\1, '; ')\2", sql)
+sql = re.sub(r"concat_ws\(' \| ', collect_set\((.+?)\)\)(\s+AS)", r"string_agg(DISTINCT \1, ' | ')\2", sql)
 for i, st in enumerate([s for s in re.split(r";\s*\n", sql) if s.strip()], 1):
     try:
         con.execute(st)

@@ -39,6 +39,11 @@ individual returns.
   levy barred, repeat IA default, unreported IRP income, REP without election, responsible persons for several entities,
   entity interest not on the 433-A, repeat issue), answer from `v_tp_signals` filtered on that `signal_id`. Do not rebuild
   the rule by hand.
+- `v_tp_signals` has **one row per taxpayer per signal** (evidence combined). Take amounts (balances, counts of
+  accounts) from the source tables such as `tp_bank_account`, never by joining to signal rows.
+  `v_tp_signal_evidence` lists each piece of evidence separately.
+- Answer in **one query** where possible. Do not run a lookup and then a second query with the tokens it returned.
+- `v_related_parties_named.related_balance` is the related party's **total** balance, not its trust fund balance.
 - **Never hard-code TIN tokens** found in an earlier step. Filter by `display_name` (via `tp_taxpayer`) or by the rule itself.
 - Get taxpayer names by joining `tp_taxpayer` on `tin_token`.
 - **Trust fund balance** = `tp_tax_module.assessed_balance` where `mft = 1` (Form 941). Not the entity's total balance.
