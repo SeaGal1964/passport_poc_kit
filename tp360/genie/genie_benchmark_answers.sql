@@ -116,11 +116,10 @@ SELECT detection_source, issues, adjusted, adjusted_pct, total_abs_sustained
 FROM {{catalog}}.{{schema}}.v_detection_mix
 ORDER BY total_abs_sustained DESC;
 
--- Q20. Which taxpayers had the same issue adjusted in more than one year?
-SELECT DISTINCT h.display_name, s.tin_token, s.evidence
-FROM {{catalog}}.{{schema}}.v_tp_signals s JOIN {{catalog}}.{{schema}}.tp_taxpayer h USING (tin_token)
-WHERE s.signal_id = 'SG10_REPEAT_ISSUE'
-ORDER BY h.display_name;
+-- Q20. List each taxpayer who had the same issue adjusted in more than one year, with the issue and the tax years.
+SELECT display_name, tin_token, issue_code, issue_name, years_adjusted, tax_years
+FROM {{catalog}}.{{schema}}.v_repeat_issues
+ORDER BY display_name, issue_code;
 
 -- Q21. Which Form 1040 lines does an unsubstantiated Schedule C car and truck expense flow through?
 SELECT issue_code, issue_name, source_line, rollup_path
