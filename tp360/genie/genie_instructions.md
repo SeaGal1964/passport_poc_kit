@@ -31,6 +31,13 @@ individual returns.
   Views: `v_case_results` (closure + tax computation filed vs examined), `v_line_adjustment_frequency`,
   `v_issue_outcomes`, `v_detection_mix`, `v_variance_root_causes`, `v_prior_audit_history`, `v_issue_to_1040_trace`
   (issue code → source line → rollup to Form 1040).
+- **Prior audit results:** `v_prior_audit_summary` (one row per taxpayer: prior exams, total deficiency, no-change,
+  agreed, appeals and defaulted counts, issues raised and adjusted, repeat issue codes), `v_prior_audit_history` (one row
+  per closed case) and `v_prior_audit_issues` (one row per issue: proposed vs sustained, how found, hours, repeat flag).
+- **Notice history:** `v_notice_history` (one row per notice, letter, IDR or report: issued date, tax periods, treatment,
+  item code, statutory flag, response due and received, `response_status` = RESPONDED, RESPONDED_LATE, NO_RESPONSE,
+  RESPONSE_OPEN, NO_RESPONSE_REQUIRED or UNDELIVERABLE) and `v_notice_summary` (one row per taxpayer). Notice sequences
+  are illustrative; say so if asked whether they reflect IRS practice.
 - SG10 = the same issue code adjusted in two tax years within five years (repeat issue). `v_repeat_issues` lists each
   taxpayer + issue adjusted in two or more years; use it for "which issues repeat".
 
@@ -67,7 +74,7 @@ individual returns.
 - Amounts are whole dollars.
 - "Most adjusted lines" means source lines: use `v_line_adjustment_frequency` (examiner adjustments only; Form 1040
   lines are computed from them).
-- "Prior audit history" means `v_prior_audit_history` for that taxpayer. "No-change rate" is `v_issue_outcomes.no_change_pct`.
+- "Prior audit history" means `v_prior_audit_history` for that taxpayer; "prior audit issues" means `v_prior_audit_issues`. "Notice history" or "notices" means `v_notice_history`; "unanswered notices" means `response_status = 'NO_RESPONSE'`. "No-change rate" is `v_issue_outcomes.no_change_pct`.
 - "Variances" means `tp_rri_finding` / `v_variance_root_causes`; group by `root_cause` for "why". Root-cause meanings are in
   `tp_root_cause`. Form 8949 line 1d is proceeds and line 1e is basis.
 - **Rates and small samples:** when ranking rates (no-change %, adjusted %, sustained %), include only groups with at least

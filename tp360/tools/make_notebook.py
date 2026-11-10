@@ -93,13 +93,16 @@ mm = spark.sql(\"\"\"
 n_mm = mm.count()
 defs = {r["episode_id"]: r["deficiency"] for r in spark.sql("SELECT episode_id, deficiency FROM v_exam_results WHERE episode_id IN ('EP-A-EX24','EP-B-EX24')").collect()}
 bad_cases = spark.sql("SELECT count(*) AS n FROM v_case_results WHERE total_tax_examined - total_tax_filed <> deficiency").first()["n"]
+n_notices = spark.sql("SELECT count(*) AS n FROM v_notice_history").first()["n"]
+n_contact = spark.table("tp_contact_event").count()
+print("notices:", n_notices, "of", n_contact, "contact events")
 print("closed cases:", spark.table("tp_case_closure").count(), "| closure vs tax computation mismatches:", bad_cases)
 print("signal mismatches:", n_mm)
 print("deficiencies:", defs)
 display(spark.sql("SELECT signal_id, count(DISTINCT tin_token) AS taxpayers FROM v_tp_signals GROUP BY signal_id ORDER BY signal_id"))
 if n_mm:
     display(mm)
-if n_mm or bad_cases or defs.get("EP-A-EX24") != 2417 or defs.get("EP-B-EX24") != 11000:
+if n_mm or bad_cases or n_notices != n_contact or defs.get("EP-A-EX24") != 2417 or defs.get("EP-B-EX24") != 11000:
     raise RuntimeError("VALIDATION FAILED")
 print("VALIDATION PASSED")
 """)

@@ -120,3 +120,23 @@ ORDER BY program, cases DESC;
 SELECT display_name, tin_token, issue_code, issue_name, years_adjusted, tax_years
 FROM {{catalog}}.{{schema}}.v_repeat_issues
 ORDER BY display_name, issue_code;
+
+-- E16. Show Marisol T. Vance's notice history, newest first, with the response to each.
+SELECT issued_date, tax_periods, treatment, contact_type, item_code, statutory_flag, response_due, response_received, response_status
+FROM {{catalog}}.{{schema}}.v_notice_history
+WHERE display_name = 'Marisol T. Vance'
+ORDER BY issued_date DESC;
+
+-- E17. Which taxpayers have the most unanswered notices past their response date?
+SELECT display_name, tin_token, unanswered_notices, notices, last_notice_code, last_notice_date
+FROM {{catalog}}.{{schema}}.v_notice_summary
+WHERE unanswered_notices > 0
+ORDER BY unanswered_notices DESC, notices DESC
+LIMIT 20;
+
+-- E18. Show Marisol T. Vance's prior audit results by issue: amount proposed and sustained, and how each issue was found.
+SELECT tax_period, program, outcome, issue_code, issue_name, return_ref, amount_proposed, amount_sustained, issue_status,
+       detection_source, repeat_issue
+FROM {{catalog}}.{{schema}}.v_prior_audit_issues
+WHERE display_name = 'Marisol T. Vance'
+ORDER BY tax_period, abs(amount_sustained) DESC;

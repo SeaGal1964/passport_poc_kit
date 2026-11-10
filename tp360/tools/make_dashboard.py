@@ -12,39 +12,72 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 CAT, SCH = (sys.argv[1], sys.argv[2]) if len(sys.argv) > 2 else ("workspace", "tp360_poc")
 Q = f"{CAT}.{SCH}"
 HERO = "Marisol T. Vance"
+HERO_LABEL = "Marisol T. Vance (TK100001)"
+PICK = "concat(t.display_name, ' (', t.tin_token, ')') = :taxpayer"
 
 DATASETS = {
     # ---- page 1: Taxpayer 360 -------------------------------------------------------------
     "ds_hero_header": ("TP360 header — hero", f"""
-SELECT total_balance, modules_with_balance, signal_count,
-       size(split(open_episodes, '; ')) AS open_episode_count
-FROM {Q}.v_tp360_header WHERE display_name = '{HERO}'"""),
+SELECT t.display_name, t.total_balance, t.modules_with_balance, t.signal_count,
+       coalesce(size(split(t.open_episodes, '; ')), 0) AS open_episode_count
+FROM {Q}.v_tp360_header t WHERE {PICK}"""),
     "ds_hero_signals": ("Signals — hero", f"""
 SELECT s.signal_id, s.severity, s.evidence
 FROM {Q}.v_tp_signals s JOIN {Q}.tp_taxpayer t USING (tin_token)
-WHERE t.display_name = '{HERO}'
+WHERE {PICK}
 ORDER BY CASE s.severity WHEN 'HIGH' THEN 1 ELSE 2 END, s.signal_id"""),
     "ds_hero_modules": ("Modules — hero", f"""
 SELECT CAST(m.tax_period AS STRING) AS tax_period, m.assessed_balance AS balance,
        CAST(m.csed AS STRING) AS csed, CASE WHEN c.suspended_ind = 'Y' THEN 'Suspended' ELSE 'Running' END AS csed_status
 FROM {Q}.tp_tax_module m JOIN {Q}.tp_taxpayer t USING (tin_token)
 LEFT JOIN {Q}.tp_statutory_clock c ON c.module_id = m.module_id AND c.clock_type = 'CSED'
-WHERE t.display_name = '{HERO}' AND m.assessed_balance > 0
+WHERE {PICK} AND m.assessed_balance > 0
 ORDER BY tax_period"""),
     "ds_hero_episodes": ("Open episodes — hero", f"""
 SELECT e.episode_type, e.episode_subtype, e.status, CAST(e.opened_date AS STRING) AS opened
 FROM {Q}.tp_compliance_episode e JOIN {Q}.tp_taxpayer t USING (tin_token)
-WHERE t.display_name = '{HERO}' AND e.closed_date IS NULL
+WHERE {PICK} AND e.closed_date IS NULL
 ORDER BY e.opened_date"""),
-    "ds_hero_history": ("Prior audit history — hero", f"""
-SELECT CAST(tax_period AS STRING) AS tax_period, program, outcome,
-       CAST(closed_date AS STRING) AS closed, deficiency, issues
-FROM {Q}.v_prior_audit_history WHERE display_name = '{HERO}'
+    "ds_hero_history": ("Prior audit results by case — selected taxpayer", f"""
+SELECT CAST(tax_period AS STRING) AS tax_period, program, selection_source, outcome, appeals_outcome,
+       CAST(closed_date AS STRING) AS closed, deficiency, penalty_amount, issues
+FROM {Q}.v_prior_audit_history t WHERE {PICK}
 ORDER BY tax_period"""),
+    "ds_audit_kpis": ("Prior audit summary — selected taxpayer", f"""
+SELECT coalesce(s.prior_exams, 0) AS prior_exams, coalesce(s.total_deficiency, 0) AS total_deficiency,
+       coalesce(s.issues_adjusted, 0) AS issues_adjusted, coalesce(s.repeat_issue_codes, 0) AS repeat_issue_codes
+FROM {Q}.tp_taxpayer t LEFT JOIN {Q}.v_prior_audit_summary s ON s.tin_token = t.tin_token
+WHERE {PICK}"""),
+    "ds_audit_issues": ("Prior audit issues — selected taxpayer", f"""
+SELECT i.tax_period, i.program, i.issue_code, i.issue_name, i.return_ref, i.amount_proposed, i.amount_sustained,
+       i.issue_status, i.detection_source, i.hours_charged, i.repeat_issue
+FROM {Q}.v_prior_audit_issues i JOIN {Q}.tp_taxpayer t ON t.tin_token = i.tin_token
+WHERE {PICK}
+ORDER BY i.tax_period, abs(i.amount_sustained) DESC"""),
+    "ds_notice_kpis": ("Notice summary — selected taxpayer", f"""
+SELECT coalesce(s.notices, 0) AS notices, coalesce(s.statutory_notices, 0) AS statutory_notices,
+       coalesce(s.unanswered_notices, 0) AS unanswered_notices
+FROM {Q}.tp_taxpayer t LEFT JOIN {Q}.v_notice_summary s ON s.tin_token = t.tin_token
+WHERE {PICK}"""),
+    "ds_notice_history": ("Notice history — selected taxpayer", f"""
+SELECT CAST(n.issued_date AS STRING) AS issued, n.tax_periods, n.treatment, n.contact_type, n.item_code,
+       n.statutory_flag, n.recipient, CAST(n.response_due AS STRING) AS response_due,
+       CAST(n.response_received AS STRING) AS received, n.response_status, n.days_to_respond
+FROM {Q}.v_notice_history n JOIN {Q}.tp_taxpayer t ON t.tin_token = n.tin_token
+WHERE {PICK}
+ORDER BY n.issued_date DESC"""),
     "ds_hero_related": ("Related parties with signals — hero", f"""
 SELECT DISTINCT r.related_name, r.hops, r.path, r.via_name, r.related_signals
 FROM {Q}.v_related_parties_named r JOIN {Q}.tp_taxpayer t ON t.tin_token = r.tin_token
-WHERE t.display_name = '{HERO}' AND r.related_signals IS NOT NULL"""),
+WHERE {PICK} AND r.related_signals IS NOT NULL"""),
+    "ds_taxpayer_list": ("Taxpayer picker values", f"""
+SELECT concat(t.display_name, ' (', t.tin_token, ')') AS taxpayer
+FROM {Q}.v_tp360_header t
+WHERE t.entity_type = 'INDIVIDUAL'
+  AND (t.signal_count > 0 OR t.total_balance > 0
+       OR t.tin_token IN (SELECT tin_token FROM {Q}.tp_case_closure)
+       OR t.tin_token IN (SELECT tin_token FROM {Q}.tp_compliance_episode WHERE closed_date IS NULL))
+ORDER BY CASE WHEN t.case_group LIKE 'HERO%' THEN 0 ELSE 1 END, taxpayer"""),
     # ---- page 2: RVE ----------------------------------------------------------------------
     "ds_rve_compare": ("RVE three-column view — 2024 heroes", f"""
 SELECT t.display_name AS taxpayer, c.form, c.line, c.line_desc, c.as_filed, c.as_adjusted, c.delta, c.data_origin
@@ -111,11 +144,12 @@ FROM {Q}.v_issue_to_1040_trace ORDER BY issue_code, role DESC"""),
 # column types for tables: name -> (type, displayAs)
 NUMERIC_HINTS = ("balance", "deficiency", "amount", "count", "cases", "hours", "pct", "per_hour", "adjust", "findings",
                  "issues", "taxpayers", "hops", "raised", "conceded", "no_change", "sustained", "delta", "as_filed",
-                 "as_adjusted", "line_count", "change")
+                 "as_adjusted", "line_count", "change", "notices", "exams", "days_to", "codes")
 
 
 def col_type(name):
-    if name in ("line", "tin_token", "csed", "opened", "closed", "tax_year", "tax_period"):
+    if name in ("line", "tin_token", "csed", "opened", "closed", "tax_year", "tax_period", "tax_periods", "issued",
+                "response_due", "received", "issue_code", "repeat_issue", "issue_status", "issue_name"):
         return "string"
     return "float" if any(h in name for h in NUMERIC_HINTS) else "string"
 
@@ -209,18 +243,62 @@ def hbar(ds, cat, val, title, cat_title, val_title, x, y, w, h):
             "position": {"x": x, "y": y, "width": w, "height": h}}
 
 
+PARAM_DS = ["ds_hero_header", "ds_hero_signals", "ds_hero_modules", "ds_hero_episodes", "ds_hero_history", "ds_hero_related",
+            "ds_audit_kpis", "ds_audit_issues", "ds_notice_kpis", "ds_notice_history"]
+
+
+def dataset(k, v):
+    d = {"name": k, "displayName": v[0], "queryLines": [l + "\n" for l in v[1].strip().splitlines()]}
+    if k in PARAM_DS:
+        d["parameters"] = [{"displayName": "taxpayer", "keyword": "taxpayer", "dataType": "STRING",
+                            "defaultSelection": {"values": {"dataType": "STRING", "values": [{"value": HERO_LABEL}]}}}]
+    return d
+
+
+def picker(x, y, w, h):
+    queries = [{"name": "q_taxpayer_values", "query": {"datasetName": "ds_taxpayer_list",
+                "fields": [{"name": "taxpayer", "expression": "`taxpayer`"}], "disaggregated": False}}]
+    fields = [{"fieldName": "taxpayer", "displayName": "taxpayer", "queryName": "q_taxpayer_values"}]
+    for ds in PARAM_DS:
+        qn = f"p_{ds}_taxpayer"
+        queries.append({"name": qn, "query": {"datasetName": ds, "parameters": [{"name": "taxpayer", "keyword": "taxpayer"}],
+                                              "disaggregated": False}})
+        fields.append({"parameterName": "taxpayer", "queryName": qn})
+    return {"widget": {"name": "f_taxpayer", "queries": queries,
+                       "spec": {"version": 2, "widgetType": "filter-single-select", "encodings": {"fields": fields},
+                                "frame": {"showTitle": True, "title": "Taxpayer"}}},
+            "position": {"x": x, "y": y, "width": w, "height": h}}
+
+
 NOTE = "Fictional taxpayers · synthetic data · not IRS data. Closed-case figures are illustrative (TY2024 parameters)."
 
 p1 = [
-    text([f"## Taxpayer 360 — {HERO}", "Every open episode, balance, signal, prior exam and related party for one taxpayer, read from the UCP canonical tables on EDP.", NOTE], 0, 0, 6, 2),
+    text(["## Taxpayer 360", "Pick a taxpayer: every open episode, balance, signal, prior audit result, notice and related party, read from the UCP canonical tables on EDP. Starts on Marisol T. Vance; try Marcus Thornbury (TK200001) or R. Latimer (TK100050).", NOTE], 0, 0, 4, 2),
+    picker(4, 0, 2, 2),
     counter("ds_hero_header", "total_balance", "Total balance", 0, 2),
     counter("ds_hero_header", "open_episode_count", "Open episodes", 2, 2),
     counter("ds_hero_header", "signal_count", "Signals", 4, 2),
     table("ds_hero_signals", "Signals and their evidence", 0, 4, 6, 5),
     table("ds_hero_episodes", "Open episodes", 0, 9, 3, 4),
     table("ds_hero_modules", "Modules with a balance", 3, 9, 3, 4, {"csed_status": "CSED status", "tax_period": "tax period"}),
-    table("ds_hero_history", "Audit history (closed cases, including TY2024)", 0, 13, 6, 4, {"tax_period": "tax period"}),
-    table("ds_hero_related", "Related parties with signals of their own", 0, 17, 6, 3),
+    text(["### Prior audit results", "Every closed exam and AUR case for this taxpayer: the case-level result AIMS would hold, then each issue with amount proposed vs sustained and how it was found. Repeat issue = the same issue code adjusted in two or more tax years."], 0, 13, 6, 1),
+    counter("ds_audit_kpis", "prior_exams", "Prior exams and AUR cases", 0, 14),
+    counter("ds_audit_kpis", "total_deficiency", "Total deficiency", 2, 14),
+    counter("ds_audit_kpis", "repeat_issue_codes", "Repeat issues", 4, 14),
+    table("ds_hero_history", "Summary — one row per closed case", 0, 16, 6, 4,
+          {"tax_period": "tax period", "selection_source": "selected by", "appeals_outcome": "appeals", "penalty_amount": "penalty"}),
+    table("ds_audit_issues", "Detail — one row per issue", 0, 20, 6, 5,
+          {"tax_period": "tax period", "issue_code": "issue", "issue_name": "description", "return_ref": "return line",
+           "amount_proposed": "proposed", "amount_sustained": "sustained", "issue_status": "status",
+           "detection_source": "how found", "hours_charged": "hours", "repeat_issue": "repeat"}),
+    text(["### Notice history", "Every notice, letter, IDR and report sent, newest first, with the response. Statutory = a notice with legal effect (notice and demand, CP504, LT11/Letter 1058, Letter 3219). Notice sequences are illustrative; item codes and timing are SME to confirm."], 0, 25, 6, 1),
+    counter("ds_notice_kpis", "notices", "Notices and letters sent", 0, 26),
+    counter("ds_notice_kpis", "statutory_notices", "Statutory notices", 2, 26),
+    counter("ds_notice_kpis", "unanswered_notices", "Unanswered past due", 4, 26),
+    table("ds_notice_history", "Notice history (newest first)", 0, 28, 6, 7,
+          {"tax_periods": "tax periods", "contact_type": "type", "item_code": "notice", "statutory_flag": "statutory",
+           "response_due": "response due", "response_status": "response", "days_to_respond": "days to respond"}),
+    table("ds_hero_related", "Related parties with signals of their own", 0, 35, 6, 3),
 ]
 p2 = [
     text(["## Return Viewer Editor — TY2024 heroes", "The as-filed baseline is never overwritten. Each change is versioned and every line says where its data came from: MeF, an attachment extract, an RVE supplement, an examiner adjustment, or the recompute.", NOTE], 0, 0, 6, 2),
@@ -252,7 +330,7 @@ p4 = [
 ]
 
 dash = {
-    "datasets": [{"name": k, "displayName": v[0], "queryLines": [l + "\n" for l in v[1].strip().splitlines()]} for k, v in DATASETS.items()],
+    "datasets": [dataset(k, v) for k, v in DATASETS.items()],
     "pages": [
         {"name": "p_tp360", "displayName": "Taxpayer 360", "layout": p1, "pageType": "PAGE_TYPE_CANVAS"},
         {"name": "p_rve", "displayName": "Return Viewer Editor", "layout": p2, "pageType": "PAGE_TYPE_CANVAS"},

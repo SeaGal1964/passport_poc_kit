@@ -15,6 +15,7 @@ from datetime import date, timedelta
 sys.path.insert(0, os.path.dirname(__file__))
 import hero_cases as H
 import closed_cases
+import notice_history
 from reference_tables import ISSUE_CODES, ISSUE_LINE_MAP, LINE_CATALOG, ROOT_CAUSES
 from tax_engine_ty2024 import compute
 
@@ -37,7 +38,7 @@ COLS = {
     "tp_compliance_episode": "episode_id,tin_token,episode_type,episode_subtype,opened_date,closed_date,status,module_ids",
     "tp_treatment_assignment": "episode_id,function,assignee,start_date,end_date",
     "tp_procedural_overlay": "overlay_id,tin_token,episode_id,overlay_type,effect,authority,start_date,end_date",
-    "tp_contact_event": "contact_id,tin_token,module_ids,episode_id,contact_type,item_code,source_system,statutory_flag,issued_date,delivery_status,response_due,response_received,recipient",
+    "tp_contact_event": "contact_id,tin_token,module_ids,episode_id,contact_type,item_code,source_system,statutory_flag,issued_date,delivery_status,response_due,response_received,recipient,tax_periods",
     "tp_issue": "issue_id,episode_id,tin_token,tax_period,issue_code,description,return_ref,amount_claimed,amount_proposed,amount_sustained,status,detection_source,hours_charged",
     "tp_determination": "determination_id,episode_id,issue_id,tin_token,determination_type,outcome,amount,authority,decided_date,detail",
     "tp_statutory_clock": "clock_id,tin_token,module_id,episode_id,clock_type,start_date,expiry_date,suspended_ind,authority",
@@ -127,7 +128,7 @@ def contact(tin, mods, ep, ctype, code, src, stat, issued, status="DELIVERED", d
     ce += 1
     add("tp_contact_event", contact_id=f"CE{ce:05d}", tin_token=tin, module_ids=mods, episode_id=ep, contact_type=ctype,
         item_code=code, source_system=src, statutory_flag=stat, issued_date=issued, delivery_status=status,
-        response_due=due, response_received=recv, recipient=to)
+        response_due=due, response_received=recv, recipient=to, tax_periods=";".join(m[-6:] for m in mods.split(";")))
 
 contact(A, mod_ids_a, "EP-A-ACS", "NOTICE", "LT11", "ACS", "Y", "2026-01-08", due="2026-02-07")
 contact(A, mod_ids_a, "EP-A-PP", "NOTICE", "CP508C", "PASSPORT", "Y", "2026-03-12")
@@ -509,6 +510,8 @@ for r in LINE_CATALOG:
     add("tp_line_catalog", **dict(zip(COLS["tp_line_catalog"].split(","), r)))
 for rc, (br, desc) in ROOT_CAUSES.items():
     add("tp_root_cause", root_cause=rc, branch=br, description=desc)
+
+nh_count = notice_history.generate(T, add, AS_OF, iso)
 
 # ==============================================================================================
 # ANSWER KEY: expected signals computed in Python (independent of the SQL rules)
