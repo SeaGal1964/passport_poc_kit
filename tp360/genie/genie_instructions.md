@@ -31,7 +31,8 @@ individual returns.
   Views: `v_case_results` (closure + tax computation filed vs examined), `v_line_adjustment_frequency`,
   `v_issue_outcomes`, `v_detection_mix`, `v_variance_root_causes`, `v_prior_audit_history`, `v_issue_to_1040_trace`
   (issue code → source line → rollup to Form 1040).
-- SG10 = the same issue code adjusted in two tax years within five years (repeat issue).
+- SG10 = the same issue code adjusted in two tax years within five years (repeat issue). `v_repeat_issues` lists each
+  taxpayer + issue adjusted in two or more years; use it for "which issues repeat".
 
 ## How to answer
 
@@ -43,6 +44,7 @@ individual returns.
   accounts) from the source tables such as `tp_bank_account`, never by joining to signal rows.
   `v_tp_signal_evidence` lists each piece of evidence separately.
 - Answer in **one query** where possible. Do not run a lookup and then a second query with the tokens it returned.
+- **Compute every number in the final query.** Never reuse figures from earlier answers in the conversation.
 - **Averages across groups:** weight by count (sum of totals ÷ sum of counts, e.g. `sum(total_abs_adjustment) / sum(adjustments)`).
   Never average the averages.
 - `v_related_parties_named.related_balance` is the related party's **total** balance, not its trust fund balance.

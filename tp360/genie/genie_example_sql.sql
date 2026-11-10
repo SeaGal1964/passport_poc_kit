@@ -102,3 +102,16 @@ SELECT form, sum(adjustments) AS adjustments, round(sum(total_abs_adjustment) / 
 FROM {{catalog}}.{{schema}}.v_line_adjustment_frequency
 GROUP BY form
 ORDER BY adjustments DESC;
+
+-- E13. Which issues repeat most often for the same taxpayer?
+SELECT issue_code, issue_name, count(DISTINCT tin_token) AS taxpayers_with_repeat
+FROM {{catalog}}.{{schema}}.v_repeat_issues
+GROUP BY issue_code, issue_name
+ORDER BY taxpayers_with_repeat DESC;
+
+-- E14. Average deficiency, hours and deficiency per hour by program and outcome
+SELECT program, outcome, count(*) AS cases, round(avg(deficiency), 0) AS avg_deficiency,
+       round(avg(total_hours), 1) AS avg_hours, round(sum(deficiency) / sum(total_hours), 0) AS deficiency_per_hour
+FROM {{catalog}}.{{schema}}.v_case_results
+GROUP BY program, outcome
+ORDER BY program, cases DESC;

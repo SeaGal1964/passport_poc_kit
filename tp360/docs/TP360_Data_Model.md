@@ -131,6 +131,7 @@ Interest is computed at assessment and is not modeled. Closed-case computations 
 | `v_detection_mix` | How adjustments were found |
 | `v_variance_root_causes` | Most common variances and their root causes |
 | `v_prior_audit_history` | Every closed case per taxpayer, with its issues |
+| `v_repeat_issues` | Taxpayer + issue code adjusted in two or more tax years |
 | `v_issue_to_1040_trace` | Issue code → source line → rollup path to Form 1040 |
 | `v_related_parties_named` | One- and two-hop relationships with the related party's signals |
 | `v_tp_timeline` | Episodes, contacts, snapshots and determinations in one timeline |

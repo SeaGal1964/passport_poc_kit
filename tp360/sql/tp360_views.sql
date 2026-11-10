@@ -338,3 +338,14 @@ LEFT JOIN tp_line_catalog l6 ON l6.form = l5.rolls_to_form AND l6.line = l5.roll
 LEFT JOIN tp_line_catalog l7 ON l7.form = l6.rolls_to_form AND l7.line = l6.rolls_to_line
 LEFT JOIN tp_line_catalog l8 ON l8.form = l7.rolls_to_form AND l8.line = l7.rolls_to_line
 LEFT JOIN tp_line_catalog l9 ON l9.form = l8.rolls_to_form AND l9.line = l8.rolls_to_line;
+
+-- Repeat issues: the same issue code adjusted for the same taxpayer in more than one tax year
+CREATE OR REPLACE VIEW v_repeat_issues AS
+SELECT y.tin_token, t.display_name, y.issue_code, ic.issue_name,
+       count(*) AS years_adjusted, min(y.yr) AS first_year, max(y.yr) AS last_year,
+       concat_ws(', ', collect_list(CAST(y.yr AS STRING))) AS tax_years
+FROM v_adjusted_issue_years y
+JOIN tp_taxpayer t ON t.tin_token = y.tin_token
+LEFT JOIN tp_issue_code ic ON ic.issue_code = y.issue_code
+GROUP BY y.tin_token, t.display_name, y.issue_code, ic.issue_name
+HAVING count(*) >= 2;
