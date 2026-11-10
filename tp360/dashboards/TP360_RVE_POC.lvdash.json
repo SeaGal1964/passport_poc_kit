@@ -4,9 +4,26 @@
       "name": "ds_hero_header",
       "displayName": "TP360 header \u2014 hero",
       "queryLines": [
-        "SELECT total_balance, modules_with_balance, signal_count,\n",
-        "       size(split(open_episodes, '; ')) AS open_episode_count\n",
-        "FROM workspace.tp360_poc.v_tp360_header WHERE display_name = 'Marisol T. Vance'\n"
+        "SELECT t.display_name, t.total_balance, t.modules_with_balance, t.signal_count,\n",
+        "       coalesce(size(split(t.open_episodes, '; ')), 0) AS open_episode_count\n",
+        "FROM workspace.tp360_poc.v_tp360_header t WHERE concat(t.display_name, ' (', t.tin_token, ')') = :taxpayer\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "taxpayer",
+          "keyword": "taxpayer",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "Marisol T. Vance (TK100001)"
+                }
+              ]
+            }
+          }
+        }
       ]
     },
     {
@@ -15,8 +32,25 @@
       "queryLines": [
         "SELECT s.signal_id, s.severity, s.evidence\n",
         "FROM workspace.tp360_poc.v_tp_signals s JOIN workspace.tp360_poc.tp_taxpayer t USING (tin_token)\n",
-        "WHERE t.display_name = 'Marisol T. Vance'\n",
+        "WHERE concat(t.display_name, ' (', t.tin_token, ')') = :taxpayer\n",
         "ORDER BY CASE s.severity WHEN 'HIGH' THEN 1 ELSE 2 END, s.signal_id\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "taxpayer",
+          "keyword": "taxpayer",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "Marisol T. Vance (TK100001)"
+                }
+              ]
+            }
+          }
+        }
       ]
     },
     {
@@ -27,8 +61,25 @@
         "       CAST(m.csed AS STRING) AS csed, CASE WHEN c.suspended_ind = 'Y' THEN 'Suspended' ELSE 'Running' END AS csed_status\n",
         "FROM workspace.tp360_poc.tp_tax_module m JOIN workspace.tp360_poc.tp_taxpayer t USING (tin_token)\n",
         "LEFT JOIN workspace.tp360_poc.tp_statutory_clock c ON c.module_id = m.module_id AND c.clock_type = 'CSED'\n",
-        "WHERE t.display_name = 'Marisol T. Vance' AND m.assessed_balance > 0\n",
+        "WHERE concat(t.display_name, ' (', t.tin_token, ')') = :taxpayer AND m.assessed_balance > 0\n",
         "ORDER BY tax_period\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "taxpayer",
+          "keyword": "taxpayer",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "Marisol T. Vance (TK100001)"
+                }
+              ]
+            }
+          }
+        }
       ]
     },
     {
@@ -37,8 +88,25 @@
       "queryLines": [
         "SELECT e.episode_type, e.episode_subtype, e.status, CAST(e.opened_date AS STRING) AS opened\n",
         "FROM workspace.tp360_poc.tp_compliance_episode e JOIN workspace.tp360_poc.tp_taxpayer t USING (tin_token)\n",
-        "WHERE t.display_name = 'Marisol T. Vance' AND e.closed_date IS NULL\n",
+        "WHERE concat(t.display_name, ' (', t.tin_token, ')') = :taxpayer AND e.closed_date IS NULL\n",
         "ORDER BY e.opened_date\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "taxpayer",
+          "keyword": "taxpayer",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "Marisol T. Vance (TK100001)"
+                }
+              ]
+            }
+          }
+        }
       ]
     },
     {
@@ -47,8 +115,25 @@
       "queryLines": [
         "SELECT CAST(tax_period AS STRING) AS tax_period, program, outcome,\n",
         "       CAST(closed_date AS STRING) AS closed, deficiency, issues\n",
-        "FROM workspace.tp360_poc.v_prior_audit_history WHERE display_name = 'Marisol T. Vance'\n",
+        "FROM workspace.tp360_poc.v_prior_audit_history t WHERE concat(t.display_name, ' (', t.tin_token, ')') = :taxpayer\n",
         "ORDER BY tax_period\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "taxpayer",
+          "keyword": "taxpayer",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "Marisol T. Vance (TK100001)"
+                }
+              ]
+            }
+          }
+        }
       ]
     },
     {
@@ -57,7 +142,37 @@
       "queryLines": [
         "SELECT DISTINCT r.related_name, r.hops, r.path, r.via_name, r.related_signals\n",
         "FROM workspace.tp360_poc.v_related_parties_named r JOIN workspace.tp360_poc.tp_taxpayer t ON t.tin_token = r.tin_token\n",
-        "WHERE t.display_name = 'Marisol T. Vance' AND r.related_signals IS NOT NULL\n"
+        "WHERE concat(t.display_name, ' (', t.tin_token, ')') = :taxpayer AND r.related_signals IS NOT NULL\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "taxpayer",
+          "keyword": "taxpayer",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "Marisol T. Vance (TK100001)"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ds_taxpayer_list",
+      "displayName": "Taxpayer picker values",
+      "queryLines": [
+        "SELECT concat(t.display_name, ' (', t.tin_token, ')') AS taxpayer\n",
+        "FROM workspace.tp360_poc.v_tp360_header t\n",
+        "WHERE t.entity_type = 'INDIVIDUAL'\n",
+        "  AND (t.signal_count > 0 OR t.total_balance > 0\n",
+        "       OR t.tin_token IN (SELECT tin_token FROM workspace.tp360_poc.tp_case_closure)\n",
+        "       OR t.tin_token IN (SELECT tin_token FROM workspace.tp360_poc.tp_compliance_episode WHERE closed_date IS NULL))\n",
+        "ORDER BY CASE WHEN t.case_group LIKE 'HERO%' THEN 0 ELSE 1 END, taxpayer\n"
       ]
     },
     {
@@ -199,8 +314,8 @@
             "name": "t001",
             "multilineTextboxSpec": {
               "lines": [
-                "## Taxpayer 360 \u2014 Marisol T. Vance",
-                "Every open episode, balance, signal, prior exam and related party for one taxpayer, read from the UCP canonical tables on EDP.",
+                "## Taxpayer 360",
+                "Pick a taxpayer: every open episode, balance, signal, prior exam and related party, read from the UCP canonical tables on EDP. Starts on Marisol T. Vance; try Marcus Thornbury (TK200001) or R. Latimer (TK100050).",
                 "Fictional taxpayers \u00b7 synthetic data \u00b7 not IRS data. Closed-case figures are illustrative (TY2024 parameters)."
               ]
             }
@@ -208,7 +323,152 @@
           "position": {
             "x": 0,
             "y": 0,
-            "width": 6,
+            "width": 4,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "f_taxpayer",
+            "queries": [
+              {
+                "name": "q_taxpayer_values",
+                "query": {
+                  "datasetName": "ds_taxpayer_list",
+                  "fields": [
+                    {
+                      "name": "taxpayer",
+                      "expression": "`taxpayer`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "p_ds_hero_header_taxpayer",
+                "query": {
+                  "datasetName": "ds_hero_header",
+                  "parameters": [
+                    {
+                      "name": "taxpayer",
+                      "keyword": "taxpayer"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "p_ds_hero_signals_taxpayer",
+                "query": {
+                  "datasetName": "ds_hero_signals",
+                  "parameters": [
+                    {
+                      "name": "taxpayer",
+                      "keyword": "taxpayer"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "p_ds_hero_modules_taxpayer",
+                "query": {
+                  "datasetName": "ds_hero_modules",
+                  "parameters": [
+                    {
+                      "name": "taxpayer",
+                      "keyword": "taxpayer"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "p_ds_hero_episodes_taxpayer",
+                "query": {
+                  "datasetName": "ds_hero_episodes",
+                  "parameters": [
+                    {
+                      "name": "taxpayer",
+                      "keyword": "taxpayer"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "p_ds_hero_history_taxpayer",
+                "query": {
+                  "datasetName": "ds_hero_history",
+                  "parameters": [
+                    {
+                      "name": "taxpayer",
+                      "keyword": "taxpayer"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "p_ds_hero_related_taxpayer",
+                "query": {
+                  "datasetName": "ds_hero_related",
+                  "parameters": [
+                    {
+                      "name": "taxpayer",
+                      "keyword": "taxpayer"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "taxpayer",
+                    "displayName": "taxpayer",
+                    "queryName": "q_taxpayer_values"
+                  },
+                  {
+                    "parameterName": "taxpayer",
+                    "queryName": "p_ds_hero_header_taxpayer"
+                  },
+                  {
+                    "parameterName": "taxpayer",
+                    "queryName": "p_ds_hero_signals_taxpayer"
+                  },
+                  {
+                    "parameterName": "taxpayer",
+                    "queryName": "p_ds_hero_modules_taxpayer"
+                  },
+                  {
+                    "parameterName": "taxpayer",
+                    "queryName": "p_ds_hero_episodes_taxpayer"
+                  },
+                  {
+                    "parameterName": "taxpayer",
+                    "queryName": "p_ds_hero_history_taxpayer"
+                  },
+                  {
+                    "parameterName": "taxpayer",
+                    "queryName": "p_ds_hero_related_taxpayer"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Taxpayer"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 2,
             "height": 2
           }
         },
@@ -1011,7 +1271,7 @@
               "withRowNumber": false,
               "frame": {
                 "showTitle": true,
-                "title": "Audit history (closed cases, including TY2024)"
+                "title": "Audit history (closed cases)"
               }
             }
           },
