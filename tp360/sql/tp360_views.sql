@@ -349,3 +349,74 @@ JOIN tp_taxpayer t ON t.tin_token = y.tin_token
 LEFT JOIN tp_issue_code ic ON ic.issue_code = y.issue_code
 GROUP BY y.tin_token, t.display_name, y.issue_code, ic.issue_name
 HAVING count(*) >= 2;
+
+-- --------------------------------------------------------------------------------------------
+-- Notice history: every notice, letter, IDR and report sent to the taxpayer, with the response
+-- --------------------------------------------------------------------------------------------
+CREATE OR REPLACE VIEW v_notice_history AS
+SELECT c.contact_id, c.tin_token, t.display_name, CAST(c.issued_date AS DATE) AS issued_date,
+       CAST(c.tax_periods AS STRING) AS tax_periods,
+       coalesce(e.episode_type, 'BALANCE_DUE') AS treatment, c.contact_type, c.item_code, c.source_system,
+       c.statutory_flag, c.recipient, c.delivery_status,
+       CAST(c.response_due AS DATE) AS response_due, CAST(c.response_received AS DATE) AS response_received,
+       CASE WHEN c.delivery_status = 'UNDELIVERABLE' THEN 'UNDELIVERABLE'
+            WHEN c.response_due IS NULL THEN 'NO_RESPONSE_REQUIRED'
+            WHEN c.response_received IS NOT NULL AND CAST(c.response_received AS DATE) <= CAST(c.response_due AS DATE) THEN 'RESPONDED'
+            WHEN c.response_received IS NOT NULL THEN 'RESPONDED_LATE'
+            WHEN CAST(c.response_due AS DATE) >= a.as_of_date THEN 'RESPONSE_OPEN'
+            ELSE 'NO_RESPONSE' END AS response_status,
+       CASE WHEN c.response_received IS NOT NULL THEN datediff(CAST(c.response_received AS DATE), CAST(c.issued_date AS DATE)) END AS days_to_respond
+FROM tp_contact_event c
+JOIN tp_taxpayer t ON t.tin_token = c.tin_token
+LEFT JOIN tp_compliance_episode e ON e.episode_id = c.episode_id
+CROSS JOIN v_as_of a;
+
+CREATE OR REPLACE VIEW v_notice_summary AS
+SELECT n.tin_token, n.display_name,
+       count(*) AS notices,
+       count_if(n.statutory_flag = 'Y') AS statutory_notices,
+       count_if(datediff(a.as_of_date, n.issued_date) <= 365) AS notices_last_12_months,
+       count_if(n.response_status = 'NO_RESPONSE') AS unanswered_notices,
+       count_if(n.response_status = 'UNDELIVERABLE') AS undeliverable_notices,
+       count(DISTINCT n.treatment) AS treatments,
+       min(n.issued_date) AS first_notice_date,
+       max(n.issued_date) AS last_notice_date,
+       max_by(n.item_code, n.issued_date) AS last_notice_code,
+       datediff(a.as_of_date, max(n.issued_date)) AS days_since_last_notice
+FROM v_notice_history n CROSS JOIN v_as_of a
+GROUP BY n.tin_token, n.display_name, a.as_of_date;
+
+-- --------------------------------------------------------------------------------------------
+-- Prior audit results: one summary row per taxpayer, and one detail row per issue
+-- --------------------------------------------------------------------------------------------
+CREATE OR REPLACE VIEW v_prior_audit_summary AS
+WITH rep AS (SELECT tin_token, count(*) AS repeat_issue_codes FROM v_repeat_issues GROUP BY tin_token)
+SELECT c.tin_token, t.display_name,
+       count(*) AS prior_exams,
+       count(DISTINCT c.tax_period) AS tax_periods_examined,
+       sum(c.deficiency) AS total_deficiency,
+       sum(c.penalty_amount) AS total_penalties,
+       count_if(c.outcome = 'NO_CHANGE') AS no_change_exams,
+       count_if(c.agreed_ind = 'Y') AS agreed_exams,
+       count_if(c.outcome = 'UNAGREED_APPEALS') AS appeals_exams,
+       count_if(c.outcome = 'DEFAULTED_SNOD') AS defaulted_exams,
+       sum(c.issue_count) AS issues_raised,
+       sum(c.adjusted_issue_count) AS issues_adjusted,
+       max(CAST(c.closed_date AS DATE)) AS last_closed_date,
+       coalesce(max(rep.repeat_issue_codes), 0) AS repeat_issue_codes
+FROM tp_case_closure c
+JOIN tp_taxpayer t ON t.tin_token = c.tin_token
+LEFT JOIN rep ON rep.tin_token = c.tin_token
+GROUP BY c.tin_token, t.display_name;
+
+CREATE OR REPLACE VIEW v_prior_audit_issues AS
+WITH rep AS (SELECT DISTINCT tin_token, issue_code FROM v_repeat_issues)
+SELECT i.tin_token, t.display_name, CAST(c.tax_period AS STRING) AS tax_period, c.program, c.outcome,
+       CAST(c.closed_date AS DATE) AS closed_date, i.issue_id, i.issue_code, ic.issue_name, i.description, i.return_ref,
+       i.amount_claimed, i.amount_proposed, i.amount_sustained, i.status AS issue_status, i.detection_source, i.hours_charged,
+       CASE WHEN rep.issue_code IS NOT NULL THEN 'Y' ELSE 'N' END AS repeat_issue
+FROM tp_issue i
+JOIN tp_case_closure c ON c.episode_id = i.episode_id
+JOIN tp_taxpayer t ON t.tin_token = i.tin_token
+LEFT JOIN tp_issue_code ic ON ic.issue_code = i.issue_code
+LEFT JOIN rep ON rep.tin_token = i.tin_token AND rep.issue_code = i.issue_code;

@@ -68,7 +68,7 @@ Interest is computed at assessment and is not modeled. Closed-case computations 
 | `tp_compliance_episode` | The canonical case: ACS, IA, OIC, PASSPORT, EXAM, AUR, FIELD_COLLECTION. Open when closed_date is null. | episode_id, tin_token, episode_type, episode_subtype, opened_date, closed_date, status, module_ids |
 | `tp_treatment_assignment` | Who owns an episode, and when. | episode_id, function, assignee, start_date, end_date |
 | `tp_procedural_overlay` | Conditions that change what treatments may do (OIC pending, Passport certified). | overlay_id, tin_token, episode_id, overlay_type, effect, authority, start_date, end_date |
-| `tp_contact_event` | Notices, letters, IDRs, reports — the home of notice history. | contact_id, tin_token, module_ids, episode_id, contact_type, item_code, source_system, statutory_flag, issued_date, delivery_status, response_due, response_received, recipient |
+| `tp_contact_event` | Notices, letters, IDRs, reports — the home of notice history. | contact_id, tin_token, module_ids, episode_id, contact_type, item_code, source_system, statutory_flag, issued_date, delivery_status, response_due, response_received, recipient, tax_periods |
 | `tp_statutory_clock` | ASED, CSED, OIC deemed-acceptance and similar clocks. | clock_id, tin_token, module_id, episode_id, clock_type, start_date, expiry_date, suspended_ind, authority |
 
 ### Taxpayer 360 context

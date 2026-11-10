@@ -111,12 +111,123 @@
     },
     {
       "name": "ds_hero_history",
-      "displayName": "Prior audit history \u2014 hero",
+      "displayName": "Prior audit results by case \u2014 selected taxpayer",
       "queryLines": [
-        "SELECT CAST(tax_period AS STRING) AS tax_period, program, outcome,\n",
-        "       CAST(closed_date AS STRING) AS closed, deficiency, issues\n",
+        "SELECT CAST(tax_period AS STRING) AS tax_period, program, selection_source, outcome, appeals_outcome,\n",
+        "       CAST(closed_date AS STRING) AS closed, deficiency, penalty_amount, issues\n",
         "FROM workspace.tp360_poc.v_prior_audit_history t WHERE concat(t.display_name, ' (', t.tin_token, ')') = :taxpayer\n",
         "ORDER BY tax_period\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "taxpayer",
+          "keyword": "taxpayer",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "Marisol T. Vance (TK100001)"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ds_audit_kpis",
+      "displayName": "Prior audit summary \u2014 selected taxpayer",
+      "queryLines": [
+        "SELECT coalesce(s.prior_exams, 0) AS prior_exams, coalesce(s.total_deficiency, 0) AS total_deficiency,\n",
+        "       coalesce(s.issues_adjusted, 0) AS issues_adjusted, coalesce(s.repeat_issue_codes, 0) AS repeat_issue_codes\n",
+        "FROM workspace.tp360_poc.tp_taxpayer t LEFT JOIN workspace.tp360_poc.v_prior_audit_summary s ON s.tin_token = t.tin_token\n",
+        "WHERE concat(t.display_name, ' (', t.tin_token, ')') = :taxpayer\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "taxpayer",
+          "keyword": "taxpayer",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "Marisol T. Vance (TK100001)"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ds_audit_issues",
+      "displayName": "Prior audit issues \u2014 selected taxpayer",
+      "queryLines": [
+        "SELECT i.tax_period, i.program, i.issue_code, i.issue_name, i.return_ref, i.amount_proposed, i.amount_sustained,\n",
+        "       i.issue_status, i.detection_source, i.hours_charged, i.repeat_issue\n",
+        "FROM workspace.tp360_poc.v_prior_audit_issues i JOIN workspace.tp360_poc.tp_taxpayer t ON t.tin_token = i.tin_token\n",
+        "WHERE concat(t.display_name, ' (', t.tin_token, ')') = :taxpayer\n",
+        "ORDER BY i.tax_period, abs(i.amount_sustained) DESC\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "taxpayer",
+          "keyword": "taxpayer",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "Marisol T. Vance (TK100001)"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ds_notice_kpis",
+      "displayName": "Notice summary \u2014 selected taxpayer",
+      "queryLines": [
+        "SELECT coalesce(s.notices, 0) AS notices, coalesce(s.statutory_notices, 0) AS statutory_notices,\n",
+        "       coalesce(s.unanswered_notices, 0) AS unanswered_notices\n",
+        "FROM workspace.tp360_poc.tp_taxpayer t LEFT JOIN workspace.tp360_poc.v_notice_summary s ON s.tin_token = t.tin_token\n",
+        "WHERE concat(t.display_name, ' (', t.tin_token, ')') = :taxpayer\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "taxpayer",
+          "keyword": "taxpayer",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "Marisol T. Vance (TK100001)"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ds_notice_history",
+      "displayName": "Notice history \u2014 selected taxpayer",
+      "queryLines": [
+        "SELECT CAST(n.issued_date AS STRING) AS issued, n.tax_periods, n.treatment, n.contact_type, n.item_code,\n",
+        "       n.statutory_flag, n.recipient, CAST(n.response_due AS STRING) AS response_due,\n",
+        "       CAST(n.response_received AS STRING) AS received, n.response_status, n.days_to_respond\n",
+        "FROM workspace.tp360_poc.v_notice_history n JOIN workspace.tp360_poc.tp_taxpayer t ON t.tin_token = n.tin_token\n",
+        "WHERE concat(t.display_name, ' (', t.tin_token, ')') = :taxpayer\n",
+        "ORDER BY n.issued_date DESC\n"
       ],
       "parameters": [
         {
@@ -315,7 +426,7 @@
             "multilineTextboxSpec": {
               "lines": [
                 "## Taxpayer 360",
-                "Pick a taxpayer: every open episode, balance, signal, prior exam and related party, read from the UCP canonical tables on EDP. Starts on Marisol T. Vance; try Marcus Thornbury (TK200001) or R. Latimer (TK100050).",
+                "Pick a taxpayer: every open episode, balance, signal, prior audit result, notice and related party, read from the UCP canonical tables on EDP. Starts on Marisol T. Vance; try Marcus Thornbury (TK200001) or R. Latimer (TK100050).",
                 "Fictional taxpayers \u00b7 synthetic data \u00b7 not IRS data. Closed-case figures are illustrative (TY2024 parameters)."
               ]
             }
@@ -421,6 +532,58 @@
                   ],
                   "disaggregated": false
                 }
+              },
+              {
+                "name": "p_ds_audit_kpis_taxpayer",
+                "query": {
+                  "datasetName": "ds_audit_kpis",
+                  "parameters": [
+                    {
+                      "name": "taxpayer",
+                      "keyword": "taxpayer"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "p_ds_audit_issues_taxpayer",
+                "query": {
+                  "datasetName": "ds_audit_issues",
+                  "parameters": [
+                    {
+                      "name": "taxpayer",
+                      "keyword": "taxpayer"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "p_ds_notice_kpis_taxpayer",
+                "query": {
+                  "datasetName": "ds_notice_kpis",
+                  "parameters": [
+                    {
+                      "name": "taxpayer",
+                      "keyword": "taxpayer"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "p_ds_notice_history_taxpayer",
+                "query": {
+                  "datasetName": "ds_notice_history",
+                  "parameters": [
+                    {
+                      "name": "taxpayer",
+                      "keyword": "taxpayer"
+                    }
+                  ],
+                  "disaggregated": false
+                }
               }
             ],
             "spec": {
@@ -456,6 +619,22 @@
                   {
                     "parameterName": "taxpayer",
                     "queryName": "p_ds_hero_related_taxpayer"
+                  },
+                  {
+                    "parameterName": "taxpayer",
+                    "queryName": "p_ds_audit_kpis_taxpayer"
+                  },
+                  {
+                    "parameterName": "taxpayer",
+                    "queryName": "p_ds_audit_issues_taxpayer"
+                  },
+                  {
+                    "parameterName": "taxpayer",
+                    "queryName": "p_ds_notice_kpis_taxpayer"
+                  },
+                  {
+                    "parameterName": "taxpayer",
+                    "queryName": "p_ds_notice_history_taxpayer"
                   }
                 ]
               },
@@ -1056,7 +1235,144 @@
         },
         {
           "widget": {
-            "name": "tb008",
+            "name": "t008",
+            "multilineTextboxSpec": {
+              "lines": [
+                "### Prior audit results",
+                "Every closed exam and AUR case for this taxpayer: the case-level result AIMS would hold, then each issue with amount proposed vs sustained and how it was found. Repeat issue = the same issue code adjusted in two or more tax years."
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 13,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "c009",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_audit_kpis",
+                  "fields": [
+                    {
+                      "name": "prior_exams",
+                      "expression": "`prior_exams`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "prior_exams",
+                  "displayName": "Prior exams and AUR cases"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Prior exams and AUR cases"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 14,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "c010",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_audit_kpis",
+                  "fields": [
+                    {
+                      "name": "total_deficiency",
+                      "expression": "`total_deficiency`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "total_deficiency",
+                  "displayName": "Total deficiency"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Total deficiency"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 14,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "c011",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_audit_kpis",
+                  "fields": [
+                    {
+                      "name": "repeat_issue_codes",
+                      "expression": "`repeat_issue_codes`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "repeat_issue_codes",
+                  "displayName": "Repeat issues"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Repeat issues"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 14,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "tb012",
             "queries": [
               {
                 "name": "main_query",
@@ -1072,8 +1388,16 @@
                       "expression": "`program`"
                     },
                     {
+                      "name": "selection_source",
+                      "expression": "`selection_source`"
+                    },
+                    {
                       "name": "outcome",
                       "expression": "`outcome`"
+                    },
+                    {
+                      "name": "appeals_outcome",
+                      "expression": "`appeals_outcome`"
                     },
                     {
                       "name": "closed",
@@ -1082,6 +1406,10 @@
                     {
                       "name": "deficiency",
                       "expression": "`deficiency`"
+                    },
+                    {
+                      "name": "penalty_amount",
+                      "expression": "`penalty_amount`"
                     },
                     {
                       "name": "issues",
@@ -1152,7 +1480,7 @@
                     "displayName": "program"
                   },
                   {
-                    "fieldName": "outcome",
+                    "fieldName": "selection_source",
                     "booleanValues": [
                       "false",
                       "true"
@@ -1169,6 +1497,33 @@
                     "displayAs": "string",
                     "visible": true,
                     "order": 100002,
+                    "title": "selected by",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "selected by"
+                  },
+                  {
+                    "fieldName": "outcome",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100003,
                     "title": "outcome",
                     "allowSearch": false,
                     "alignContent": "left",
@@ -1177,6 +1532,33 @@
                     "useMonospaceFont": false,
                     "preserveWhitespace": false,
                     "displayName": "outcome"
+                  },
+                  {
+                    "fieldName": "appeals_outcome",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100004,
+                    "title": "appeals",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "appeals"
                   },
                   {
                     "fieldName": "closed",
@@ -1195,7 +1577,7 @@
                     "type": "string",
                     "displayAs": "string",
                     "visible": true,
-                    "order": 100003,
+                    "order": 100005,
                     "title": "closed",
                     "allowSearch": false,
                     "alignContent": "left",
@@ -1223,7 +1605,7 @@
                     "displayAs": "number",
                     "numberFormat": "#,##0.##",
                     "visible": true,
-                    "order": 100004,
+                    "order": 100006,
                     "title": "deficiency",
                     "allowSearch": false,
                     "alignContent": "right",
@@ -1232,6 +1614,34 @@
                     "useMonospaceFont": false,
                     "preserveWhitespace": false,
                     "displayName": "deficiency"
+                  },
+                  {
+                    "fieldName": "penalty_amount",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "float",
+                    "displayAs": "number",
+                    "numberFormat": "#,##0.##",
+                    "visible": true,
+                    "order": 100007,
+                    "title": "penalty",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "penalty"
                   },
                   {
                     "fieldName": "issues",
@@ -1251,7 +1661,7 @@
                     "displayAs": "number",
                     "numberFormat": "#,##0.##",
                     "visible": true,
-                    "order": 100005,
+                    "order": 100008,
                     "title": "issues",
                     "allowSearch": false,
                     "alignContent": "right",
@@ -1271,20 +1681,923 @@
               "withRowNumber": false,
               "frame": {
                 "showTitle": true,
-                "title": "Audit history (closed cases)"
+                "title": "Summary \u2014 one row per closed case"
               }
             }
           },
           "position": {
             "x": 0,
-            "y": 13,
+            "y": 16,
             "width": 6,
             "height": 4
           }
         },
         {
           "widget": {
-            "name": "tb009",
+            "name": "tb013",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_audit_issues",
+                  "fields": [
+                    {
+                      "name": "tax_period",
+                      "expression": "`tax_period`"
+                    },
+                    {
+                      "name": "program",
+                      "expression": "`program`"
+                    },
+                    {
+                      "name": "issue_code",
+                      "expression": "`issue_code`"
+                    },
+                    {
+                      "name": "issue_name",
+                      "expression": "`issue_name`"
+                    },
+                    {
+                      "name": "return_ref",
+                      "expression": "`return_ref`"
+                    },
+                    {
+                      "name": "amount_proposed",
+                      "expression": "`amount_proposed`"
+                    },
+                    {
+                      "name": "amount_sustained",
+                      "expression": "`amount_sustained`"
+                    },
+                    {
+                      "name": "issue_status",
+                      "expression": "`issue_status`"
+                    },
+                    {
+                      "name": "detection_source",
+                      "expression": "`detection_source`"
+                    },
+                    {
+                      "name": "hours_charged",
+                      "expression": "`hours_charged`"
+                    },
+                    {
+                      "name": "repeat_issue",
+                      "expression": "`repeat_issue`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "tax_period",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100000,
+                    "title": "tax period",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "tax period"
+                  },
+                  {
+                    "fieldName": "program",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100001,
+                    "title": "program",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "program"
+                  },
+                  {
+                    "fieldName": "issue_code",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100002,
+                    "title": "issue",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "issue"
+                  },
+                  {
+                    "fieldName": "issue_name",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100003,
+                    "title": "description",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "description"
+                  },
+                  {
+                    "fieldName": "return_ref",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100004,
+                    "title": "return line",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "return line"
+                  },
+                  {
+                    "fieldName": "amount_proposed",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "float",
+                    "displayAs": "number",
+                    "numberFormat": "#,##0.##",
+                    "visible": true,
+                    "order": 100005,
+                    "title": "proposed",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "proposed"
+                  },
+                  {
+                    "fieldName": "amount_sustained",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "float",
+                    "displayAs": "number",
+                    "numberFormat": "#,##0.##",
+                    "visible": true,
+                    "order": 100006,
+                    "title": "sustained",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "sustained"
+                  },
+                  {
+                    "fieldName": "issue_status",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100007,
+                    "title": "status",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "status"
+                  },
+                  {
+                    "fieldName": "detection_source",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100008,
+                    "title": "how found",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "how found"
+                  },
+                  {
+                    "fieldName": "hours_charged",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "float",
+                    "displayAs": "number",
+                    "numberFormat": "#,##0.##",
+                    "visible": true,
+                    "order": 100009,
+                    "title": "hours",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "hours"
+                  },
+                  {
+                    "fieldName": "repeat_issue",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100010,
+                    "title": "repeat",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "repeat"
+                  }
+                ]
+              },
+              "invisibleColumns": [],
+              "allowHTMLByDefault": false,
+              "itemsPerPage": 25,
+              "paginationSize": "default",
+              "condensed": true,
+              "withRowNumber": false,
+              "frame": {
+                "showTitle": true,
+                "title": "Detail \u2014 one row per issue"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 20,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "t014",
+            "multilineTextboxSpec": {
+              "lines": [
+                "### Notice history",
+                "Every notice, letter, IDR and report sent, newest first, with the response. Statutory = a notice with legal effect (notice and demand, CP504, LT11/Letter 1058, Letter 3219). Notice sequences are illustrative; item codes and timing are SME to confirm."
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 25,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "c015",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_notice_kpis",
+                  "fields": [
+                    {
+                      "name": "notices",
+                      "expression": "`notices`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "notices",
+                  "displayName": "Notices and letters sent"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Notices and letters sent"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 26,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "c016",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_notice_kpis",
+                  "fields": [
+                    {
+                      "name": "statutory_notices",
+                      "expression": "`statutory_notices`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "statutory_notices",
+                  "displayName": "Statutory notices"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Statutory notices"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 26,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "c017",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_notice_kpis",
+                  "fields": [
+                    {
+                      "name": "unanswered_notices",
+                      "expression": "`unanswered_notices`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "unanswered_notices",
+                  "displayName": "Unanswered past due"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Unanswered past due"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 26,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "tb018",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_notice_history",
+                  "fields": [
+                    {
+                      "name": "issued",
+                      "expression": "`issued`"
+                    },
+                    {
+                      "name": "tax_periods",
+                      "expression": "`tax_periods`"
+                    },
+                    {
+                      "name": "treatment",
+                      "expression": "`treatment`"
+                    },
+                    {
+                      "name": "contact_type",
+                      "expression": "`contact_type`"
+                    },
+                    {
+                      "name": "item_code",
+                      "expression": "`item_code`"
+                    },
+                    {
+                      "name": "statutory_flag",
+                      "expression": "`statutory_flag`"
+                    },
+                    {
+                      "name": "recipient",
+                      "expression": "`recipient`"
+                    },
+                    {
+                      "name": "response_due",
+                      "expression": "`response_due`"
+                    },
+                    {
+                      "name": "received",
+                      "expression": "`received`"
+                    },
+                    {
+                      "name": "response_status",
+                      "expression": "`response_status`"
+                    },
+                    {
+                      "name": "days_to_respond",
+                      "expression": "`days_to_respond`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "issued",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100000,
+                    "title": "issued",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "issued"
+                  },
+                  {
+                    "fieldName": "tax_periods",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100001,
+                    "title": "tax periods",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "tax periods"
+                  },
+                  {
+                    "fieldName": "treatment",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100002,
+                    "title": "treatment",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "treatment"
+                  },
+                  {
+                    "fieldName": "contact_type",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100003,
+                    "title": "type",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "type"
+                  },
+                  {
+                    "fieldName": "item_code",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100004,
+                    "title": "notice",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "notice"
+                  },
+                  {
+                    "fieldName": "statutory_flag",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100005,
+                    "title": "statutory",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "statutory"
+                  },
+                  {
+                    "fieldName": "recipient",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100006,
+                    "title": "recipient",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "recipient"
+                  },
+                  {
+                    "fieldName": "response_due",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100007,
+                    "title": "response due",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "response due"
+                  },
+                  {
+                    "fieldName": "received",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100008,
+                    "title": "received",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "received"
+                  },
+                  {
+                    "fieldName": "response_status",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100009,
+                    "title": "response",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "response"
+                  },
+                  {
+                    "fieldName": "days_to_respond",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "float",
+                    "displayAs": "number",
+                    "numberFormat": "#,##0.##",
+                    "visible": true,
+                    "order": 100010,
+                    "title": "days to respond",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "days to respond"
+                  }
+                ]
+              },
+              "invisibleColumns": [],
+              "allowHTMLByDefault": false,
+              "itemsPerPage": 25,
+              "paginationSize": "default",
+              "condensed": true,
+              "withRowNumber": false,
+              "frame": {
+                "showTitle": true,
+                "title": "Notice history (newest first)"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 28,
+            "width": 6,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "tb019",
             "queries": [
               {
                 "name": "main_query",
@@ -1473,7 +2786,7 @@
           },
           "position": {
             "x": 0,
-            "y": 17,
+            "y": 35,
             "width": 6,
             "height": 3
           }
@@ -1487,7 +2800,7 @@
       "layout": [
         {
           "widget": {
-            "name": "t010",
+            "name": "t020",
             "multilineTextboxSpec": {
               "lines": [
                 "## Return Viewer Editor \u2014 TY2024 heroes",
@@ -1505,7 +2818,7 @@
         },
         {
           "widget": {
-            "name": "tb011",
+            "name": "tb021",
             "queries": [
               {
                 "name": "main_query",
@@ -1671,7 +2984,7 @@
         },
         {
           "widget": {
-            "name": "tb012",
+            "name": "tb022",
             "queries": [
               {
                 "name": "main_query",
@@ -1962,7 +3275,7 @@
         },
         {
           "widget": {
-            "name": "tb013",
+            "name": "tb023",
             "queries": [
               {
                 "name": "main_query",
@@ -2283,7 +3596,7 @@
         },
         {
           "widget": {
-            "name": "tb014",
+            "name": "tb024",
             "queries": [
               {
                 "name": "main_query",
@@ -2424,7 +3737,7 @@
       "layout": [
         {
           "widget": {
-            "name": "t015",
+            "name": "t025",
             "multilineTextboxSpec": {
               "lines": [
                 "## Signals across the population",
@@ -2442,7 +3755,7 @@
         },
         {
           "widget": {
-            "name": "c016",
+            "name": "c026",
             "queries": [
               {
                 "name": "main_query",
@@ -2482,7 +3795,7 @@
         },
         {
           "widget": {
-            "name": "c017",
+            "name": "c027",
             "queries": [
               {
                 "name": "main_query",
@@ -2522,7 +3835,7 @@
         },
         {
           "widget": {
-            "name": "c018",
+            "name": "c028",
             "queries": [
               {
                 "name": "main_query",
@@ -2562,7 +3875,7 @@
         },
         {
           "widget": {
-            "name": "b019",
+            "name": "b029",
             "queries": [
               {
                 "name": "main_query",
@@ -2622,7 +3935,7 @@
         },
         {
           "widget": {
-            "name": "tb020",
+            "name": "tb030",
             "queries": [
               {
                 "name": "main_query",
@@ -2888,7 +4201,7 @@
       "layout": [
         {
           "widget": {
-            "name": "t021",
+            "name": "t031",
             "multilineTextboxSpec": {
               "lines": [
                 "## Closed cases \u2014 beyond AIMS",
@@ -2906,7 +4219,7 @@
         },
         {
           "widget": {
-            "name": "c022",
+            "name": "c032",
             "queries": [
               {
                 "name": "main_query",
@@ -2946,7 +4259,7 @@
         },
         {
           "widget": {
-            "name": "c023",
+            "name": "c033",
             "queries": [
               {
                 "name": "main_query",
@@ -2986,7 +4299,7 @@
         },
         {
           "widget": {
-            "name": "c024",
+            "name": "c034",
             "queries": [
               {
                 "name": "main_query",
@@ -3026,7 +4339,7 @@
         },
         {
           "widget": {
-            "name": "b025",
+            "name": "b035",
             "queries": [
               {
                 "name": "main_query",
@@ -3086,7 +4399,7 @@
         },
         {
           "widget": {
-            "name": "b026",
+            "name": "b036",
             "queries": [
               {
                 "name": "main_query",
@@ -3146,7 +4459,7 @@
         },
         {
           "widget": {
-            "name": "tb027",
+            "name": "tb037",
             "queries": [
               {
                 "name": "main_query",
@@ -3504,7 +4817,7 @@
         },
         {
           "widget": {
-            "name": "tb028",
+            "name": "tb038",
             "queries": [
               {
                 "name": "main_query",
@@ -3734,7 +5047,7 @@
         },
         {
           "widget": {
-            "name": "b029",
+            "name": "b039",
             "queries": [
               {
                 "name": "main_query",
@@ -3794,7 +5107,7 @@
         },
         {
           "widget": {
-            "name": "tb030",
+            "name": "tb040",
             "queries": [
               {
                 "name": "main_query",
