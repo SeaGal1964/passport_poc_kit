@@ -25,7 +25,7 @@ FROM {Q}.v_tp_signals s JOIN {Q}.tp_taxpayer t USING (tin_token)
 WHERE t.display_name = '{HERO}'
 ORDER BY CASE s.severity WHEN 'HIGH' THEN 1 ELSE 2 END, s.signal_id"""),
     "ds_hero_modules": ("Modules — hero", f"""
-SELECT CAST(substr(CAST(m.tax_period AS STRING), 1, 4) AS INT) AS tax_year, m.assessed_balance AS balance,
+SELECT substr(CAST(m.tax_period AS STRING), 1, 4) AS tax_year, m.assessed_balance AS balance,
        CAST(m.csed AS STRING) AS csed, CASE WHEN c.suspended_ind = 'Y' THEN 'Suspended' ELSE 'Running' END AS csed_status
 FROM {Q}.tp_tax_module m JOIN {Q}.tp_taxpayer t USING (tin_token)
 LEFT JOIN {Q}.tp_statutory_clock c ON c.module_id = m.module_id AND c.clock_type = 'CSED'
@@ -37,7 +37,7 @@ FROM {Q}.tp_compliance_episode e JOIN {Q}.tp_taxpayer t USING (tin_token)
 WHERE t.display_name = '{HERO}' AND e.closed_date IS NULL
 ORDER BY e.opened_date"""),
     "ds_hero_history": ("Prior audit history — hero", f"""
-SELECT CAST(substr(CAST(tax_period AS STRING), 1, 4) AS INT) AS tax_year, program, outcome,
+SELECT substr(CAST(tax_period AS STRING), 1, 4) AS tax_year, program, outcome,
        CAST(closed_date AS STRING) AS closed, deficiency, issues
 FROM {Q}.v_prior_audit_history WHERE display_name = '{HERO}'
 ORDER BY tax_year"""),
@@ -111,11 +111,11 @@ FROM {Q}.v_issue_to_1040_trace ORDER BY issue_code, role DESC"""),
 # column types for tables: name -> (type, displayAs)
 NUMERIC_HINTS = ("balance", "deficiency", "amount", "count", "cases", "hours", "pct", "per_hour", "adjust", "findings",
                  "issues", "taxpayers", "hops", "raised", "conceded", "no_change", "sustained", "delta", "as_filed",
-                 "as_adjusted", "tax_year", "line_count", "change")
+                 "as_adjusted", "line_count", "change")
 
 
 def col_type(name):
-    if name in ("line", "tin_token", "csed", "opened", "closed", "irp_amount_text"):
+    if name in ("line", "tin_token", "csed", "opened", "closed", "tax_year", "tax_period"):
         return "string"
     return "float" if any(h in name for h in NUMERIC_HINTS) else "string"
 
