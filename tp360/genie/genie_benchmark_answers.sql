@@ -44,9 +44,11 @@ ORDER BY h.display_name, f.item;
 
 -- Q8. Which data on the Thornbury return did RVE add that MeF could not carry?
 SELECT l.form, l.line, l.sub_id, l.line_desc, l.amount, l.data_origin
-FROM {{catalog}}.{{schema}}.tp_return_line l JOIN {{catalog}}.{{schema}}.tp_return_snapshot s USING (snapshot_id)
-WHERE s.tin_token = 'TK200001' AND l.data_origin IN ('RVE_SUPPLEMENT', 'ATTACHMENT_EXTRACT')
-ORDER BY l.line, l.sub_id;
+FROM {{catalog}}.{{schema}}.tp_return_line l
+JOIN {{catalog}}.{{schema}}.tp_return_snapshot s USING (snapshot_id)
+JOIN {{catalog}}.{{schema}}.tp_taxpayer t ON t.tin_token = s.tin_token
+WHERE t.display_name = 'Marcus Thornbury' AND l.data_origin IN ('RVE_SUPPLEMENT', 'ATTACHMENT_EXTRACT')
+ORDER BY l.form, l.line, l.sub_id;
 
 -- Q9. List each IDR with its taxpayer, issued, due and response dates, and whether it was answered on time.
 SELECT h.display_name, i.idr_id, i.issued_date, i.due_date, i.response_date,
