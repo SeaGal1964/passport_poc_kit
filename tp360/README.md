@@ -99,7 +99,8 @@ python tp360/tools/make_data_model_doc.py  # if tables or columns changed
 ## Limits (v0.1)
 
 - Tax figures come from a simplified engine. It uses rate schedules, not the Tax Table, and has no
-  W-2/UBIA limitation or capital-gain rate worksheet. RVE's production recompute is the Thomson Reuters
+  capital-gain rate worksheet. Above the section 199A threshold the QBI deduction is treated as fully limited, since no
+  W-2 wages or UBIA are modeled. RVE's production recompute is the Thomson Reuters
   calculator (FYT in future).
 - MeF element names in `tp_return_line.mef_element` are illustrative. Verify them against the IRS1040
   schema before reuse.

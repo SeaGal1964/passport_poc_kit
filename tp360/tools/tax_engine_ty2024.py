@@ -70,9 +70,10 @@ def compute(ret):
 
     deduction = max(STD[st], ret.get("itemized", 0))
     ti_before_qbi = max(0, agi - deduction)
-    if ti_before_qbi > QBI_THRESHOLD[st]:
-        raise ValueError("QBI above threshold: this simplified engine does not apply W-2/UBIA limits")
-    qbi = sum(max(0, c["net"] - half_se_by_owner.get(c["owner"], 0)) for c in ret.get("sch_c", []) if c.get("qbi", True))
+    # Above the threshold the W-2 wage / UBIA limits apply; with no W-2 wages or UBIA modeled, the deduction is
+    # treated as fully limited (0). Simplification for illustration, stated in the README.
+    over_threshold = ti_before_qbi > QBI_THRESHOLD[st]
+    qbi = 0 if over_threshold else sum(max(0, c["net"] - half_se_by_owner.get(c["owner"], 0)) for c in ret.get("sch_c", []) if c.get("qbi", True))
     qbi_ded = r(min(0.20 * qbi, 0.20 * ti_before_qbi))  # no net capital gain in POC returns
     ti = max(0, ti_before_qbi - qbi_ded)
     tax = r(bracket_tax(ti, st))
