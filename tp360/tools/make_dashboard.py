@@ -25,22 +25,22 @@ FROM {Q}.v_tp_signals s JOIN {Q}.tp_taxpayer t USING (tin_token)
 WHERE t.display_name = '{HERO}'
 ORDER BY CASE s.severity WHEN 'HIGH' THEN 1 ELSE 2 END, s.signal_id"""),
     "ds_hero_modules": ("Modules — hero", f"""
-SELECT substr(CAST(m.tax_period AS STRING), 1, 4) AS tax_year, m.assessed_balance AS balance,
+SELECT CAST(m.tax_period AS STRING) AS tax_period, m.assessed_balance AS balance,
        CAST(m.csed AS STRING) AS csed, CASE WHEN c.suspended_ind = 'Y' THEN 'Suspended' ELSE 'Running' END AS csed_status
 FROM {Q}.tp_tax_module m JOIN {Q}.tp_taxpayer t USING (tin_token)
 LEFT JOIN {Q}.tp_statutory_clock c ON c.module_id = m.module_id AND c.clock_type = 'CSED'
 WHERE t.display_name = '{HERO}' AND m.assessed_balance > 0
-ORDER BY tax_year"""),
+ORDER BY tax_period"""),
     "ds_hero_episodes": ("Open episodes — hero", f"""
 SELECT e.episode_type, e.episode_subtype, e.status, CAST(e.opened_date AS STRING) AS opened
 FROM {Q}.tp_compliance_episode e JOIN {Q}.tp_taxpayer t USING (tin_token)
 WHERE t.display_name = '{HERO}' AND e.closed_date IS NULL
 ORDER BY e.opened_date"""),
     "ds_hero_history": ("Prior audit history — hero", f"""
-SELECT substr(CAST(tax_period AS STRING), 1, 4) AS tax_year, program, outcome,
+SELECT CAST(tax_period AS STRING) AS tax_period, program, outcome,
        CAST(closed_date AS STRING) AS closed, deficiency, issues
 FROM {Q}.v_prior_audit_history WHERE display_name = '{HERO}'
-ORDER BY tax_year"""),
+ORDER BY tax_period"""),
     "ds_hero_related": ("Related parties with signals — hero", f"""
 SELECT DISTINCT r.related_name, r.hops, r.path, r.via_name, r.related_signals
 FROM {Q}.v_related_parties_named r JOIN {Q}.tp_taxpayer t ON t.tin_token = r.tin_token
@@ -218,8 +218,8 @@ p1 = [
     counter("ds_hero_header", "signal_count", "Signals", 4, 2),
     table("ds_hero_signals", "Signals and their evidence", 0, 4, 6, 5),
     table("ds_hero_episodes", "Open episodes", 0, 9, 3, 4),
-    table("ds_hero_modules", "Modules with a balance", 3, 9, 3, 4, {"csed_status": "CSED status"}),
-    table("ds_hero_history", "Audit history (closed cases, including TY2024)", 0, 13, 6, 4),
+    table("ds_hero_modules", "Modules with a balance", 3, 9, 3, 4, {"csed_status": "CSED status", "tax_period": "tax period"}),
+    table("ds_hero_history", "Audit history (closed cases, including TY2024)", 0, 13, 6, 4, {"tax_period": "tax period"}),
     table("ds_hero_related", "Related parties with signals of their own", 0, 17, 6, 3),
 ]
 p2 = [
