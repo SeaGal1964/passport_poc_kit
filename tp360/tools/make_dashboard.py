@@ -83,7 +83,7 @@ ORDER BY CASE WHEN t.case_group LIKE 'HERO%' THEN 0 ELSE 1 END, taxpayer"""),
 SELECT t.display_name AS taxpayer, c.form, c.line, c.line_desc, c.as_filed, c.as_adjusted, c.delta, c.data_origin
 FROM {Q}.v_return_compare c JOIN {Q}.tp_taxpayer t USING (tin_token)
 WHERE c.tax_period = 202412 AND c.delta <> 0 AND t.case_group IN ('HERO_A', 'HERO_B')
-ORDER BY taxpayer, CASE WHEN c.form = '1040' THEN 2 ELSE 1 END, c.form, c.line"""),
+ORDER BY taxpayer, c.form_sort, c.line_sort, c.line, c.sub_id"""),
     "ds_rve_origin": ("Where return data came from — 2024 heroes", f"""
 SELECT concat(t.display_name, ' · ', o.version_type) AS snapshot, o.data_origin, o.line_count
 FROM {Q}.v_rve_data_origin o JOIN {Q}.tp_taxpayer t USING (tin_token)

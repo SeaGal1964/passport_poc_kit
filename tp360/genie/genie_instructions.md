@@ -69,7 +69,8 @@ individual returns.
 - Identify taxpayers by `display_name`; show `tin_token` alongside, never invent a TIN.
 - "Open" means `closed_date IS NULL`. "Pending offer" means an OIC episode that is open.
 - The deficiency for an exam is `v_exam_results.deficiency` (the change in Form 1040 line 24).
-- For "what changed on the return", use `v_return_compare` with `delta <> 0`.
+- For "what changed on the return", use `v_return_compare` with `delta <> 0`. Whenever you list return lines, order them
+  by `form_sort`, `line_sort`, `line` (Form 1040 first, then Schedules 1–3, lettered schedules, then forms by number).
 - `tax_period` is YYYYMM (202412 = tax year 2024).
 - Amounts are whole dollars.
 - "Most adjusted lines" means source lines: use `v_line_adjustment_frequency` (examiner adjustments only; Form 1040

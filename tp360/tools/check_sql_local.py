@@ -48,7 +48,7 @@ checks = {
     "Latimer 2-hop": con.execute("SELECT count(*) FROM v_related_parties_named WHERE tin_token='TK100001' AND hops=2").fetchone()[0],
 }
 print(checks)
-print(con.execute("SELECT form,line,sub_id,line_desc,as_filed,as_adjusted,delta,data_origin FROM v_return_compare WHERE tin_token='TK100001' AND delta<>0 ORDER BY form,line").fetchall())
+print(con.execute("SELECT form,line,sub_id,line_desc,as_filed,as_adjusted,delta,data_origin FROM v_return_compare WHERE tin_token='TK100001' AND delta<>0 ORDER BY form_sort,line_sort,line").fetchall())
 print(con.execute("SELECT related_name, path, via_name, related_signals FROM v_related_parties_named WHERE tin_token='TK100001' AND hops=2").fetchall())
 bench = (open(os.path.join(ROOT, "genie", "genie_benchmark_answers.sql")).read()
          + "\n" + open(os.path.join(ROOT, "genie", "genie_example_sql.sql")).read()).replace("{{catalog}}.{{schema}}.", "")

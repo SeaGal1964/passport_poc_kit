@@ -49,7 +49,7 @@ ORDER BY t.display_name;
 SELECT c.form, c.line, c.line_desc, c.as_filed, c.as_adjusted, c.delta, c.data_origin
 FROM {{catalog}}.{{schema}}.v_return_compare c JOIN {{catalog}}.{{schema}}.tp_taxpayer t USING (tin_token)
 WHERE t.display_name = 'Marisol T. Vance' AND c.tax_period = 202412 AND c.delta <> 0
-ORDER BY CASE WHEN c.form = '1040' THEN 2 ELSE 1 END, c.form, c.line;
+ORDER BY c.form_sort, c.line_sort, c.line;
 
 -- E5. List each IDR with its taxpayer, issued, due and response dates, and whether it was answered on time.
 SELECT t.display_name, i.idr_id, i.issued_date, i.due_date, i.response_date,
