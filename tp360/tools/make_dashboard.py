@@ -275,7 +275,7 @@ NOTE = "Fictional taxpayers · synthetic data · not IRS data. Closed-case figur
 p1 = [
     text(["## Taxpayer 360", "Pick a taxpayer: every open episode, balance, signal, prior audit result, notice and related party, read from the UCP canonical tables on EDP. Starts on Marisol T. Vance; try Marcus Thornbury (TK200001) or R. Latimer (TK100050).", NOTE], 0, 0, 4, 2),
     picker(4, 0, 2, 2),
-    counter("ds_hero_header", "total_balance", "Total balance", 0, 2),
+    counter("ds_hero_header", "total_balance", "Total assessed balance (excludes accruals)", 0, 2),
     counter("ds_hero_header", "open_episode_count", "Open episodes", 2, 2),
     counter("ds_hero_header", "signal_count", "Signals", 4, 2),
     table("ds_hero_signals", "Signals and their evidence", 0, 4, 6, 5),
@@ -313,7 +313,7 @@ p3 = [
     counter("ds_sig_kpis", "taxpayers_with_high", "Taxpayers with a HIGH signal", 2, 2),
     counter("ds_sig_kpis", "signal_rows", "Signals firing", 4, 2),
     hbar("ds_sig_by_rule", "signal_id", "taxpayers", "Taxpayers per signal", "Signal", "Taxpayers", 0, 4, 6, 6),
-    table("ds_sig_top", "Taxpayers with the most signals", 0, 10, 6, 7),
+    table("ds_sig_top", "Taxpayers with the most signals", 0, 10, 6, 7, {"total_balance": "assessed balance (excl. accruals)"}),
 ]
 p4 = [
     text(["## Closed cases — beyond AIMS", "AIMS holds the case level. This adds what AIMS does not: issue codes, amount proposed vs sustained, how each adjustment was found, hours per issue, every line adjustment and the tax computation filed vs examined.", NOTE], 0, 0, 6, 2),
