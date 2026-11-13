@@ -675,12 +675,12 @@
               "encodings": {
                 "value": {
                   "fieldName": "total_balance",
-                  "displayName": "Total balance"
+                  "displayName": "Total assessed balance (excludes accruals)"
                 }
               },
               "frame": {
                 "showTitle": true,
-                "title": "Total balance"
+                "title": "Total assessed balance (excludes accruals)"
               }
             }
           },
@@ -4080,14 +4080,14 @@
                     "numberFormat": "#,##0.##",
                     "visible": true,
                     "order": 100003,
-                    "title": "total balance",
+                    "title": "assessed balance (excl. accruals)",
                     "allowSearch": false,
                     "alignContent": "right",
                     "allowHTML": false,
                     "highlightLinks": false,
                     "useMonospaceFont": false,
                     "preserveWhitespace": false,
-                    "displayName": "total balance"
+                    "displayName": "assessed balance (excl. accruals)"
                   },
                   {
                     "fieldName": "signal_count",
