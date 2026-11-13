@@ -3794,6 +3794,22 @@
                       "expression": "`from_version`"
                     },
                     {
+                      "name": "to_version",
+                      "expression": "`to_version`"
+                    },
+                    {
+                      "name": "from_total_tax",
+                      "expression": "`from_total_tax`"
+                    },
+                    {
+                      "name": "to_total_tax",
+                      "expression": "`to_total_tax`"
+                    },
+                    {
+                      "name": "change_in_total_tax",
+                      "expression": "`change_in_total_tax`"
+                    },
+                    {
                       "name": "note",
                       "expression": "`note`"
                     }
@@ -3835,7 +3851,7 @@
                     "displayName": "from"
                   },
                   {
-                    "fieldName": "note",
+                    "fieldName": "to_version",
                     "booleanValues": [
                       "false",
                       "true"
@@ -3852,6 +3868,117 @@
                     "displayAs": "string",
                     "visible": true,
                     "order": 100001,
+                    "title": "to",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "to"
+                  },
+                  {
+                    "fieldName": "from_total_tax",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "float",
+                    "displayAs": "number",
+                    "numberFormat": "#,##0.##",
+                    "visible": true,
+                    "order": 100002,
+                    "title": "total tax \u2014 from",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "total tax \u2014 from"
+                  },
+                  {
+                    "fieldName": "to_total_tax",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "float",
+                    "displayAs": "number",
+                    "numberFormat": "#,##0.##",
+                    "visible": true,
+                    "order": 100003,
+                    "title": "total tax \u2014 to",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "total tax \u2014 to"
+                  },
+                  {
+                    "fieldName": "change_in_total_tax",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "float",
+                    "displayAs": "number",
+                    "numberFormat": "#,##0.##",
+                    "visible": true,
+                    "order": 100004,
+                    "title": "change",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "change"
+                  },
+                  {
+                    "fieldName": "note",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100005,
                     "title": "note",
                     "allowSearch": false,
                     "alignContent": "left",
@@ -3892,28 +4019,32 @@
                   "datasetName": "ds_rve_compare",
                   "fields": [
                     {
-                      "name": "(SELECT * FROM v WHERE version_type = (SELECT to_version FROM tv))\nSELECT coalesce(b.form",
-                      "expression": "`(SELECT * FROM v WHERE version_type = (SELECT to_version FROM tv))\nSELECT coalesce(b.form`"
+                      "name": "form",
+                      "expression": "`form`"
                     },
                     {
-                      "name": "form, coalesce(b.line",
-                      "expression": "`form, coalesce(b.line`"
+                      "name": "line",
+                      "expression": "`line`"
                     },
                     {
-                      "name": "line, coalesce(b.line_desc",
-                      "expression": "`line, coalesce(b.line_desc`"
+                      "name": "line_desc",
+                      "expression": "`line_desc`"
                     },
                     {
-                      "name": "to_amount, coalesce(b.amount",
-                      "expression": "`to_amount, coalesce(b.amount`"
+                      "name": "from_amount",
+                      "expression": "`from_amount`"
                     },
                     {
-                      "name": "amount",
-                      "expression": "`amount`"
+                      "name": "to_amount",
+                      "expression": "`to_amount`"
                     },
                     {
-                      "name": "change,\n       b.data_origin",
-                      "expression": "`change,\n       b.data_origin`"
+                      "name": "change",
+                      "expression": "`change`"
+                    },
+                    {
+                      "name": "data_origin",
+                      "expression": "`data_origin`"
                     }
                   ],
                   "disaggregated": true
@@ -3926,7 +4057,7 @@
               "encodings": {
                 "columns": [
                   {
-                    "fieldName": "(SELECT * FROM v WHERE version_type = (SELECT to_version FROM tv))\nSELECT coalesce(b.form",
+                    "fieldName": "form",
                     "booleanValues": [
                       "false",
                       "true"
@@ -3943,17 +4074,17 @@
                     "displayAs": "string",
                     "visible": true,
                     "order": 100000,
-                    "title": "(SELECT * FROM v WHERE version type = (SELECT to version FROM tv))\nSELECT coalesce(b.form",
+                    "title": "form",
                     "allowSearch": false,
                     "alignContent": "left",
                     "allowHTML": false,
                     "highlightLinks": false,
                     "useMonospaceFont": false,
                     "preserveWhitespace": false,
-                    "displayName": "(SELECT * FROM v WHERE version type = (SELECT to version FROM tv))\nSELECT coalesce(b.form"
+                    "displayName": "form"
                   },
                   {
-                    "fieldName": "form, coalesce(b.line",
+                    "fieldName": "line",
                     "booleanValues": [
                       "false",
                       "true"
@@ -3970,17 +4101,17 @@
                     "displayAs": "string",
                     "visible": true,
                     "order": 100001,
-                    "title": "form, coalesce(b.line",
+                    "title": "line",
                     "allowSearch": false,
                     "alignContent": "left",
                     "allowHTML": false,
                     "highlightLinks": false,
                     "useMonospaceFont": false,
                     "preserveWhitespace": false,
-                    "displayName": "form, coalesce(b.line"
+                    "displayName": "line"
                   },
                   {
-                    "fieldName": "line, coalesce(b.line_desc",
+                    "fieldName": "line_desc",
                     "booleanValues": [
                       "false",
                       "true"
@@ -3997,17 +4128,17 @@
                     "displayAs": "string",
                     "visible": true,
                     "order": 100002,
-                    "title": "line, coalesce(b.line desc",
+                    "title": "description",
                     "allowSearch": false,
                     "alignContent": "left",
                     "allowHTML": false,
                     "highlightLinks": false,
                     "useMonospaceFont": false,
                     "preserveWhitespace": false,
-                    "displayName": "line, coalesce(b.line desc"
+                    "displayName": "description"
                   },
                   {
-                    "fieldName": "to_amount, coalesce(b.amount",
+                    "fieldName": "from_amount",
                     "booleanValues": [
                       "false",
                       "true"
@@ -4025,17 +4156,17 @@
                     "numberFormat": "#,##0.##",
                     "visible": true,
                     "order": 100003,
-                    "title": "to amount, coalesce(b.amount",
+                    "title": "from version",
                     "allowSearch": false,
                     "alignContent": "right",
                     "allowHTML": false,
                     "highlightLinks": false,
                     "useMonospaceFont": false,
                     "preserveWhitespace": false,
-                    "displayName": "to amount, coalesce(b.amount"
+                    "displayName": "from version"
                   },
                   {
-                    "fieldName": "amount",
+                    "fieldName": "to_amount",
                     "booleanValues": [
                       "false",
                       "true"
@@ -4053,17 +4184,17 @@
                     "numberFormat": "#,##0.##",
                     "visible": true,
                     "order": 100004,
-                    "title": "amount",
+                    "title": "to version",
                     "allowSearch": false,
                     "alignContent": "right",
                     "allowHTML": false,
                     "highlightLinks": false,
                     "useMonospaceFont": false,
                     "preserveWhitespace": false,
-                    "displayName": "amount"
+                    "displayName": "to version"
                   },
                   {
-                    "fieldName": "change,\n       b.data_origin",
+                    "fieldName": "change",
                     "booleanValues": [
                       "false",
                       "true"
@@ -4081,14 +4212,41 @@
                     "numberFormat": "#,##0.##",
                     "visible": true,
                     "order": 100005,
-                    "title": "change,\n       b.data origin",
+                    "title": "change",
                     "allowSearch": false,
                     "alignContent": "right",
                     "allowHTML": false,
                     "highlightLinks": false,
                     "useMonospaceFont": false,
                     "preserveWhitespace": false,
-                    "displayName": "change,\n       b.data origin"
+                    "displayName": "change"
+                  },
+                  {
+                    "fieldName": "data_origin",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100006,
+                    "title": "data origin",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "data origin"
                   }
                 ]
               },
