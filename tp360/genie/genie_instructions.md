@@ -19,7 +19,7 @@ individual returns.
   entities with trust fund balances, SG09 K-1 entity interest not on the Form 433-A.
 - **RVE:** `tp_return_snapshot` (versions of one return: AS_FILED, RVE_WORKING, PROPOSED, AS_EXAMINED),
   `tp_return_line` (one row per line per snapshot; `data_origin` says where it came from: MEF, ATTACHMENT_EXTRACT,
-  RVE_SUPPLEMENT, EXAMINER_ADJUSTMENT, COMPUTED), `v_return_compare` (as filed vs as adjusted vs delta).
+  RVE_SUPPLEMENT, EXAMINER_ADJUSTMENT, COMPUTED, TAXPAYER_AMENDMENT), `v_return_compare` (as filed vs as adjusted vs delta).
 - **Reconciliation:** `tp_rri_finding` — information-return matches and RVE findings with a branch:
   A = resolved from data, B = not a taxpayer issue (never an IDR), C = needs the taxpayer (IDR).
 - **Exam:** `tp_idr`, `tp_adjustment`, `v_exam_results` (deficiency per exam), `tp_determination`.
@@ -34,6 +34,11 @@ individual returns.
 - **Prior audit results:** `v_prior_audit_summary` (one row per taxpayer: prior exams, total deficiency, no-change,
   agreed, appeals and defaulted counts, issues raised and adjusted, repeat issue codes), `v_prior_audit_history` (one row
   per closed case) and `v_prior_audit_issues` (one row per issue: proposed vs sustained, how found, hours, repeat flag).
+- **Return versions:** `v_return_versions` (one row per snapshot of a return: `version_type` = AS_FILED, AS_AMENDED,
+  RVE_WORKING, PROPOSED, AS_EXAMINED or AS_APPEALED; `version_seq` in creation order; `versions_of_return`; total tax on
+  line 24 and its change vs as filed) and `v_return_line_versions` (every line of every version, with `form_sort` and
+  `line_sort`). To compare two versions, join `v_return_line_versions` to itself on form, line and sub_id. Priya N.
+  Halvorsen (TK500001) has all six versions; `data_origin` TAXPAYER_AMENDMENT marks lines from a Form 1040-X.
 - **Notice history:** `v_notice_history` (one row per notice, letter, IDR or report: issued date, tax periods, treatment,
   item code, statutory flag, response due and received, `response_status` = RESPONDED, RESPONDED_LATE, NO_RESPONSE,
   RESPONSE_OPEN, NO_RESPONSE_REQUIRED or UNDELIVERABLE) and `v_notice_summary` (one row per taxpayer). Notice sequences

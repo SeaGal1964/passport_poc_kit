@@ -140,3 +140,18 @@ SELECT tax_period, program, outcome, issue_code, issue_name, return_ref, amount_
 FROM {{catalog}}.{{schema}}.v_prior_audit_issues
 WHERE display_name = 'Marisol T. Vance'
 ORDER BY tax_period, abs(amount_sustained) DESC;
+
+-- E19. How many versions does Priya N. Halvorsen's 2024 return have, and how did total tax change at each one?
+SELECT version_seq, version_type, created_date, created_by, source_tc, status, total_tax, total_tax_change_vs_filed
+FROM {{catalog}}.{{schema}}.v_return_versions
+WHERE display_name = 'Priya N. Halvorsen' AND tax_period = '202412'
+ORDER BY version_seq;
+
+-- E20. What changed on Priya N. Halvorsen's return between the amended version and the Appeals version?
+SELECT coalesce(b.form, a.form) AS form, coalesce(b.line, a.line) AS line, coalesce(b.line_desc, a.line_desc) AS line_desc,
+       a.amount AS as_amended, b.amount AS as_appealed, coalesce(b.amount, 0) - coalesce(a.amount, 0) AS change
+FROM (SELECT * FROM {{catalog}}.{{schema}}.v_return_line_versions WHERE display_name = 'Priya N. Halvorsen' AND version_type = 'AS_AMENDED') a
+FULL OUTER JOIN (SELECT * FROM {{catalog}}.{{schema}}.v_return_line_versions WHERE display_name = 'Priya N. Halvorsen' AND version_type = 'AS_APPEALED') b
+  ON a.form = b.form AND a.line = b.line AND a.sub_id = b.sub_id
+WHERE coalesce(b.amount, 0) <> coalesce(a.amount, 0)
+ORDER BY coalesce(b.form_sort, a.form_sort), coalesce(b.line_sort, a.line_sort), coalesce(b.line, a.line);

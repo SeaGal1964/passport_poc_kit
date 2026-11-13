@@ -287,44 +287,266 @@
       ]
     },
     {
-      "name": "ds_rve_compare",
-      "displayName": "RVE three-column view \u2014 2024 heroes",
+      "name": "ds_rve_taxpayers",
+      "displayName": "RVE taxpayer picker values",
       "queryLines": [
-        "SELECT t.display_name AS taxpayer, c.form, c.line, c.line_desc, c.as_filed, c.as_adjusted, c.delta, c.data_origin\n",
-        "FROM workspace.tp360_poc.v_return_compare c JOIN workspace.tp360_poc.tp_taxpayer t USING (tin_token)\n",
-        "WHERE c.tax_period = 202412 AND c.delta <> 0 AND t.case_group IN ('HERO_A', 'HERO_B')\n",
-        "ORDER BY taxpayer, c.form_sort, c.line_sort, c.line, c.sub_id\n"
+        "SELECT DISTINCT concat(t.display_name, ' (', t.tin_token, ')') AS rve_taxpayer, v.versions_of_return,\n",
+        "       CASE WHEN t.case_group LIKE 'HERO%' THEN 0 ELSE 1 END AS hero_first\n",
+        "FROM workspace.tp360_poc.v_return_versions v JOIN workspace.tp360_poc.tp_taxpayer t ON t.tin_token = v.tin_token\n",
+        "ORDER BY hero_first, v.versions_of_return DESC, rve_taxpayer\n"
+      ]
+    },
+    {
+      "name": "ds_from_versions",
+      "displayName": "Compare-from version values",
+      "queryLines": [
+        "SELECT version AS from_version FROM (VALUES ('AS_FILED', 1), ('AS_AMENDED', 2), ('RVE_WORKING', 3), ('PROPOSED', 4), ('AS_EXAMINED', 5), ('AS_APPEALED', 6)) AS v(version, seq) ORDER BY seq\n"
+      ]
+    },
+    {
+      "name": "ds_to_versions",
+      "displayName": "Compare-to version values",
+      "queryLines": [
+        "SELECT version AS to_version FROM (VALUES ('LATEST', 0), ('AS_FILED', 1), ('AS_AMENDED', 2), ('RVE_WORKING', 3), ('PROPOSED', 4), ('AS_EXAMINED', 5), ('AS_APPEALED', 6)) AS v(version, seq) ORDER BY seq\n"
+      ]
+    },
+    {
+      "name": "ds_rve_version_kpis",
+      "displayName": "Versions of the return \u2014 selected taxpayer",
+      "queryLines": [
+        "SELECT count(*) AS versions, count_if(v.source_tc IS NOT NULL) AS posted_versions,\n",
+        "       max(v.total_tax_change_vs_filed) FILTER (WHERE v.version_seq = v.versions_of_return) AS latest_change_in_total_tax\n",
+        "FROM workspace.tp360_poc.v_return_versions v JOIN workspace.tp360_poc.tp_taxpayer t ON t.tin_token = v.tin_token\n",
+        "WHERE concat(t.display_name, ' (', t.tin_token, ')') = :rve_taxpayer\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "rve_taxpayer",
+          "keyword": "rve_taxpayer",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "Marisol T. Vance (TK100001)"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ds_rve_versions",
+      "displayName": "Version history \u2014 selected taxpayer",
+      "queryLines": [
+        "SELECT v.version_seq, v.version_type, CAST(v.created_date AS STRING) AS created, v.created_by, v.source_tc, v.status,\n",
+        "       v.line_count, v.total_tax, v.total_tax_change_vs_filed\n",
+        "FROM workspace.tp360_poc.v_return_versions v JOIN workspace.tp360_poc.tp_taxpayer t ON t.tin_token = v.tin_token\n",
+        "WHERE concat(t.display_name, ' (', t.tin_token, ')') = :rve_taxpayer AND v.tax_period = '202412'\n",
+        "ORDER BY v.version_seq\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "rve_taxpayer",
+          "keyword": "rve_taxpayer",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "Marisol T. Vance (TK100001)"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ds_rve_pair",
+      "displayName": "Versions being compared \u2014 selected taxpayer",
+      "queryLines": [
+        "WITH v AS (SELECT v.* FROM workspace.tp360_poc.v_return_versions v JOIN workspace.tp360_poc.tp_taxpayer t ON t.tin_token = v.tin_token\n",
+        "           WHERE concat(t.display_name, ' (', t.tin_token, ')') = :rve_taxpayer AND v.tax_period = '202412'),\n",
+        "pick AS (SELECT :from_version AS from_version,\n",
+        "                CASE WHEN :to_version = 'LATEST' THEN (SELECT max_by(version_type, version_seq) FROM v) ELSE :to_version END AS to_version)\n",
+        "SELECT p.from_version, p.to_version, a.total_tax AS from_total_tax, b.total_tax AS to_total_tax,\n",
+        "       b.total_tax - a.total_tax AS change_in_total_tax,\n",
+        "       CASE WHEN a.snapshot_id IS NULL OR b.snapshot_id IS NULL THEN 'This return has no ' ||\n",
+        "            CASE WHEN a.snapshot_id IS NULL THEN p.from_version ELSE p.to_version END || ' version \u2014 see Version history'\n",
+        "            ELSE 'OK' END AS note\n",
+        "FROM pick p LEFT JOIN v a ON a.version_type = p.from_version LEFT JOIN v b ON b.version_type = p.to_version\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "rve_taxpayer",
+          "keyword": "rve_taxpayer",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "Marisol T. Vance (TK100001)"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "displayName": "from_version",
+          "keyword": "from_version",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "AS_FILED"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "displayName": "to_version",
+          "keyword": "to_version",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "LATEST"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ds_rve_compare",
+      "displayName": "What changed between the two versions \u2014 selected taxpayer",
+      "queryLines": [
+        "WITH v AS (SELECT l.* FROM workspace.tp360_poc.v_return_line_versions l JOIN workspace.tp360_poc.tp_taxpayer t ON t.tin_token = l.tin_token\n",
+        "           WHERE concat(t.display_name, ' (', t.tin_token, ')') = :rve_taxpayer AND l.tax_period = '202412'),\n",
+        "tv AS (SELECT CASE WHEN :to_version = 'LATEST' THEN (SELECT max_by(version_type, version_seq) FROM v) ELSE :to_version END AS to_version),\n",
+        "a AS (SELECT * FROM v WHERE version_type = :from_version),\n",
+        "b AS (SELECT * FROM v WHERE version_type = (SELECT to_version FROM tv))\n",
+        "SELECT coalesce(b.form, a.form) AS form, coalesce(b.line, a.line) AS line, coalesce(b.line_desc, a.line_desc) AS line_desc,\n",
+        "       a.amount AS from_amount, b.amount AS to_amount, coalesce(b.amount, 0) - coalesce(a.amount, 0) AS change,\n",
+        "       b.data_origin\n",
+        "FROM a FULL OUTER JOIN b ON a.form = b.form AND a.line = b.line AND a.sub_id = b.sub_id\n",
+        "WHERE coalesce(b.amount, 0) <> coalesce(a.amount, 0)\n",
+        "ORDER BY coalesce(b.form_sort, a.form_sort), coalesce(b.line_sort, a.line_sort), coalesce(b.line, a.line), coalesce(b.sub_id, a.sub_id)\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "rve_taxpayer",
+          "keyword": "rve_taxpayer",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "Marisol T. Vance (TK100001)"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "displayName": "from_version",
+          "keyword": "from_version",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "AS_FILED"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "displayName": "to_version",
+          "keyword": "to_version",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "LATEST"
+                }
+              ]
+            }
+          }
+        }
       ]
     },
     {
       "name": "ds_rve_origin",
-      "displayName": "Where return data came from \u2014 2024 heroes",
+      "displayName": "Where return data came from \u2014 selected taxpayer",
       "queryLines": [
-        "SELECT concat(t.display_name, ' \u00b7 ', o.version_type) AS snapshot, o.data_origin, o.line_count\n",
-        "FROM workspace.tp360_poc.v_rve_data_origin o JOIN workspace.tp360_poc.tp_taxpayer t USING (tin_token)\n",
-        "WHERE o.tax_period = 202412 AND t.case_group IN ('HERO_A', 'HERO_B')\n",
-        "ORDER BY snapshot, o.data_origin\n"
+        "SELECT concat(lpad(CAST(l.version_seq AS STRING), 2, '0'), ' ', l.version_type) AS version, l.data_origin, count(*) AS lines\n",
+        "FROM workspace.tp360_poc.v_return_line_versions l JOIN workspace.tp360_poc.tp_taxpayer t ON t.tin_token = l.tin_token\n",
+        "WHERE concat(t.display_name, ' (', t.tin_token, ')') = :rve_taxpayer\n",
+        "GROUP BY l.version_seq, l.version_type, l.data_origin\n",
+        "ORDER BY version, l.data_origin\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "rve_taxpayer",
+          "keyword": "rve_taxpayer",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "Marisol T. Vance (TK100001)"
+                }
+              ]
+            }
+          }
+        }
       ]
     },
     {
       "name": "ds_rve_findings",
-      "displayName": "Reconciliation findings \u2014 2024 heroes",
+      "displayName": "Reconciliation findings \u2014 selected taxpayer",
       "queryLines": [
-        "SELECT t.display_name AS taxpayer, f.branch,\n",
+        "SELECT f.branch,\n",
         "       CASE f.branch WHEN 'A' THEN 'Resolved from data' WHEN 'B' THEN 'Not a taxpayer issue' ELSE 'Needs the taxpayer (IDR)' END AS branch_meaning,\n",
         "       f.item, f.irp_amount, f.return_ref, f.return_amount, f.root_cause, f.note\n",
-        "FROM workspace.tp360_poc.tp_rri_finding f JOIN workspace.tp360_poc.tp_taxpayer t USING (tin_token)\n",
-        "WHERE f.tax_period = 202412 AND t.case_group IN ('HERO_A', 'HERO_B')\n",
-        "ORDER BY taxpayer, f.branch, f.finding_id\n"
-      ]
-    },
-    {
-      "name": "ds_rve_exams",
-      "displayName": "2024 exam results \u2014 heroes",
-      "queryLines": [
-        "SELECT t.display_name AS taxpayer, r.deficiency, r.taxable_income_change, r.episode_status\n",
-        "FROM workspace.tp360_poc.v_exam_results r JOIN workspace.tp360_poc.tp_taxpayer t USING (tin_token)\n",
-        "WHERE r.tax_period = 202412 ORDER BY r.deficiency DESC\n"
+        "FROM workspace.tp360_poc.tp_rri_finding f JOIN workspace.tp360_poc.tp_taxpayer t ON t.tin_token = f.tin_token\n",
+        "WHERE concat(t.display_name, ' (', t.tin_token, ')') = :rve_taxpayer\n",
+        "ORDER BY f.branch, f.finding_id\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "rve_taxpayer",
+          "keyword": "rve_taxpayer",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "Marisol T. Vance (TK100001)"
+                }
+              ]
+            }
+          }
+        }
       ]
     },
     {
@@ -2803,8 +3025,8 @@
             "name": "t020",
             "multilineTextboxSpec": {
               "lines": [
-                "## Return Viewer Editor \u2014 TY2024 heroes",
-                "The as-filed baseline is never overwritten. Each change is versioned and every line says where its data came from: MeF, an attachment extract, an RVE supplement, an examiner adjustment, or the recompute.",
+                "## Return Viewer Editor",
+                "One return, every version. The as-filed baseline is never overwritten: an amended return, the examiner's working copy, the proposal, the assessment and the Appeals result are each kept as their own snapshot. Pick a taxpayer and any two versions to see exactly what changed. Try Priya N. Halvorsen (TK500001): six versions, from as filed to as appealed.",
                 "Fictional taxpayers \u00b7 synthetic data \u00b7 not IRS data. Closed-case figures are illustrative (TY2024 parameters)."
               ]
             }
@@ -2818,210 +3040,467 @@
         },
         {
           "widget": {
-            "name": "tb021",
+            "name": "f_rve_taxpayer",
             "queries": [
               {
-                "name": "main_query",
+                "name": "q_rve_taxpayer_values",
                 "query": {
-                  "datasetName": "ds_rve_exams",
+                  "datasetName": "ds_rve_taxpayers",
                   "fields": [
                     {
-                      "name": "taxpayer",
-                      "expression": "`taxpayer`"
-                    },
-                    {
-                      "name": "deficiency",
-                      "expression": "`deficiency`"
-                    },
-                    {
-                      "name": "taxable_income_change",
-                      "expression": "`taxable_income_change`"
-                    },
-                    {
-                      "name": "episode_status",
-                      "expression": "`episode_status`"
+                      "name": "rve_taxpayer",
+                      "expression": "`rve_taxpayer`"
                     }
                   ],
-                  "disaggregated": true
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "p_ds_rve_version_kpis_rve_taxpayer",
+                "query": {
+                  "datasetName": "ds_rve_version_kpis",
+                  "parameters": [
+                    {
+                      "name": "rve_taxpayer",
+                      "keyword": "rve_taxpayer"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "p_ds_rve_versions_rve_taxpayer",
+                "query": {
+                  "datasetName": "ds_rve_versions",
+                  "parameters": [
+                    {
+                      "name": "rve_taxpayer",
+                      "keyword": "rve_taxpayer"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "p_ds_rve_pair_rve_taxpayer",
+                "query": {
+                  "datasetName": "ds_rve_pair",
+                  "parameters": [
+                    {
+                      "name": "rve_taxpayer",
+                      "keyword": "rve_taxpayer"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "p_ds_rve_compare_rve_taxpayer",
+                "query": {
+                  "datasetName": "ds_rve_compare",
+                  "parameters": [
+                    {
+                      "name": "rve_taxpayer",
+                      "keyword": "rve_taxpayer"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "p_ds_rve_origin_rve_taxpayer",
+                "query": {
+                  "datasetName": "ds_rve_origin",
+                  "parameters": [
+                    {
+                      "name": "rve_taxpayer",
+                      "keyword": "rve_taxpayer"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "p_ds_rve_findings_rve_taxpayer",
+                "query": {
+                  "datasetName": "ds_rve_findings",
+                  "parameters": [
+                    {
+                      "name": "rve_taxpayer",
+                      "keyword": "rve_taxpayer"
+                    }
+                  ],
+                  "disaggregated": false
                 }
               }
             ],
             "spec": {
-              "version": 1,
-              "widgetType": "table",
+              "version": 2,
+              "widgetType": "filter-single-select",
               "encodings": {
-                "columns": [
+                "fields": [
                   {
-                    "fieldName": "taxpayer",
-                    "booleanValues": [
-                      "false",
-                      "true"
-                    ],
-                    "imageUrlTemplate": "{{ @ }}",
-                    "imageTitleTemplate": "{{ @ }}",
-                    "imageWidth": "",
-                    "imageHeight": "",
-                    "linkUrlTemplate": "{{ @ }}",
-                    "linkTextTemplate": "{{ @ }}",
-                    "linkTitleTemplate": "{{ @ }}",
-                    "linkOpenInNewTab": true,
-                    "type": "string",
-                    "displayAs": "string",
-                    "visible": true,
-                    "order": 100000,
-                    "title": "taxpayer",
-                    "allowSearch": false,
-                    "alignContent": "left",
-                    "allowHTML": false,
-                    "highlightLinks": false,
-                    "useMonospaceFont": false,
-                    "preserveWhitespace": false,
-                    "displayName": "taxpayer"
+                    "fieldName": "rve_taxpayer",
+                    "displayName": "rve_taxpayer",
+                    "queryName": "q_rve_taxpayer_values"
                   },
                   {
-                    "fieldName": "deficiency",
-                    "booleanValues": [
-                      "false",
-                      "true"
-                    ],
-                    "imageUrlTemplate": "{{ @ }}",
-                    "imageTitleTemplate": "{{ @ }}",
-                    "imageWidth": "",
-                    "imageHeight": "",
-                    "linkUrlTemplate": "{{ @ }}",
-                    "linkTextTemplate": "{{ @ }}",
-                    "linkTitleTemplate": "{{ @ }}",
-                    "linkOpenInNewTab": true,
-                    "type": "float",
-                    "displayAs": "number",
-                    "numberFormat": "#,##0.##",
-                    "visible": true,
-                    "order": 100001,
-                    "title": "deficiency",
-                    "allowSearch": false,
-                    "alignContent": "right",
-                    "allowHTML": false,
-                    "highlightLinks": false,
-                    "useMonospaceFont": false,
-                    "preserveWhitespace": false,
-                    "displayName": "deficiency"
+                    "parameterName": "rve_taxpayer",
+                    "queryName": "p_ds_rve_version_kpis_rve_taxpayer"
                   },
                   {
-                    "fieldName": "taxable_income_change",
-                    "booleanValues": [
-                      "false",
-                      "true"
-                    ],
-                    "imageUrlTemplate": "{{ @ }}",
-                    "imageTitleTemplate": "{{ @ }}",
-                    "imageWidth": "",
-                    "imageHeight": "",
-                    "linkUrlTemplate": "{{ @ }}",
-                    "linkTextTemplate": "{{ @ }}",
-                    "linkTitleTemplate": "{{ @ }}",
-                    "linkOpenInNewTab": true,
-                    "type": "float",
-                    "displayAs": "number",
-                    "numberFormat": "#,##0.##",
-                    "visible": true,
-                    "order": 100002,
-                    "title": "taxable income change",
-                    "allowSearch": false,
-                    "alignContent": "right",
-                    "allowHTML": false,
-                    "highlightLinks": false,
-                    "useMonospaceFont": false,
-                    "preserveWhitespace": false,
-                    "displayName": "taxable income change"
+                    "parameterName": "rve_taxpayer",
+                    "queryName": "p_ds_rve_versions_rve_taxpayer"
                   },
                   {
-                    "fieldName": "episode_status",
-                    "booleanValues": [
-                      "false",
-                      "true"
-                    ],
-                    "imageUrlTemplate": "{{ @ }}",
-                    "imageTitleTemplate": "{{ @ }}",
-                    "imageWidth": "",
-                    "imageHeight": "",
-                    "linkUrlTemplate": "{{ @ }}",
-                    "linkTextTemplate": "{{ @ }}",
-                    "linkTitleTemplate": "{{ @ }}",
-                    "linkOpenInNewTab": true,
-                    "type": "string",
-                    "displayAs": "string",
-                    "visible": true,
-                    "order": 100003,
-                    "title": "episode status",
-                    "allowSearch": false,
-                    "alignContent": "left",
-                    "allowHTML": false,
-                    "highlightLinks": false,
-                    "useMonospaceFont": false,
-                    "preserveWhitespace": false,
-                    "displayName": "episode status"
+                    "parameterName": "rve_taxpayer",
+                    "queryName": "p_ds_rve_pair_rve_taxpayer"
+                  },
+                  {
+                    "parameterName": "rve_taxpayer",
+                    "queryName": "p_ds_rve_compare_rve_taxpayer"
+                  },
+                  {
+                    "parameterName": "rve_taxpayer",
+                    "queryName": "p_ds_rve_origin_rve_taxpayer"
+                  },
+                  {
+                    "parameterName": "rve_taxpayer",
+                    "queryName": "p_ds_rve_findings_rve_taxpayer"
                   }
                 ]
               },
-              "invisibleColumns": [],
-              "allowHTMLByDefault": false,
-              "itemsPerPage": 25,
-              "paginationSize": "default",
-              "condensed": true,
-              "withRowNumber": false,
               "frame": {
                 "showTitle": true,
-                "title": "2024 exam results"
+                "title": "Taxpayer"
               }
             }
           },
           "position": {
             "x": 0,
             "y": 2,
-            "width": 6,
-            "height": 3
+            "width": 2,
+            "height": 1
           }
         },
         {
           "widget": {
-            "name": "tb022",
+            "name": "f_from_version",
+            "queries": [
+              {
+                "name": "q_from_version_values",
+                "query": {
+                  "datasetName": "ds_from_versions",
+                  "fields": [
+                    {
+                      "name": "from_version",
+                      "expression": "`from_version`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "p_ds_rve_pair_from_version",
+                "query": {
+                  "datasetName": "ds_rve_pair",
+                  "parameters": [
+                    {
+                      "name": "from_version",
+                      "keyword": "from_version"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "p_ds_rve_compare_from_version",
+                "query": {
+                  "datasetName": "ds_rve_compare",
+                  "parameters": [
+                    {
+                      "name": "from_version",
+                      "keyword": "from_version"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "from_version",
+                    "displayName": "from_version",
+                    "queryName": "q_from_version_values"
+                  },
+                  {
+                    "parameterName": "from_version",
+                    "queryName": "p_ds_rve_pair_from_version"
+                  },
+                  {
+                    "parameterName": "from_version",
+                    "queryName": "p_ds_rve_compare_from_version"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Compare from"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 2,
+            "width": 2,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "f_to_version",
+            "queries": [
+              {
+                "name": "q_to_version_values",
+                "query": {
+                  "datasetName": "ds_to_versions",
+                  "fields": [
+                    {
+                      "name": "to_version",
+                      "expression": "`to_version`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "p_ds_rve_pair_to_version",
+                "query": {
+                  "datasetName": "ds_rve_pair",
+                  "parameters": [
+                    {
+                      "name": "to_version",
+                      "keyword": "to_version"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "p_ds_rve_compare_to_version",
+                "query": {
+                  "datasetName": "ds_rve_compare",
+                  "parameters": [
+                    {
+                      "name": "to_version",
+                      "keyword": "to_version"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "to_version",
+                    "displayName": "to_version",
+                    "queryName": "q_to_version_values"
+                  },
+                  {
+                    "parameterName": "to_version",
+                    "queryName": "p_ds_rve_pair_to_version"
+                  },
+                  {
+                    "parameterName": "to_version",
+                    "queryName": "p_ds_rve_compare_to_version"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Compare to (LATEST = most recent version)"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 2,
+            "width": 2,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "c021",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "ds_rve_compare",
+                  "datasetName": "ds_rve_version_kpis",
                   "fields": [
                     {
-                      "name": "taxpayer",
-                      "expression": "`taxpayer`"
+                      "name": "versions",
+                      "expression": "`versions`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "versions",
+                  "displayName": "Versions of this return"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Versions of this return"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "c022",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_rve_version_kpis",
+                  "fields": [
+                    {
+                      "name": "posted_versions",
+                      "expression": "`posted_versions`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "posted_versions",
+                  "displayName": "Versions posted to Master File"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Versions posted to Master File"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 3,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "c023",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_rve_version_kpis",
+                  "fields": [
+                    {
+                      "name": "latest_change_in_total_tax",
+                      "expression": "`latest_change_in_total_tax`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "latest_change_in_total_tax",
+                  "displayName": "Total tax change, latest vs as filed"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Total tax change, latest vs as filed"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 3,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "tb024",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_rve_versions",
+                  "fields": [
+                    {
+                      "name": "version_seq",
+                      "expression": "`version_seq`"
                     },
                     {
-                      "name": "form",
-                      "expression": "`form`"
+                      "name": "version_type",
+                      "expression": "`version_type`"
                     },
                     {
-                      "name": "line",
-                      "expression": "`line`"
+                      "name": "created",
+                      "expression": "`created`"
                     },
                     {
-                      "name": "line_desc",
-                      "expression": "`line_desc`"
+                      "name": "created_by",
+                      "expression": "`created_by`"
                     },
                     {
-                      "name": "as_filed",
-                      "expression": "`as_filed`"
+                      "name": "source_tc",
+                      "expression": "`source_tc`"
                     },
                     {
-                      "name": "as_adjusted",
-                      "expression": "`as_adjusted`"
+                      "name": "status",
+                      "expression": "`status`"
                     },
                     {
-                      "name": "delta",
-                      "expression": "`delta`"
+                      "name": "line_count",
+                      "expression": "`line_count`"
                     },
                     {
-                      "name": "data_origin",
-                      "expression": "`data_origin`"
+                      "name": "total_tax",
+                      "expression": "`total_tax`"
+                    },
+                    {
+                      "name": "total_tax_change_vs_filed",
+                      "expression": "`total_tax_change_vs_filed`"
                     }
                   ],
                   "disaggregated": true
@@ -3034,7 +3513,7 @@
               "encodings": {
                 "columns": [
                   {
-                    "fieldName": "taxpayer",
+                    "fieldName": "version_seq",
                     "booleanValues": [
                       "false",
                       "true"
@@ -3047,21 +3526,22 @@
                     "linkTextTemplate": "{{ @ }}",
                     "linkTitleTemplate": "{{ @ }}",
                     "linkOpenInNewTab": true,
-                    "type": "string",
-                    "displayAs": "string",
+                    "type": "float",
+                    "displayAs": "number",
+                    "numberFormat": "#,##0.##",
                     "visible": true,
                     "order": 100000,
-                    "title": "taxpayer",
+                    "title": "#",
                     "allowSearch": false,
-                    "alignContent": "left",
+                    "alignContent": "right",
                     "allowHTML": false,
                     "highlightLinks": false,
                     "useMonospaceFont": false,
                     "preserveWhitespace": false,
-                    "displayName": "taxpayer"
+                    "displayName": "#"
                   },
                   {
-                    "fieldName": "form",
+                    "fieldName": "version_type",
                     "booleanValues": [
                       "false",
                       "true"
@@ -3078,17 +3558,17 @@
                     "displayAs": "string",
                     "visible": true,
                     "order": 100001,
-                    "title": "form",
+                    "title": "version",
                     "allowSearch": false,
                     "alignContent": "left",
                     "allowHTML": false,
                     "highlightLinks": false,
                     "useMonospaceFont": false,
                     "preserveWhitespace": false,
-                    "displayName": "form"
+                    "displayName": "version"
                   },
                   {
-                    "fieldName": "line",
+                    "fieldName": "created",
                     "booleanValues": [
                       "false",
                       "true"
@@ -3105,17 +3585,17 @@
                     "displayAs": "string",
                     "visible": true,
                     "order": 100002,
-                    "title": "line",
+                    "title": "created",
                     "allowSearch": false,
                     "alignContent": "left",
                     "allowHTML": false,
                     "highlightLinks": false,
                     "useMonospaceFont": false,
                     "preserveWhitespace": false,
-                    "displayName": "line"
+                    "displayName": "created"
                   },
                   {
-                    "fieldName": "line_desc",
+                    "fieldName": "created_by",
                     "booleanValues": [
                       "false",
                       "true"
@@ -3132,17 +3612,17 @@
                     "displayAs": "string",
                     "visible": true,
                     "order": 100003,
-                    "title": "line desc",
+                    "title": "created by",
                     "allowSearch": false,
                     "alignContent": "left",
                     "allowHTML": false,
                     "highlightLinks": false,
                     "useMonospaceFont": false,
                     "preserveWhitespace": false,
-                    "displayName": "line desc"
+                    "displayName": "created by"
                   },
                   {
-                    "fieldName": "as_filed",
+                    "fieldName": "source_tc",
                     "booleanValues": [
                       "false",
                       "true"
@@ -3155,22 +3635,21 @@
                     "linkTextTemplate": "{{ @ }}",
                     "linkTitleTemplate": "{{ @ }}",
                     "linkOpenInNewTab": true,
-                    "type": "float",
-                    "displayAs": "number",
-                    "numberFormat": "#,##0.##",
+                    "type": "string",
+                    "displayAs": "string",
                     "visible": true,
                     "order": 100004,
-                    "title": "as filed",
+                    "title": "TC",
                     "allowSearch": false,
-                    "alignContent": "right",
+                    "alignContent": "left",
                     "allowHTML": false,
                     "highlightLinks": false,
                     "useMonospaceFont": false,
                     "preserveWhitespace": false,
-                    "displayName": "as filed"
+                    "displayName": "TC"
                   },
                   {
-                    "fieldName": "as_adjusted",
+                    "fieldName": "status",
                     "booleanValues": [
                       "false",
                       "true"
@@ -3183,22 +3662,21 @@
                     "linkTextTemplate": "{{ @ }}",
                     "linkTitleTemplate": "{{ @ }}",
                     "linkOpenInNewTab": true,
-                    "type": "float",
-                    "displayAs": "number",
-                    "numberFormat": "#,##0.##",
+                    "type": "string",
+                    "displayAs": "string",
                     "visible": true,
                     "order": 100005,
-                    "title": "as adjusted",
+                    "title": "status",
                     "allowSearch": false,
-                    "alignContent": "right",
+                    "alignContent": "left",
                     "allowHTML": false,
                     "highlightLinks": false,
                     "useMonospaceFont": false,
                     "preserveWhitespace": false,
-                    "displayName": "as adjusted"
+                    "displayName": "status"
                   },
                   {
-                    "fieldName": "delta",
+                    "fieldName": "line_count",
                     "booleanValues": [
                       "false",
                       "true"
@@ -3216,17 +3694,121 @@
                     "numberFormat": "#,##0.##",
                     "visible": true,
                     "order": 100006,
-                    "title": "delta",
+                    "title": "lines",
                     "allowSearch": false,
                     "alignContent": "right",
                     "allowHTML": false,
                     "highlightLinks": false,
                     "useMonospaceFont": false,
                     "preserveWhitespace": false,
-                    "displayName": "delta"
+                    "displayName": "lines"
                   },
                   {
-                    "fieldName": "data_origin",
+                    "fieldName": "total_tax",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "float",
+                    "displayAs": "number",
+                    "numberFormat": "#,##0.##",
+                    "visible": true,
+                    "order": 100007,
+                    "title": "total tax (line 24)",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "total tax (line 24)"
+                  },
+                  {
+                    "fieldName": "total_tax_change_vs_filed",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "float",
+                    "displayAs": "number",
+                    "numberFormat": "#,##0.##",
+                    "visible": true,
+                    "order": 100008,
+                    "title": "change vs as filed",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "change vs as filed"
+                  }
+                ]
+              },
+              "invisibleColumns": [],
+              "allowHTMLByDefault": false,
+              "itemsPerPage": 25,
+              "paginationSize": "default",
+              "condensed": true,
+              "withRowNumber": false,
+              "frame": {
+                "showTitle": true,
+                "title": "Version history (each snapshot, in order)"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 5,
+            "width": 6,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "tb025",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_rve_pair",
+                  "fields": [
+                    {
+                      "name": "from_version",
+                      "expression": "`from_version`"
+                    },
+                    {
+                      "name": "note",
+                      "expression": "`note`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "from_version",
                     "booleanValues": [
                       "false",
                       "true"
@@ -3242,15 +3824,42 @@
                     "type": "string",
                     "displayAs": "string",
                     "visible": true,
-                    "order": 100007,
-                    "title": "data origin",
+                    "order": 100000,
+                    "title": "from",
                     "allowSearch": false,
                     "alignContent": "left",
                     "allowHTML": false,
                     "highlightLinks": false,
                     "useMonospaceFont": false,
                     "preserveWhitespace": false,
-                    "displayName": "data origin"
+                    "displayName": "from"
+                  },
+                  {
+                    "fieldName": "note",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100001,
+                    "title": "note",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "note"
                   }
                 ]
               },
@@ -3262,30 +3871,255 @@
               "withRowNumber": false,
               "frame": {
                 "showTitle": true,
-                "title": "Three-column view \u2014 what changed (as filed \u00b7 as adjusted \u00b7 delta)"
+                "title": "Comparing"
               }
             }
           },
           "position": {
             "x": 0,
-            "y": 5,
+            "y": 9,
+            "width": 6,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "tb026",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_rve_compare",
+                  "fields": [
+                    {
+                      "name": "(SELECT * FROM v WHERE version_type = (SELECT to_version FROM tv))\nSELECT coalesce(b.form",
+                      "expression": "`(SELECT * FROM v WHERE version_type = (SELECT to_version FROM tv))\nSELECT coalesce(b.form`"
+                    },
+                    {
+                      "name": "form, coalesce(b.line",
+                      "expression": "`form, coalesce(b.line`"
+                    },
+                    {
+                      "name": "line, coalesce(b.line_desc",
+                      "expression": "`line, coalesce(b.line_desc`"
+                    },
+                    {
+                      "name": "to_amount, coalesce(b.amount",
+                      "expression": "`to_amount, coalesce(b.amount`"
+                    },
+                    {
+                      "name": "amount",
+                      "expression": "`amount`"
+                    },
+                    {
+                      "name": "change,\n       b.data_origin",
+                      "expression": "`change,\n       b.data_origin`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "(SELECT * FROM v WHERE version_type = (SELECT to_version FROM tv))\nSELECT coalesce(b.form",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100000,
+                    "title": "(SELECT * FROM v WHERE version type = (SELECT to version FROM tv))\nSELECT coalesce(b.form",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "(SELECT * FROM v WHERE version type = (SELECT to version FROM tv))\nSELECT coalesce(b.form"
+                  },
+                  {
+                    "fieldName": "form, coalesce(b.line",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100001,
+                    "title": "form, coalesce(b.line",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "form, coalesce(b.line"
+                  },
+                  {
+                    "fieldName": "line, coalesce(b.line_desc",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100002,
+                    "title": "line, coalesce(b.line desc",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "line, coalesce(b.line desc"
+                  },
+                  {
+                    "fieldName": "to_amount, coalesce(b.amount",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "float",
+                    "displayAs": "number",
+                    "numberFormat": "#,##0.##",
+                    "visible": true,
+                    "order": 100003,
+                    "title": "to amount, coalesce(b.amount",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "to amount, coalesce(b.amount"
+                  },
+                  {
+                    "fieldName": "amount",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "float",
+                    "displayAs": "number",
+                    "numberFormat": "#,##0.##",
+                    "visible": true,
+                    "order": 100004,
+                    "title": "amount",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "amount"
+                  },
+                  {
+                    "fieldName": "change,\n       b.data_origin",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "float",
+                    "displayAs": "number",
+                    "numberFormat": "#,##0.##",
+                    "visible": true,
+                    "order": 100005,
+                    "title": "change,\n       b.data origin",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "change,\n       b.data origin"
+                  }
+                ]
+              },
+              "invisibleColumns": [],
+              "allowHTMLByDefault": false,
+              "itemsPerPage": 25,
+              "paginationSize": "default",
+              "condensed": true,
+              "withRowNumber": false,
+              "frame": {
+                "showTitle": true,
+                "title": "What changed between the two versions (form, then line)"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 11,
             "width": 6,
             "height": 7
           }
         },
         {
           "widget": {
-            "name": "tb023",
+            "name": "tb027",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
                   "datasetName": "ds_rve_findings",
                   "fields": [
-                    {
-                      "name": "taxpayer",
-                      "expression": "`taxpayer`"
-                    },
                     {
                       "name": "branch",
                       "expression": "`branch`"
@@ -3329,33 +4163,6 @@
               "encodings": {
                 "columns": [
                   {
-                    "fieldName": "taxpayer",
-                    "booleanValues": [
-                      "false",
-                      "true"
-                    ],
-                    "imageUrlTemplate": "{{ @ }}",
-                    "imageTitleTemplate": "{{ @ }}",
-                    "imageWidth": "",
-                    "imageHeight": "",
-                    "linkUrlTemplate": "{{ @ }}",
-                    "linkTextTemplate": "{{ @ }}",
-                    "linkTitleTemplate": "{{ @ }}",
-                    "linkOpenInNewTab": true,
-                    "type": "string",
-                    "displayAs": "string",
-                    "visible": true,
-                    "order": 100000,
-                    "title": "taxpayer",
-                    "allowSearch": false,
-                    "alignContent": "left",
-                    "allowHTML": false,
-                    "highlightLinks": false,
-                    "useMonospaceFont": false,
-                    "preserveWhitespace": false,
-                    "displayName": "taxpayer"
-                  },
-                  {
                     "fieldName": "branch",
                     "booleanValues": [
                       "false",
@@ -3372,7 +4179,7 @@
                     "type": "string",
                     "displayAs": "string",
                     "visible": true,
-                    "order": 100001,
+                    "order": 100000,
                     "title": "branch",
                     "allowSearch": false,
                     "alignContent": "left",
@@ -3399,7 +4206,7 @@
                     "type": "string",
                     "displayAs": "string",
                     "visible": true,
-                    "order": 100002,
+                    "order": 100001,
                     "title": "branch meaning",
                     "allowSearch": false,
                     "alignContent": "left",
@@ -3426,7 +4233,7 @@
                     "type": "string",
                     "displayAs": "string",
                     "visible": true,
-                    "order": 100003,
+                    "order": 100002,
                     "title": "item",
                     "allowSearch": false,
                     "alignContent": "left",
@@ -3454,7 +4261,7 @@
                     "displayAs": "number",
                     "numberFormat": "#,##0.##",
                     "visible": true,
-                    "order": 100004,
+                    "order": 100003,
                     "title": "irp amount",
                     "allowSearch": false,
                     "alignContent": "right",
@@ -3481,7 +4288,7 @@
                     "type": "string",
                     "displayAs": "string",
                     "visible": true,
-                    "order": 100005,
+                    "order": 100004,
                     "title": "return ref",
                     "allowSearch": false,
                     "alignContent": "left",
@@ -3509,7 +4316,7 @@
                     "displayAs": "number",
                     "numberFormat": "#,##0.##",
                     "visible": true,
-                    "order": 100006,
+                    "order": 100005,
                     "title": "return amount",
                     "allowSearch": false,
                     "alignContent": "right",
@@ -3536,7 +4343,7 @@
                     "type": "string",
                     "displayAs": "string",
                     "visible": true,
-                    "order": 100007,
+                    "order": 100006,
                     "title": "root cause",
                     "allowSearch": false,
                     "alignContent": "left",
@@ -3563,7 +4370,7 @@
                     "type": "string",
                     "displayAs": "string",
                     "visible": true,
-                    "order": 100008,
+                    "order": 100007,
                     "title": "note",
                     "allowSearch": false,
                     "alignContent": "left",
@@ -3589,14 +4396,14 @@
           },
           "position": {
             "x": 0,
-            "y": 12,
+            "y": 18,
             "width": 6,
-            "height": 6
+            "height": 5
           }
         },
         {
           "widget": {
-            "name": "tb024",
+            "name": "tb028",
             "queries": [
               {
                 "name": "main_query",
@@ -3604,16 +4411,16 @@
                   "datasetName": "ds_rve_origin",
                   "fields": [
                     {
-                      "name": "snapshot",
-                      "expression": "`snapshot`"
+                      "name": "version",
+                      "expression": "`version`"
                     },
                     {
                       "name": "data_origin",
                       "expression": "`data_origin`"
                     },
                     {
-                      "name": "line_count",
-                      "expression": "`line_count`"
+                      "name": "lines",
+                      "expression": "`lines`"
                     }
                   ],
                   "disaggregated": true
@@ -3626,7 +4433,7 @@
               "encodings": {
                 "columns": [
                   {
-                    "fieldName": "snapshot",
+                    "fieldName": "version",
                     "booleanValues": [
                       "false",
                       "true"
@@ -3643,14 +4450,14 @@
                     "displayAs": "string",
                     "visible": true,
                     "order": 100000,
-                    "title": "snapshot",
+                    "title": "version",
                     "allowSearch": false,
                     "alignContent": "left",
                     "allowHTML": false,
                     "highlightLinks": false,
                     "useMonospaceFont": false,
                     "preserveWhitespace": false,
-                    "displayName": "snapshot"
+                    "displayName": "version"
                   },
                   {
                     "fieldName": "data_origin",
@@ -3680,7 +4487,7 @@
                     "displayName": "data origin"
                   },
                   {
-                    "fieldName": "line_count",
+                    "fieldName": "lines",
                     "booleanValues": [
                       "false",
                       "true"
@@ -3698,14 +4505,14 @@
                     "numberFormat": "#,##0.##",
                     "visible": true,
                     "order": 100002,
-                    "title": "line count",
+                    "title": "lines",
                     "allowSearch": false,
                     "alignContent": "right",
                     "allowHTML": false,
                     "highlightLinks": false,
                     "useMonospaceFont": false,
                     "preserveWhitespace": false,
-                    "displayName": "line count"
+                    "displayName": "lines"
                   }
                 ]
               },
@@ -3717,13 +4524,13 @@
               "withRowNumber": false,
               "frame": {
                 "showTitle": true,
-                "title": "Where the return data came from, by snapshot"
+                "title": "Where the return data came from, by version"
               }
             }
           },
           "position": {
             "x": 0,
-            "y": 18,
+            "y": 23,
             "width": 6,
             "height": 5
           }
@@ -3737,7 +4544,7 @@
       "layout": [
         {
           "widget": {
-            "name": "t025",
+            "name": "t029",
             "multilineTextboxSpec": {
               "lines": [
                 "## Signals across the population",
@@ -3755,7 +4562,7 @@
         },
         {
           "widget": {
-            "name": "c026",
+            "name": "c030",
             "queries": [
               {
                 "name": "main_query",
@@ -3795,7 +4602,7 @@
         },
         {
           "widget": {
-            "name": "c027",
+            "name": "c031",
             "queries": [
               {
                 "name": "main_query",
@@ -3835,7 +4642,7 @@
         },
         {
           "widget": {
-            "name": "c028",
+            "name": "c032",
             "queries": [
               {
                 "name": "main_query",
@@ -3875,7 +4682,7 @@
         },
         {
           "widget": {
-            "name": "b029",
+            "name": "b033",
             "queries": [
               {
                 "name": "main_query",
@@ -3935,7 +4742,7 @@
         },
         {
           "widget": {
-            "name": "tb030",
+            "name": "tb034",
             "queries": [
               {
                 "name": "main_query",
@@ -4201,7 +5008,7 @@
       "layout": [
         {
           "widget": {
-            "name": "t031",
+            "name": "t035",
             "multilineTextboxSpec": {
               "lines": [
                 "## Closed cases \u2014 beyond AIMS",
@@ -4219,7 +5026,7 @@
         },
         {
           "widget": {
-            "name": "c032",
+            "name": "c036",
             "queries": [
               {
                 "name": "main_query",
@@ -4259,7 +5066,7 @@
         },
         {
           "widget": {
-            "name": "c033",
+            "name": "c037",
             "queries": [
               {
                 "name": "main_query",
@@ -4299,7 +5106,7 @@
         },
         {
           "widget": {
-            "name": "c034",
+            "name": "c038",
             "queries": [
               {
                 "name": "main_query",
@@ -4339,7 +5146,7 @@
         },
         {
           "widget": {
-            "name": "b035",
+            "name": "b039",
             "queries": [
               {
                 "name": "main_query",
@@ -4399,7 +5206,7 @@
         },
         {
           "widget": {
-            "name": "b036",
+            "name": "b040",
             "queries": [
               {
                 "name": "main_query",
@@ -4459,7 +5266,7 @@
         },
         {
           "widget": {
-            "name": "tb037",
+            "name": "tb041",
             "queries": [
               {
                 "name": "main_query",
@@ -4817,7 +5624,7 @@
         },
         {
           "widget": {
-            "name": "tb038",
+            "name": "tb042",
             "queries": [
               {
                 "name": "main_query",
@@ -5047,7 +5854,7 @@
         },
         {
           "widget": {
-            "name": "b039",
+            "name": "b043",
             "queries": [
               {
                 "name": "main_query",
@@ -5107,7 +5914,7 @@
         },
         {
           "widget": {
-            "name": "tb040",
+            "name": "tb044",
             "queries": [
               {
                 "name": "main_query",

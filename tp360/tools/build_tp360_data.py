@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 import hero_cases as H
 import closed_cases
 import notice_history
+import hero_case_c
 from reference_tables import ISSUE_CODES, ISSUE_LINE_MAP, LINE_CATALOG, ROOT_CAUSES
 from tax_engine_ty2024 import compute
 
@@ -510,6 +511,9 @@ for r in LINE_CATALOG:
     add("tp_line_catalog", **dict(zip(COLS["tp_line_catalog"].split(","), r)))
 for rc, (br, desc) in ROOT_CAUSES.items():
     add("tp_root_cause", root_cause=rc, branch=br, description=desc)
+
+c_taxes, c_deficiency = hero_case_c.build(add, snapshot, line, lines_from_tax, iso, closed_cases)
+print("Case C total tax by version:", c_taxes, "deficiency", c_deficiency)
 
 nh_count = notice_history.generate(T, add, AS_OF, iso)
 
