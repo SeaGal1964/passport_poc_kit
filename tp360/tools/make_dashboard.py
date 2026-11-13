@@ -214,6 +214,8 @@ def table_columns(cols, titles):
 
 def cols_of(ds):
     sql = DATASETS[ds][1]
+    if sql.strip().upper().startswith("WITH"):  # a CTE query: the columns come from the final SELECT
+        sql = sql[sql.rindex("\nSELECT "):]
     sel = sql.split("SELECT", 1)[1].split("\nFROM", 1)[0]
     parts, depth, cur = [], 0, ""
     for ch in sel:
