@@ -442,3 +442,6 @@ F-CC00411,,TK400259,202212,RECOMPUTE,Form 8582 passive loss allocation recompute
 F-CC00412,,TK400260,201912,RECOMPUTE,Recompute variance on SCH_C 9 — Car and truck expenses not substantiated,,SCH_C 9,,-6880,C,IDR_REQUIRED,RECOMPUTE_VARIANCE,TAXPAYER_ISSUE,EX_SCHC_VEHICLE,Closed case
 F-CC00413,,TK400260,201912,RECOMPUTE,Recompute variance on SCH_C 9 — Car and truck expenses not substantiated,,SCH_C 9,,7020,C,IDR_REQUIRED,RECOMPUTE_VARIANCE,TAXPAYER_ISSUE,EX_SCHC_VEHICLE,Closed case
 F-CC00414,,TK400260,201912,RECOMPUTE,Form 8582 worksheets not carried in MeF,,SCH_E 21,,3990,A,RESOLVED_FROM_DATA,RECOMPUTE_VARIANCE,MEF_DATA_GAP,,Closed case
+F-C1,SN-C3,TK500001,202412,IRP,1099-NEC · Cedar Loop Media,4800,SCH_C 1,0,-4800,A,UNREPORTED_INCOME,IRP_MISMATCH,TAXPAYER_ISSUE,IR12,Payer not in gross receipts. Resolved from data: added to the proposal.
+F-C2,SN-C3,TK500001,202412,RVE,Form 1040-X · car and truck expenses,,SCH_C 9,9400,,C,IDR_REQUIRED,DATA_GAP,MEF_DATA_GAP,EX_SCHC_VEHICLE,"Claim adds $9,400 with no mileage detail; the IDR asks for the log."
+F-C3,SN-C3,TK500001,202412,RVE,Form 8829 · business use of home,,SCH_C 30,6200,,C,IDR_REQUIRED,DATA_GAP,MEF_DATA_GAP,EX_HOME_OFFICE,Exclusive use cannot be seen in return data; the IDR asks for a floor plan.

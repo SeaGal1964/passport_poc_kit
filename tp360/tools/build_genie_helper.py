@@ -14,7 +14,7 @@ ex, bm = parse("genie_example_sql.sql", "E"), parse("genie_benchmark_answers.sql
 SOURCES = ["v_tp360_header", "v_tp_signals", "v_tp_signal_evidence", "v_return_compare", "v_exam_results", "v_related_parties_named",
            "v_tp_timeline", "v_case_results", "v_line_adjustment_frequency", "v_issue_outcomes", "v_detection_mix",
            "v_variance_root_causes", "v_prior_audit_history", "v_prior_audit_summary", "v_prior_audit_issues", "v_repeat_issues",
-           "v_notice_history", "v_notice_summary", "v_issue_to_1040_trace", "tp_taxpayer", "tp_tax_module",
+           "v_notice_history", "v_notice_summary", "v_return_versions", "v_return_line_versions", "v_issue_to_1040_trace", "tp_taxpayer", "tp_tax_module",
            "tp_compliance_episode", "tp_statutory_clock", "tp_relationship", "tp_case_closure", "tp_issue", "tp_issue_code",
            "tp_rri_finding", "tp_idr", "tp_adjustment", "tp_return_snapshot", "tp_return_line", "tp_bank_account"]
 md = open(os.path.join(ROOT, "genie", "genie_instructions.md")).read()

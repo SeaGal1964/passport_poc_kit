@@ -2,7 +2,7 @@
 
     python tp360/tools/make_dashboard.py [catalog] [schema]      (defaults: workspace tp360_poc)
 
-Four pages: Taxpayer 360 (Marisol T. Vance), Return Viewer Editor, Signals across the population,
+Four pages: Taxpayer 360 and Return Viewer Editor (each with a taxpayer picker; RVE compares any two return versions), Signals across the population,
 Closed cases — beyond AIMS. Every dataset is plain SQL over the views built by setup_tp360, so the
 dashboard shows exactly what Genie and the notebook see.
 """
@@ -14,6 +14,9 @@ Q = f"{CAT}.{SCH}"
 HERO = "Marisol T. Vance"
 HERO_LABEL = "Marisol T. Vance (TK100001)"
 PICK = "concat(t.display_name, ' (', t.tin_token, ')') = :taxpayer"
+RVE_PICK = "concat(t.display_name, ' (', t.tin_token, ')') = :rve_taxpayer"
+VERSIONS = ["AS_FILED", "AS_AMENDED", "RVE_WORKING", "PROPOSED", "AS_EXAMINED", "AS_APPEALED"]
+VERSION_VALUES = ", ".join(f"('{v}', {i})" for i, v in enumerate(VERSIONS, 1))
 
 DATASETS = {
     # ---- page 1: Taxpayer 360 -------------------------------------------------------------
@@ -79,27 +82,62 @@ WHERE t.entity_type = 'INDIVIDUAL'
        OR t.tin_token IN (SELECT tin_token FROM {Q}.tp_compliance_episode WHERE closed_date IS NULL))
 ORDER BY CASE WHEN t.case_group LIKE 'HERO%' THEN 0 ELSE 1 END, taxpayer"""),
     # ---- page 2: RVE ----------------------------------------------------------------------
-    "ds_rve_compare": ("RVE three-column view — 2024 heroes", f"""
-SELECT t.display_name AS taxpayer, c.form, c.line, c.line_desc, c.as_filed, c.as_adjusted, c.delta, c.data_origin
-FROM {Q}.v_return_compare c JOIN {Q}.tp_taxpayer t USING (tin_token)
-WHERE c.tax_period = 202412 AND c.delta <> 0 AND t.case_group IN ('HERO_A', 'HERO_B')
-ORDER BY taxpayer, c.form_sort, c.line_sort, c.line, c.sub_id"""),
-    "ds_rve_origin": ("Where return data came from — 2024 heroes", f"""
-SELECT concat(t.display_name, ' · ', o.version_type) AS snapshot, o.data_origin, o.line_count
-FROM {Q}.v_rve_data_origin o JOIN {Q}.tp_taxpayer t USING (tin_token)
-WHERE o.tax_period = 202412 AND t.case_group IN ('HERO_A', 'HERO_B')
-ORDER BY snapshot, o.data_origin"""),
-    "ds_rve_findings": ("Reconciliation findings — 2024 heroes", f"""
-SELECT t.display_name AS taxpayer, f.branch,
+    "ds_rve_taxpayers": ("RVE taxpayer picker values", f"""
+SELECT DISTINCT concat(t.display_name, ' (', t.tin_token, ')') AS rve_taxpayer, v.versions_of_return,
+       CASE WHEN t.case_group LIKE 'HERO%' THEN 0 ELSE 1 END AS hero_first
+FROM {Q}.v_return_versions v JOIN {Q}.tp_taxpayer t ON t.tin_token = v.tin_token
+ORDER BY hero_first, v.versions_of_return DESC, rve_taxpayer"""),
+    "ds_from_versions": ("Compare-from version values", f"""
+SELECT version AS from_version FROM (VALUES {VERSION_VALUES}) AS v(version, seq) ORDER BY seq"""),
+    "ds_to_versions": ("Compare-to version values", f"""
+SELECT version AS to_version FROM (VALUES ('LATEST', 0), {VERSION_VALUES}) AS v(version, seq) ORDER BY seq"""),
+    "ds_rve_version_kpis": ("Versions of the return — selected taxpayer", f"""
+SELECT count(*) AS versions, count_if(v.source_tc IS NOT NULL) AS posted_versions,
+       max(v.total_tax_change_vs_filed) FILTER (WHERE v.version_seq = v.versions_of_return) AS latest_change_in_total_tax
+FROM {Q}.v_return_versions v JOIN {Q}.tp_taxpayer t ON t.tin_token = v.tin_token
+WHERE {RVE_PICK}"""),
+    "ds_rve_versions": ("Version history — selected taxpayer", f"""
+SELECT v.version_seq, v.version_type, CAST(v.created_date AS STRING) AS created, v.created_by, v.source_tc, v.status,
+       v.line_count, v.total_tax, v.total_tax_change_vs_filed
+FROM {Q}.v_return_versions v JOIN {Q}.tp_taxpayer t ON t.tin_token = v.tin_token
+WHERE {RVE_PICK} AND v.tax_period = '202412'
+ORDER BY v.version_seq"""),
+    "ds_rve_pair": ("Versions being compared — selected taxpayer", f"""
+WITH v AS (SELECT v.* FROM {Q}.v_return_versions v JOIN {Q}.tp_taxpayer t ON t.tin_token = v.tin_token
+           WHERE {RVE_PICK} AND v.tax_period = '202412'),
+pick AS (SELECT :from_version AS from_version,
+                CASE WHEN :to_version = 'LATEST' THEN (SELECT max_by(version_type, version_seq) FROM v) ELSE :to_version END AS to_version)
+SELECT p.from_version, p.to_version, a.total_tax AS from_total_tax, b.total_tax AS to_total_tax,
+       b.total_tax - a.total_tax AS change_in_total_tax,
+       CASE WHEN a.snapshot_id IS NULL OR b.snapshot_id IS NULL THEN 'This return has no ' ||
+            CASE WHEN a.snapshot_id IS NULL THEN p.from_version ELSE p.to_version END || ' version — see Version history'
+            ELSE 'OK' END AS note
+FROM pick p LEFT JOIN v a ON a.version_type = p.from_version LEFT JOIN v b ON b.version_type = p.to_version"""),
+    "ds_rve_compare": ("What changed between the two versions — selected taxpayer", f"""
+WITH v AS (SELECT l.* FROM {Q}.v_return_line_versions l JOIN {Q}.tp_taxpayer t ON t.tin_token = l.tin_token
+           WHERE {RVE_PICK} AND l.tax_period = '202412'),
+tv AS (SELECT CASE WHEN :to_version = 'LATEST' THEN (SELECT max_by(version_type, version_seq) FROM v) ELSE :to_version END AS to_version),
+a AS (SELECT * FROM v WHERE version_type = :from_version),
+b AS (SELECT * FROM v WHERE version_type = (SELECT to_version FROM tv))
+SELECT coalesce(b.form, a.form) AS form, coalesce(b.line, a.line) AS line, coalesce(b.line_desc, a.line_desc) AS line_desc,
+       a.amount AS from_amount, b.amount AS to_amount, coalesce(b.amount, 0) - coalesce(a.amount, 0) AS change,
+       b.data_origin
+FROM a FULL OUTER JOIN b ON a.form = b.form AND a.line = b.line AND a.sub_id = b.sub_id
+WHERE coalesce(b.amount, 0) <> coalesce(a.amount, 0)
+ORDER BY coalesce(b.form_sort, a.form_sort), coalesce(b.line_sort, a.line_sort), coalesce(b.line, a.line), coalesce(b.sub_id, a.sub_id)"""),
+    "ds_rve_origin": ("Where return data came from — selected taxpayer", f"""
+SELECT concat(lpad(CAST(l.version_seq AS STRING), 2, '0'), ' ', l.version_type) AS version, l.data_origin, count(*) AS lines
+FROM {Q}.v_return_line_versions l JOIN {Q}.tp_taxpayer t ON t.tin_token = l.tin_token
+WHERE {RVE_PICK}
+GROUP BY l.version_seq, l.version_type, l.data_origin
+ORDER BY version, l.data_origin"""),
+    "ds_rve_findings": ("Reconciliation findings — selected taxpayer", f"""
+SELECT f.branch,
        CASE f.branch WHEN 'A' THEN 'Resolved from data' WHEN 'B' THEN 'Not a taxpayer issue' ELSE 'Needs the taxpayer (IDR)' END AS branch_meaning,
        f.item, f.irp_amount, f.return_ref, f.return_amount, f.root_cause, f.note
-FROM {Q}.tp_rri_finding f JOIN {Q}.tp_taxpayer t USING (tin_token)
-WHERE f.tax_period = 202412 AND t.case_group IN ('HERO_A', 'HERO_B')
-ORDER BY taxpayer, f.branch, f.finding_id"""),
-    "ds_rve_exams": ("2024 exam results — heroes", f"""
-SELECT t.display_name AS taxpayer, r.deficiency, r.taxable_income_change, r.episode_status
-FROM {Q}.v_exam_results r JOIN {Q}.tp_taxpayer t USING (tin_token)
-WHERE r.tax_period = 202412 ORDER BY r.deficiency DESC"""),
+FROM {Q}.tp_rri_finding f JOIN {Q}.tp_taxpayer t ON t.tin_token = f.tin_token
+WHERE {RVE_PICK}
+ORDER BY f.branch, f.finding_id"""),
     # ---- page 3: signals ------------------------------------------------------------------
     "ds_sig_kpis": ("Signal KPIs", f"""
 SELECT count(DISTINCT tin_token) AS taxpayers_with_signals,
@@ -144,11 +182,13 @@ FROM {Q}.v_issue_to_1040_trace ORDER BY issue_code, role DESC"""),
 # column types for tables: name -> (type, displayAs)
 NUMERIC_HINTS = ("balance", "deficiency", "amount", "count", "cases", "hours", "pct", "per_hour", "adjust", "findings",
                  "issues", "taxpayers", "hops", "raised", "conceded", "no_change", "sustained", "delta", "as_filed",
-                 "as_adjusted", "line_count", "change", "notices", "exams", "days_to", "codes")
+                 "as_adjusted", "line_count", "change", "notices", "exams", "days_to", "codes", "total_tax", "_seq",
+                 "lines", "versions")
 
 
 def col_type(name):
-    if name in ("line", "tin_token", "csed", "opened", "closed", "tax_year", "tax_period", "tax_periods", "issued",
+    if name in ("line", "tin_token", "csed", "opened", "closed", "tax_year", "tax_period", "tax_periods", "issued", "created",
+                "source_tc", "version", "from_version", "to_version", "rve_taxpayer", "note",
                 "response_due", "received", "issue_code", "repeat_issue", "issue_status", "issue_name"):
         return "string"
     return "float" if any(h in name for h in NUMERIC_HINTS) else "string"
@@ -245,28 +285,39 @@ def hbar(ds, cat, val, title, cat_title, val_title, x, y, w, h):
 
 PARAM_DS = ["ds_hero_header", "ds_hero_signals", "ds_hero_modules", "ds_hero_episodes", "ds_hero_history", "ds_hero_related",
             "ds_audit_kpis", "ds_audit_issues", "ds_notice_kpis", "ds_notice_history"]
+RVE_LABEL = "Marisol T. Vance (TK100001)"
+PARAMS = {  # keyword: (default, datasets that use it, values dataset)
+    "taxpayer": (HERO_LABEL, PARAM_DS, "ds_taxpayer_list"),
+    "rve_taxpayer": (RVE_LABEL, ["ds_rve_version_kpis", "ds_rve_versions", "ds_rve_pair", "ds_rve_compare", "ds_rve_origin",
+                                 "ds_rve_findings"], "ds_rve_taxpayers"),
+    "from_version": ("AS_FILED", ["ds_rve_pair", "ds_rve_compare"], "ds_from_versions"),
+    "to_version": ("LATEST", ["ds_rve_pair", "ds_rve_compare"], "ds_to_versions"),
+}
 
 
 def dataset(k, v):
     d = {"name": k, "displayName": v[0], "queryLines": [l + "\n" for l in v[1].strip().splitlines()]}
-    if k in PARAM_DS:
-        d["parameters"] = [{"displayName": "taxpayer", "keyword": "taxpayer", "dataType": "STRING",
-                            "defaultSelection": {"values": {"dataType": "STRING", "values": [{"value": HERO_LABEL}]}}}]
+    ps = [kw for kw, (_, dss, _) in PARAMS.items() if k in dss]
+    if ps:
+        d["parameters"] = [{"displayName": kw, "keyword": kw, "dataType": "STRING",
+                            "defaultSelection": {"values": {"dataType": "STRING", "values": [{"value": PARAMS[kw][0]}]}}}
+                           for kw in ps]
     return d
 
 
-def picker(x, y, w, h):
-    queries = [{"name": "q_taxpayer_values", "query": {"datasetName": "ds_taxpayer_list",
-                "fields": [{"name": "taxpayer", "expression": "`taxpayer`"}], "disaggregated": False}}]
-    fields = [{"fieldName": "taxpayer", "displayName": "taxpayer", "queryName": "q_taxpayer_values"}]
-    for ds in PARAM_DS:
-        qn = f"p_{ds}_taxpayer"
-        queries.append({"name": qn, "query": {"datasetName": ds, "parameters": [{"name": "taxpayer", "keyword": "taxpayer"}],
+def picker(x, y, w, h, kw="taxpayer", title="Taxpayer"):
+    _, dss, values_ds = PARAMS[kw]
+    queries = [{"name": f"q_{kw}_values", "query": {"datasetName": values_ds,
+                "fields": [{"name": kw, "expression": f"`{kw}`"}], "disaggregated": False}}]
+    fields = [{"fieldName": kw, "displayName": kw, "queryName": f"q_{kw}_values"}]
+    for ds in dss:
+        qn = f"p_{ds}_{kw}"
+        queries.append({"name": qn, "query": {"datasetName": ds, "parameters": [{"name": kw, "keyword": kw}],
                                               "disaggregated": False}})
-        fields.append({"parameterName": "taxpayer", "queryName": qn})
-    return {"widget": {"name": "f_taxpayer", "queries": queries,
+        fields.append({"parameterName": kw, "queryName": qn})
+    return {"widget": {"name": f"f_{kw}", "queries": queries,
                        "spec": {"version": 2, "widgetType": "filter-single-select", "encodings": {"fields": fields},
-                                "frame": {"showTitle": True, "title": "Taxpayer"}}},
+                                "frame": {"showTitle": True, "title": title}}},
             "position": {"x": x, "y": y, "width": w, "height": h}}
 
 
@@ -301,11 +352,23 @@ p1 = [
     table("ds_hero_related", "Related parties with signals of their own", 0, 35, 6, 3),
 ]
 p2 = [
-    text(["## Return Viewer Editor — TY2024 heroes", "The as-filed baseline is never overwritten. Each change is versioned and every line says where its data came from: MeF, an attachment extract, an RVE supplement, an examiner adjustment, or the recompute.", NOTE], 0, 0, 6, 2),
-    table("ds_rve_exams", "2024 exam results", 0, 2, 6, 3),
-    table("ds_rve_compare", "Three-column view — what changed (as filed · as adjusted · delta)", 0, 5, 6, 7),
-    table("ds_rve_findings", "Reconciliation findings by branch", 0, 12, 6, 6),
-    table("ds_rve_origin", "Where the return data came from, by snapshot", 0, 18, 6, 5),
+    text(["## Return Viewer Editor", "One return, every version. The as-filed baseline is never overwritten: an amended return, the examiner's working copy, the proposal, the assessment and the Appeals result are each kept as their own snapshot. Pick a taxpayer and any two versions to see exactly what changed. Try Priya N. Halvorsen (TK500001): six versions, from as filed to as appealed.", NOTE], 0, 0, 6, 2),
+    picker(0, 2, 2, 1, "rve_taxpayer", "Taxpayer"),
+    picker(2, 2, 2, 1, "from_version", "Compare from"),
+    picker(4, 2, 2, 1, "to_version", "Compare to (LATEST = most recent version)"),
+    counter("ds_rve_version_kpis", "versions", "Versions of this return", 0, 3),
+    counter("ds_rve_version_kpis", "posted_versions", "Versions posted to Master File", 2, 3),
+    counter("ds_rve_version_kpis", "latest_change_in_total_tax", "Total tax change, latest vs as filed", 4, 3),
+    table("ds_rve_versions", "Version history (each snapshot, in order)", 0, 5, 6, 4,
+          {"version_seq": "#", "version_type": "version", "source_tc": "TC", "line_count": "lines",
+           "total_tax": "total tax (line 24)", "total_tax_change_vs_filed": "change vs as filed"}),
+    table("ds_rve_pair", "Comparing", 0, 9, 6, 2,
+          {"from_version": "from", "to_version": "to", "from_total_tax": "total tax — from", "to_total_tax": "total tax — to",
+           "change_in_total_tax": "change"}),
+    table("ds_rve_compare", "What changed between the two versions (form, then line)", 0, 11, 6, 7,
+          {"line_desc": "description", "from_amount": "from version", "to_amount": "to version", "data_origin": "data origin"}),
+    table("ds_rve_findings", "Reconciliation findings by branch", 0, 18, 6, 5),
+    table("ds_rve_origin", "Where the return data came from, by version", 0, 23, 6, 5),
 ]
 p3 = [
     text(["## Signals across the population", "Rules SG01–SG10 run as SQL over the canonical model. The same rules feed Genie, this dashboard and any case tool — nothing is copied into a workflow vendor.", NOTE], 0, 0, 6, 2),

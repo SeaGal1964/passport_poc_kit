@@ -151,7 +151,8 @@ LEFT JOIN s ON s.tin_token = t.tin_token;
 CREATE OR REPLACE VIEW v_latest_snapshot AS
 SELECT tin_token, tax_period, snapshot_id, version_type FROM (
   SELECT s.*, row_number() OVER (PARTITION BY tin_token, tax_period
-         ORDER BY CASE version_type WHEN 'AS_EXAMINED' THEN 1 WHEN 'PROPOSED' THEN 2 WHEN 'RVE_WORKING' THEN 3 ELSE 4 END) AS rn
+         ORDER BY CASE version_type WHEN 'AS_APPEALED' THEN 0 WHEN 'AS_EXAMINED' THEN 1 WHEN 'PROPOSED' THEN 2
+                                    WHEN 'RVE_WORKING' THEN 3 WHEN 'AS_AMENDED' THEN 4 ELSE 5 END) AS rn
   FROM tp_return_snapshot s) x
 WHERE rn = 1;
 
@@ -433,3 +434,40 @@ JOIN tp_case_closure c ON c.episode_id = i.episode_id
 JOIN tp_taxpayer t ON t.tin_token = i.tin_token
 LEFT JOIN tp_issue_code ic ON ic.issue_code = i.issue_code
 LEFT JOIN rep ON rep.tin_token = i.tin_token AND rep.issue_code = i.issue_code;
+
+
+-- --------------------------------------------------------------------------------------------
+-- Return versions: every snapshot RVE keeps for a return (as filed, as amended, working, proposed,
+-- as examined, as appealed), in the order they were created, with total tax on each
+-- --------------------------------------------------------------------------------------------
+CREATE OR REPLACE VIEW v_return_versions AS
+WITH lc AS (SELECT snapshot_id, count(*) AS line_count FROM tp_return_line GROUP BY snapshot_id),
+tt AS (SELECT snapshot_id, amount AS total_tax FROM tp_return_line WHERE form = '1040' AND line = '24')
+SELECT s.tin_token, t.display_name, CAST(s.tax_period AS STRING) AS tax_period, s.snapshot_id, s.version_type,
+       row_number() OVER (PARTITION BY s.tin_token, s.tax_period ORDER BY CAST(s.created_date AS DATE), s.snapshot_id) AS version_seq,
+       count(*) OVER (PARTITION BY s.tin_token, s.tax_period) AS versions_of_return,
+       CAST(s.created_date AS DATE) AS created_date, s.created_by, CAST(s.source_tc AS STRING) AS source_tc, s.status,
+       s.basis_snapshot_id, coalesce(lc.line_count, 0) AS line_count, tt.total_tax,
+       tt.total_tax - first_value(tt.total_tax) OVER (PARTITION BY s.tin_token, s.tax_period
+                                                       ORDER BY CAST(s.created_date AS DATE), s.snapshot_id) AS total_tax_change_vs_filed
+FROM tp_return_snapshot s
+JOIN tp_taxpayer t ON t.tin_token = s.tin_token
+LEFT JOIN lc ON lc.snapshot_id = s.snapshot_id
+LEFT JOIN tt ON tt.snapshot_id = s.snapshot_id;
+
+-- one row per line per version, with the display sort keys (Form 1040 first, then schedules, then forms)
+CREATE OR REPLACE VIEW v_return_line_versions AS
+SELECT v.tin_token, v.display_name, v.tax_period, v.snapshot_id, v.version_type, v.version_seq, v.created_date,
+       l.form, l.line, coalesce(l.sub_id, '') AS sub_id, l.line_desc, l.amount, l.data_origin,
+       CASE WHEN l.form = '1040' THEN 0
+            WHEN regexp_extract(l.form, '^SCH_([0-9])$', 1) <> ''
+                 THEN 100 + try_cast(regexp_extract(l.form, '^SCH_([0-9])$', 1) AS INT)
+            WHEN regexp_extract(l.form, '^SCH_([A-Z]+)$', 1) <> ''
+                 THEN 200 + (ascii(substr(l.form, 5, 1)) - 64) * 2 + length(l.form) - 5
+            WHEN regexp_extract(l.form, '^SCH_([0-9]+)$', 1) <> '' THEN 300
+            WHEN regexp_extract(l.form, '^F([0-9]+)', 1) <> ''
+                 THEN 1000 + try_cast(regexp_extract(l.form, '^F([0-9]+)', 1) AS INT)
+            WHEN l.form = 'RVE_SUPP' THEN 999999
+            ELSE 900000 END AS form_sort,
+       coalesce(try_cast(regexp_extract(l.line, '^([0-9]+)', 1) AS INT), 9999) AS line_sort
+FROM tp_return_line l JOIN v_return_versions v ON v.snapshot_id = l.snapshot_id;
