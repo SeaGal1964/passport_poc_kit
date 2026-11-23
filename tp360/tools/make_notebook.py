@@ -96,13 +96,18 @@ bad_cases = spark.sql("SELECT count(*) AS n FROM v_case_results WHERE total_tax_
 n_notices = spark.sql("SELECT count(*) AS n FROM v_notice_history").first()["n"]
 n_contact = spark.table("tp_contact_event").count()
 print("notices:", n_notices, "of", n_contact, "contact events")
+bad_gates = spark.sql("SELECT count(*) AS n FROM v_indirect_method_gate WHERE gate_check <> 'PASS'").first()["n"]
+bad_fsa = spark.sql(\"\"\"SELECT count(*) AS n FROM v_fsa_summary
+  WHERE material_imbalance <> (conclusion = 'MATERIAL_IMBALANCE')\"\"\").first()["n"]
+bdce_a = spark.sql("SELECT amount FROM v_bdce_computation WHERE episode_id = 'EP-A-EX19' AND line_no = 13").first()["amount"]
+print("indirect methods: gate failures", bad_gates, "| Cash T conclusion mismatches", bad_fsa, "| BDCE understatement EP-A-EX19", bdce_a)
 print("closed cases:", spark.table("tp_case_closure").count(), "| closure vs tax computation mismatches:", bad_cases)
 print("signal mismatches:", n_mm)
 print("deficiencies:", defs)
 display(spark.sql("SELECT signal_id, count(DISTINCT tin_token) AS taxpayers FROM v_tp_signals GROUP BY signal_id ORDER BY signal_id"))
 if n_mm:
     display(mm)
-if n_mm or bad_cases or n_notices != n_contact or defs.get("EP-A-EX24") != 2417 or defs.get("EP-B-EX24") != 11000:
+if n_mm or bad_cases or bad_gates or bad_fsa or bdce_a != 58000 or n_notices != n_contact or defs.get("EP-A-EX24") != 2417 or defs.get("EP-B-EX24") != 11000:
     raise RuntimeError("VALIDATION FAILED")
 print("VALIDATION PASSED")
 """)

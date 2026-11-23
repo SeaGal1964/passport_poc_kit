@@ -17,6 +17,7 @@ for f in sorted(os.listdir(os.path.join(ROOT, "data"))):
 
 sql = open(os.path.join(ROOT, "sql", "tp360_views.sql")).read()
 sql = "\n".join(l for l in sql.splitlines() if not l.strip().startswith("--"))
+con.execute("CREATE MACRO format_number(x, d) AS format('{:,.0f}', CAST(x AS DOUBLE))")
 con.execute("CREATE MACRO datediff(a, b) AS date_diff('day', CAST(b AS DATE), CAST(a AS DATE))")
 sql = re.sub(r"concat_ws\('; ', collect_list\((.+?)\)\)(\s+AS)", r"string_agg(\1, '; ')\2", sql)
 sql = re.sub(r"concat_ws\(' \| ', collect_set\((.+?)\)\)(\s+AS)", r"string_agg(DISTINCT \1, ' | ')\2", sql)
@@ -45,6 +46,9 @@ checks = {
     "A 3-col rows": con.execute("SELECT count(*) FROM v_return_compare WHERE tin_token='TK100001'").fetchone()[0],
     "A changed rows": con.execute("SELECT count(*) FROM v_return_compare WHERE tin_token='TK100001' AND delta<>0").fetchone()[0],
     "B changed rows": con.execute("SELECT count(*) FROM v_return_compare WHERE tin_token='TK200001' AND delta<>0").fetchone()[0],
+    "gate failures": con.execute("SELECT count(*) FROM v_indirect_method_gate WHERE gate_check <> 'PASS'").fetchone()[0],
+    "Cash T conclusion mismatches": con.execute("SELECT count(*) FROM v_fsa_summary WHERE material_imbalance <> (conclusion = 'MATERIAL_IMBALANCE')").fetchone()[0],
+    "BDCE understatement A 2019": con.execute("SELECT amount FROM v_bdce_computation WHERE episode_id='EP-A-EX19' AND line_no=13").fetchone()[0],
     "Latimer 2-hop": con.execute("SELECT count(*) FROM v_related_parties_named WHERE tin_token='TK100001' AND hops=2").fetchone()[0],
 }
 print(checks)
@@ -62,6 +66,7 @@ for i, st in enumerate([s for s in re.split(r";\s*\n", bench) if s.strip()], 1):
     except Exception as e:
         print(f"benchmark Q{i} FAILED: {e}")
         bench_ok = False
-ok = bench_ok and not mm and checks["case results = closure + tax comp"] == 0 and checks["A deficiency"] == 2417 and checks["B deficiency"] == 11000
+ok = bench_ok and not mm and checks["gate failures"] == 0 and checks["Cash T conclusion mismatches"] == 0 \
+    and checks["BDCE understatement A 2019"] == 58000 and checks["case results = closure + tax comp"] == 0 and checks["A deficiency"] == 2417 and checks["B deficiency"] == 11000
 print("LOCAL CHECK PASSED" if ok else "LOCAL CHECK FAILED")
 sys.exit(0 if ok else 1)

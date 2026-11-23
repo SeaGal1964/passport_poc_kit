@@ -17,6 +17,7 @@ import hero_cases as H
 import closed_cases
 import notice_history
 import hero_case_c
+import indirect_methods
 from reference_tables import ISSUE_CODES, ISSUE_LINE_MAP, LINE_CATALOG, ROOT_CAUSES
 from tax_engine_ty2024 import compute
 
@@ -31,7 +32,8 @@ T = {k: [] for k in [
     "tp_procedural_overlay", "tp_contact_event", "tp_issue", "tp_determination", "tp_statutory_clock",
     "tp_financial_profile", "tp_asset", "tp_bank_account", "tp_information_return", "tp_relationship",
     "tp_transfer", "tp_return_snapshot", "tp_return_line", "tp_rri_finding", "tp_idr", "tp_adjustment",
-    "tp_case_closure", "tp_tax_computation", "tp_issue_code", "tp_issue_line_map", "tp_line_catalog", "tp_root_cause"]}
+    "tp_case_closure", "tp_tax_computation", "tp_issue_code", "tp_issue_line_map", "tp_line_catalog", "tp_root_cause",
+    "tp_ref_ple", "tp_fsa", "tp_fsa_line", "tp_indirect_method_gate", "tp_bdce_line", "tp_net_worth_item"]}
 
 COLS = {
     "tp_taxpayer": "tin_token,tin_type,display_name,entity_type,filing_status,city,state,poa_on_file,case_group",
@@ -60,6 +62,12 @@ COLS = {
     "tp_issue_line_map": "issue_code,seq,form,line,mef_element,effect,role,note",
     "tp_line_catalog": "form,line,line_desc,mef_element,line_class,modifiable,rolls_to_form,rolls_to_line",
     "tp_root_cause": "root_cause,branch,description",
+    "tp_ref_ple": "tax_year,region,household_size,annual_ple,source",
+    "tp_fsa": "fsa_id,tin_token,episode_id,tax_period,return_class,household_size,region,prepared_date,prepared_by,cash_on_hand_begin,cash_on_hand_end,coh_established_date,conclusion,note",
+    "tp_fsa_line": "fsa_id,seq,side,category,description,amount,basis,reference",
+    "tp_indirect_method_gate": "gate_id,episode_id,tin_token,tax_periods,method,triggers,reasonable_indication,likely_income_source,documented_date,manager_concurrence_date,result_used_date,status",
+    "tp_bdce_line": "episode_id,tin_token,tax_period,line_no,line_label,amount,note",
+    "tp_net_worth_item": "episode_id,tin_token,tax_period,as_of_date,item_type,item,amount,basis",
 }
 
 
@@ -516,6 +524,8 @@ c_taxes, c_deficiency = hero_case_c.build(add, snapshot, line, lines_from_tax, i
 print("Case C total tax by version:", c_taxes, "deficiency", c_deficiency)
 
 nh_count = notice_history.generate(T, add, AS_OF, iso)
+im_results = indirect_methods.generate(T, add)
+print("Indirect methods:", im_results)
 
 # ==============================================================================================
 # ANSWER KEY: expected signals computed in Python (independent of the SQL rules)
@@ -582,6 +592,10 @@ def signals():
         ys = sorted(ys)
         if any(b - a <= 5 for a, b in zip(ys, ys[1:])):
             out.add((t, "SG10_REPEAT_ISSUE"))
+    open_exam = {e["episode_id"] for e in ep if e["episode_type"] == "EXAM" and not e["closed_date"]}
+    for f in T["tp_fsa"]:
+        if f["episode_id"] in open_exam and f["conclusion"] == "MATERIAL_IMBALANCE":
+            out.add((f["tin_token"], "SG11_CASH_T_MATERIAL_IMBALANCE"))
     return sorted(out)
 
 SIG = signals()

@@ -1,0 +1,36 @@
+episode_id,tin_token,tax_period,as_of_date,item_type,item,amount,basis
+EP-OX1-EX,TK300006,,2022-12-31,ASSET,Bank accounts,12000,Third-party records and interview
+EP-OX1-EX,TK300006,,2022-12-31,ASSET,Cash on hand,1000,Initial interview 2026-07-21
+EP-OX1-EX,TK300006,,2022-12-31,ASSET,Residence (cost),310000,Third-party records and interview
+EP-OX1-EX,TK300006,,2022-12-31,ASSET,Vehicles (cost),28000,Third-party records and interview
+EP-OX1-EX,TK300006,,2022-12-31,ASSET,Equipment (cost),15000,Third-party records and interview
+EP-OX1-EX,TK300006,,2022-12-31,LIABILITY,Mortgage,240000,Third-party records and interview
+EP-OX1-EX,TK300006,,2022-12-31,LIABILITY,Truck loan,18000,Third-party records and interview
+EP-OX1-EX,TK300006,,2023-12-31,ASSET,Bank accounts,21000,Third-party records and interview
+EP-OX1-EX,TK300006,,2023-12-31,ASSET,Cash on hand,1000,Initial interview 2026-07-21
+EP-OX1-EX,TK300006,,2023-12-31,ASSET,Residence (cost),310000,Third-party records and interview
+EP-OX1-EX,TK300006,,2023-12-31,ASSET,Vehicles and boat (cost),62000,Third-party records and interview
+EP-OX1-EX,TK300006,,2023-12-31,ASSET,Equipment (cost),22000,Third-party records and interview
+EP-OX1-EX,TK300006,,2023-12-31,LIABILITY,Mortgage,233000,Third-party records and interview
+EP-OX1-EX,TK300006,,2023-12-31,LIABILITY,Truck loan,11000,Third-party records and interview
+EP-OX1-EX,TK300006,,2024-12-31,ASSET,Bank accounts,18000,Third-party records and interview
+EP-OX1-EX,TK300006,,2024-12-31,ASSET,Cash on hand,1000,Initial interview 2026-07-21
+EP-OX1-EX,TK300006,,2024-12-31,ASSET,Residence (cost),310000,Third-party records and interview
+EP-OX1-EX,TK300006,,2024-12-31,ASSET,Vehicles and boat (cost),62000,Third-party records and interview
+EP-OX1-EX,TK300006,,2024-12-31,ASSET,Equipment (cost),22000,Third-party records and interview
+EP-OX1-EX,TK300006,,2024-12-31,ASSET,Brokerage account,25000,Third-party records and interview
+EP-OX1-EX,TK300006,,2024-12-31,LIABILITY,Mortgage,226000,Third-party records and interview
+EP-OX1-EX,TK300006,,2024-12-31,LIABILITY,Truck loan,4000,Third-party records and interview
+EP-OX1-EX,TK300006,202312,,NONDEDUCTIBLE,Personal living expenses (BLS-style table),58000,BLS-style table
+EP-OX1-EX,TK300006,202312,,NONDEDUCTIBLE,Federal tax paid,6800,Interview and records
+EP-OX1-EX,TK300006,202312,,REPORTED_INCOME,Adjusted gross income as reported,61300,Return
+EP-OX1-EX,TK300006,202412,,NONDEDUCTIBLE,Personal living expenses (BLS-style table),59740,BLS-style table
+EP-OX1-EX,TK300006,202412,,NONDEDUCTIBLE,Federal tax paid,7100,Interview and records
+EP-OX1-EX,TK300006,202412,,NONTAXABLE,"Inheritance, verified",15000,Interview and records
+EP-OX1-EX,TK300006,202412,,REPORTED_INCOME,Adjusted gross income as reported,63900,Return
+EP-OX1-EX,TK300006,202312,,NW_INCREASE,Increase in net worth 2022 to 2023,64000,Computed
+EP-OX1-EX,TK300006,202312,,CORRECTED_INCOME,Corrected adjusted gross income,128800,Computed
+EP-OX1-EX,TK300006,202312,,UNDERSTATEMENT,Understatement of income,67500,Computed
+EP-OX1-EX,TK300006,202412,,NW_INCREASE,Increase in net worth 2023 to 2024,36000,Computed
+EP-OX1-EX,TK300006,202412,,CORRECTED_INCOME,Corrected adjusted gross income,87840,Computed
+EP-OX1-EX,TK300006,202412,,UNDERSTATEMENT,Understatement of income,23940,Computed

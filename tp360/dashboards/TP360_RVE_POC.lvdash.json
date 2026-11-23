@@ -635,6 +635,159 @@
         "SELECT issue_code, issue_name, role, source_line, rollup_path\n",
         "FROM workspace.tp360_poc.v_issue_to_1040_trace ORDER BY issue_code, role DESC\n"
       ]
+    },
+    {
+      "name": "ds_im_cases",
+      "displayName": "Income probe case picker values",
+      "queryLines": [
+        "SELECT concat(f.display_name, ' \u2014 ', f.tax_period, ' (', f.episode_id, ')') AS probe_case,\n",
+        "       CASE WHEN f.tin_token = 'TK100001' THEN 0 WHEN f.episode_open THEN 1 ELSE 2 END AS sort_key\n",
+        "FROM workspace.tp360_poc.v_fsa_summary f ORDER BY sort_key, probe_case\n"
+      ]
+    },
+    {
+      "name": "ds_im_all",
+      "displayName": "Cash T results \u2014 all exam cases",
+      "queryLines": [
+        "SELECT f.display_name, f.tax_period, f.episode_id, CASE WHEN f.episode_open THEN 'Open' ELSE 'Closed' END AS exam,\n",
+        "       f.return_class, f.total_sources, f.total_applications, f.imbalance, round(100 * f.imbalance_pct, 1) AS imbalance_pct,\n",
+        "       CASE WHEN f.material_imbalance THEN 'MATERIAL' ELSE 'Balances' END AS result, f.gate_status\n",
+        "FROM workspace.tp360_poc.v_fsa_summary f ORDER BY f.material_imbalance DESC, f.imbalance DESC\n"
+      ]
+    },
+    {
+      "name": "ds_im_kpis",
+      "displayName": "Cash T totals \u2014 selected case",
+      "queryLines": [
+        "SELECT f.total_sources, f.total_applications, f.imbalance, round(100 * f.imbalance_pct, 1) AS imbalance_pct,\n",
+        "       CASE WHEN f.material_imbalance THEN 'MATERIAL IMBALANCE' ELSE 'Income supports expenditures' END AS result\n",
+        "FROM workspace.tp360_poc.v_fsa_summary f WHERE concat(f.display_name, ' \u2014 ', f.tax_period, ' (', f.episode_id, ')') = :probe_case\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "probe_case",
+          "keyword": "probe_case",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "Marisol T. Vance \u2014 201912 (EP-A-EX19)"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ds_im_lines",
+      "displayName": "Cash T lines \u2014 selected case",
+      "queryLines": [
+        "SELECT l.side, l.category, l.description, l.amount, l.basis, l.reference\n",
+        "FROM workspace.tp360_poc.v_fsa_lines l JOIN workspace.tp360_poc.v_fsa_summary f ON f.fsa_id = l.fsa_id\n",
+        "WHERE concat(f.display_name, ' \u2014 ', f.tax_period, ' (', f.episode_id, ')') = :probe_case ORDER BY l.seq\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "probe_case",
+          "keyword": "probe_case",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "Marisol T. Vance \u2014 201912 (EP-A-EX19)"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ds_im_gate",
+      "displayName": "IRC 7602(e) gate \u2014 selected case",
+      "queryLines": [
+        "WITH g AS (SELECT g.* FROM workspace.tp360_poc.v_indirect_method_gate g JOIN workspace.tp360_poc.v_fsa_summary f ON f.episode_id = g.episode_id WHERE concat(f.display_name, ' \u2014 ', f.tax_period, ' (', f.episode_id, ')') = :probe_case),\n",
+        "f AS (SELECT f.* FROM workspace.tp360_poc.v_fsa_summary f WHERE concat(f.display_name, ' \u2014 ', f.tax_period, ' (', f.episode_id, ')') = :probe_case)\n",
+        "SELECT coalesce(g.method, 'NONE') AS method, coalesce(g.gate_check, f.gate_status) AS gate_check,\n",
+        "       CAST(g.documented_date AS STRING) AS documented, CAST(g.manager_concurrence_date AS STRING) AS manager_concurrence,\n",
+        "       CAST(g.result_used_date AS STRING) AS result_used, g.reasonable_indication, g.likely_income_source\n",
+        "FROM f LEFT JOIN g ON true\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "probe_case",
+          "keyword": "probe_case",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "Marisol T. Vance \u2014 201912 (EP-A-EX19)"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ds_im_bdce",
+      "displayName": "Bank deposits and cash expenditures \u2014 selected case",
+      "queryLines": [
+        "SELECT b.line_no, b.line_label, b.amount, b.note\n",
+        "FROM workspace.tp360_poc.v_bdce_computation b JOIN workspace.tp360_poc.v_fsa_summary f ON f.episode_id = b.episode_id AND f.tax_period = b.tax_period\n",
+        "WHERE concat(f.display_name, ' \u2014 ', f.tax_period, ' (', f.episode_id, ')') = :probe_case ORDER BY b.line_no\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "probe_case",
+          "keyword": "probe_case",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "Marisol T. Vance \u2014 201912 (EP-A-EX19)"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ds_im_networth",
+      "displayName": "Net worth computation \u2014 selected case",
+      "queryLines": [
+        "SELECT coalesce(CAST(n.as_of_date AS STRING), n.tax_period) AS as_of_or_period, n.item_type, n.item, n.amount, n.basis\n",
+        "FROM workspace.tp360_poc.v_net_worth_computation n JOIN workspace.tp360_poc.v_fsa_summary f ON f.episode_id = n.episode_id\n",
+        "WHERE concat(f.display_name, ' \u2014 ', f.tax_period, ' (', f.episode_id, ')') = :probe_case AND (n.tax_period IS NULL OR n.tax_period = '' OR n.tax_period = f.tax_period)\n",
+        "ORDER BY n.item_sort, as_of_or_period, n.item\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "probe_case",
+          "keyword": "probe_case",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "Marisol T. Vance \u2014 201912 (EP-A-EX19)"
+                }
+              ]
+            }
+          }
+        }
+      ]
     }
   ],
   "pages": [
@@ -4706,7 +4859,7 @@
             "multilineTextboxSpec": {
               "lines": [
                 "## Signals across the population",
-                "Rules SG01\u2013SG10 run as SQL over the canonical model. The same rules feed Genie, this dashboard and any case tool \u2014 nothing is copied into a workflow vendor.",
+                "Rules SG01\u2013SG11 run as SQL over the canonical model. The same rules feed Genie, this dashboard and any case tool \u2014 nothing is copied into a workflow vendor.",
                 "Fictional taxpayers \u00b7 synthetic data \u00b7 not IRS data. Closed-case figures are illustrative (TY2024 parameters)."
               ]
             }
@@ -6263,6 +6416,1509 @@
             "y": 22,
             "width": 6,
             "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS"
+    },
+    {
+      "name": "p_probes",
+      "displayName": "Income probes",
+      "layout": [
+        {
+          "widget": {
+            "name": "t045",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Exam income probes and indirect methods (IRM 4.10.4)",
+                "Every exam does minimum income probes; the financial status analysis (Cash T) compares what came in with what went out, using exam data only: the return, information returns, the interview, a BLS-style living-expense table and, for business returns, bank account analysis. A Cash T is a probe, not a formal method. A formal indirect method (bank deposits, net worth) needs a documented reasonable indication of unreported income first \u2014 IRC 7602(e) \u2014 and net worth also needs manager concurrence. Living-expense figures and the materiality rule (\u2265 $10,000 and \u2265 10% of sources) are synthetic; SME to confirm.",
+                "Fictional taxpayers \u00b7 synthetic data \u00b7 not IRS data. Closed-case figures are illustrative (TY2024 parameters)."
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "tb046",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_im_all",
+                  "fields": [
+                    {
+                      "name": "display_name",
+                      "expression": "`display_name`"
+                    },
+                    {
+                      "name": "tax_period",
+                      "expression": "`tax_period`"
+                    },
+                    {
+                      "name": "episode_id",
+                      "expression": "`episode_id`"
+                    },
+                    {
+                      "name": "exam",
+                      "expression": "`exam`"
+                    },
+                    {
+                      "name": "return_class",
+                      "expression": "`return_class`"
+                    },
+                    {
+                      "name": "total_sources",
+                      "expression": "`total_sources`"
+                    },
+                    {
+                      "name": "total_applications",
+                      "expression": "`total_applications`"
+                    },
+                    {
+                      "name": "imbalance",
+                      "expression": "`imbalance`"
+                    },
+                    {
+                      "name": "imbalance_pct",
+                      "expression": "`imbalance_pct`"
+                    },
+                    {
+                      "name": "result",
+                      "expression": "`result`"
+                    },
+                    {
+                      "name": "gate_status",
+                      "expression": "`gate_status`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "display_name",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100000,
+                    "title": "taxpayer",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "taxpayer"
+                  },
+                  {
+                    "fieldName": "tax_period",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100001,
+                    "title": "tax period",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "tax period"
+                  },
+                  {
+                    "fieldName": "episode_id",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100002,
+                    "title": "case",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "case"
+                  },
+                  {
+                    "fieldName": "exam",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100003,
+                    "title": "exam",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "exam"
+                  },
+                  {
+                    "fieldName": "return_class",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100004,
+                    "title": "return",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "return"
+                  },
+                  {
+                    "fieldName": "total_sources",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "float",
+                    "displayAs": "number",
+                    "numberFormat": "#,##0.##",
+                    "visible": true,
+                    "order": 100005,
+                    "title": "sources",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "sources"
+                  },
+                  {
+                    "fieldName": "total_applications",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "float",
+                    "displayAs": "number",
+                    "numberFormat": "#,##0.##",
+                    "visible": true,
+                    "order": 100006,
+                    "title": "applications",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "applications"
+                  },
+                  {
+                    "fieldName": "imbalance",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "float",
+                    "displayAs": "number",
+                    "numberFormat": "#,##0.##",
+                    "visible": true,
+                    "order": 100007,
+                    "title": "imbalance",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "imbalance"
+                  },
+                  {
+                    "fieldName": "imbalance_pct",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "float",
+                    "displayAs": "number",
+                    "numberFormat": "#,##0.##",
+                    "visible": true,
+                    "order": 100008,
+                    "title": "imbalance %",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "imbalance %"
+                  },
+                  {
+                    "fieldName": "result",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100009,
+                    "title": "result",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "result"
+                  },
+                  {
+                    "fieldName": "gate_status",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100010,
+                    "title": "formal method / 7602(e) gate",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "formal method / 7602(e) gate"
+                  }
+                ]
+              },
+              "invisibleColumns": [],
+              "allowHTMLByDefault": false,
+              "itemsPerPage": 25,
+              "paginationSize": "default",
+              "condensed": true,
+              "withRowNumber": false,
+              "frame": {
+                "showTitle": true,
+                "title": "Cash T results \u2014 every exam case with a financial status analysis"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 6,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "f_probe_case",
+            "queries": [
+              {
+                "name": "q_probe_case_values",
+                "query": {
+                  "datasetName": "ds_im_cases",
+                  "fields": [
+                    {
+                      "name": "probe_case",
+                      "expression": "`probe_case`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "p_ds_im_kpis_probe_case",
+                "query": {
+                  "datasetName": "ds_im_kpis",
+                  "parameters": [
+                    {
+                      "name": "probe_case",
+                      "keyword": "probe_case"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "p_ds_im_lines_probe_case",
+                "query": {
+                  "datasetName": "ds_im_lines",
+                  "parameters": [
+                    {
+                      "name": "probe_case",
+                      "keyword": "probe_case"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "p_ds_im_gate_probe_case",
+                "query": {
+                  "datasetName": "ds_im_gate",
+                  "parameters": [
+                    {
+                      "name": "probe_case",
+                      "keyword": "probe_case"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "p_ds_im_bdce_probe_case",
+                "query": {
+                  "datasetName": "ds_im_bdce",
+                  "parameters": [
+                    {
+                      "name": "probe_case",
+                      "keyword": "probe_case"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "p_ds_im_networth_probe_case",
+                "query": {
+                  "datasetName": "ds_im_networth",
+                  "parameters": [
+                    {
+                      "name": "probe_case",
+                      "keyword": "probe_case"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "probe_case",
+                    "displayName": "probe_case",
+                    "queryName": "q_probe_case_values"
+                  },
+                  {
+                    "parameterName": "probe_case",
+                    "queryName": "p_ds_im_kpis_probe_case"
+                  },
+                  {
+                    "parameterName": "probe_case",
+                    "queryName": "p_ds_im_lines_probe_case"
+                  },
+                  {
+                    "parameterName": "probe_case",
+                    "queryName": "p_ds_im_gate_probe_case"
+                  },
+                  {
+                    "parameterName": "probe_case",
+                    "queryName": "p_ds_im_bdce_probe_case"
+                  },
+                  {
+                    "parameterName": "probe_case",
+                    "queryName": "p_ds_im_networth_probe_case"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Exam case and tax period"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 7,
+            "width": 3,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "c047",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_im_kpis",
+                  "fields": [
+                    {
+                      "name": "total_sources",
+                      "expression": "`total_sources`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "total_sources",
+                  "displayName": "Sources of funds"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Sources of funds"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 8,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "c048",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_im_kpis",
+                  "fields": [
+                    {
+                      "name": "total_applications",
+                      "expression": "`total_applications`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "total_applications",
+                  "displayName": "Applications of funds"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Applications of funds"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 8,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "c049",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_im_kpis",
+                  "fields": [
+                    {
+                      "name": "imbalance",
+                      "expression": "`imbalance`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "imbalance",
+                  "displayName": "Applications over sources"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Applications over sources"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 8,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "tb050",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_im_lines",
+                  "fields": [
+                    {
+                      "name": "side",
+                      "expression": "`side`"
+                    },
+                    {
+                      "name": "category",
+                      "expression": "`category`"
+                    },
+                    {
+                      "name": "description",
+                      "expression": "`description`"
+                    },
+                    {
+                      "name": "amount",
+                      "expression": "`amount`"
+                    },
+                    {
+                      "name": "basis",
+                      "expression": "`basis`"
+                    },
+                    {
+                      "name": "reference",
+                      "expression": "`reference`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "side",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100000,
+                    "title": "side",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "side"
+                  },
+                  {
+                    "fieldName": "category",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100001,
+                    "title": "category",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "category"
+                  },
+                  {
+                    "fieldName": "description",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100002,
+                    "title": "description",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "description"
+                  },
+                  {
+                    "fieldName": "amount",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "float",
+                    "displayAs": "number",
+                    "numberFormat": "#,##0.##",
+                    "visible": true,
+                    "order": 100003,
+                    "title": "amount",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "amount"
+                  },
+                  {
+                    "fieldName": "basis",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100004,
+                    "title": "source of figure",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "source of figure"
+                  },
+                  {
+                    "fieldName": "reference",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100005,
+                    "title": "reference",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "reference"
+                  }
+                ]
+              },
+              "invisibleColumns": [],
+              "allowHTMLByDefault": false,
+              "itemsPerPage": 25,
+              "paginationSize": "default",
+              "condensed": true,
+              "withRowNumber": false,
+              "frame": {
+                "showTitle": true,
+                "title": "Cash T \u2014 sources and applications, with where each figure came from"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 10,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "tb051",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_im_gate",
+                  "fields": [
+                    {
+                      "name": "method",
+                      "expression": "`method`"
+                    },
+                    {
+                      "name": "gate_check",
+                      "expression": "`gate_check`"
+                    },
+                    {
+                      "name": "documented",
+                      "expression": "`documented`"
+                    },
+                    {
+                      "name": "manager_concurrence",
+                      "expression": "`manager_concurrence`"
+                    },
+                    {
+                      "name": "result_used",
+                      "expression": "`result_used`"
+                    },
+                    {
+                      "name": "reasonable_indication",
+                      "expression": "`reasonable_indication`"
+                    },
+                    {
+                      "name": "likely_income_source",
+                      "expression": "`likely_income_source`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "method",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100000,
+                    "title": "method",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "method"
+                  },
+                  {
+                    "fieldName": "gate_check",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100001,
+                    "title": "gate check",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "gate check"
+                  },
+                  {
+                    "fieldName": "documented",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100002,
+                    "title": "documented",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "documented"
+                  },
+                  {
+                    "fieldName": "manager_concurrence",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100003,
+                    "title": "manager concurrence",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "manager concurrence"
+                  },
+                  {
+                    "fieldName": "result_used",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100004,
+                    "title": "result first used",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "result first used"
+                  },
+                  {
+                    "fieldName": "reasonable_indication",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100005,
+                    "title": "reasonable indication",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "reasonable indication"
+                  },
+                  {
+                    "fieldName": "likely_income_source",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100006,
+                    "title": "likely income source",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "likely income source"
+                  }
+                ]
+              },
+              "invisibleColumns": [],
+              "allowHTMLByDefault": false,
+              "itemsPerPage": 25,
+              "paginationSize": "default",
+              "condensed": true,
+              "withRowNumber": false,
+              "frame": {
+                "showTitle": true,
+                "title": "IRC 7602(e) gate \u2014 documented before the formal method was used?"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 16,
+            "width": 6,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "tb052",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_im_bdce",
+                  "fields": [
+                    {
+                      "name": "line_no",
+                      "expression": "`line_no`"
+                    },
+                    {
+                      "name": "line_label",
+                      "expression": "`line_label`"
+                    },
+                    {
+                      "name": "amount",
+                      "expression": "`amount`"
+                    },
+                    {
+                      "name": "note",
+                      "expression": "`note`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "line_no",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100000,
+                    "title": "line",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "line"
+                  },
+                  {
+                    "fieldName": "line_label",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100001,
+                    "title": "description",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "description"
+                  },
+                  {
+                    "fieldName": "amount",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "float",
+                    "displayAs": "number",
+                    "numberFormat": "#,##0.##",
+                    "visible": true,
+                    "order": 100002,
+                    "title": "amount",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "amount"
+                  },
+                  {
+                    "fieldName": "note",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100003,
+                    "title": "note",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "note"
+                  }
+                ]
+              },
+              "invisibleColumns": [],
+              "allowHTMLByDefault": false,
+              "itemsPerPage": 25,
+              "paginationSize": "default",
+              "condensed": true,
+              "withRowNumber": false,
+              "frame": {
+                "showTitle": true,
+                "title": "Bank deposits and cash expenditures (IRM 4.10.4.5.4.6) \u2014 Marisol 201912"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 19,
+            "width": 3,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "tb053",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_im_networth",
+                  "fields": [
+                    {
+                      "name": "as_of_or_period",
+                      "expression": "`as_of_or_period`"
+                    },
+                    {
+                      "name": "item_type",
+                      "expression": "`item_type`"
+                    },
+                    {
+                      "name": "item",
+                      "expression": "`item`"
+                    },
+                    {
+                      "name": "amount",
+                      "expression": "`amount`"
+                    },
+                    {
+                      "name": "basis",
+                      "expression": "`basis`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "as_of_or_period",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100000,
+                    "title": "date / year",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "date / year"
+                  },
+                  {
+                    "fieldName": "item_type",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100001,
+                    "title": "type",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "type"
+                  },
+                  {
+                    "fieldName": "item",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100002,
+                    "title": "item",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "item"
+                  },
+                  {
+                    "fieldName": "amount",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "float",
+                    "displayAs": "number",
+                    "numberFormat": "#,##0.##",
+                    "visible": true,
+                    "order": 100003,
+                    "title": "amount",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "amount"
+                  },
+                  {
+                    "fieldName": "basis",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true,
+                    "order": 100004,
+                    "title": "basis",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "displayName": "basis"
+                  }
+                ]
+              },
+              "invisibleColumns": [],
+              "allowHTMLByDefault": false,
+              "itemsPerPage": 25,
+              "paginationSize": "default",
+              "condensed": true,
+              "withRowNumber": false,
+              "frame": {
+                "showTitle": true,
+                "title": "Net worth computation (IRM 4.10.4.5.7) \u2014 Xena Jessup"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 19,
+            "width": 3,
+            "height": 7
           }
         }
       ],

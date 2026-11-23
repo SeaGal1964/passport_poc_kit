@@ -1,0 +1,7 @@
+fsa_id,tin_token,episode_id,tax_period,return_class,household_size,region,prepared_date,prepared_by,cash_on_hand_begin,cash_on_hand_end,coh_established_date,conclusion,note
+FSA-A-2019,TK100001,EP-A-EX19,201912,BUSINESS,3,West,2021-04-08,R. Okonkwo,500,500,2021-04-06,MATERIAL_IMBALANCE,Business return: bank account analysis is a minimum income probe.
+FSA-B-2024,TK200001,EP-B-EX24,202412,BUSINESS,2,West,2026-05-21,D. Brennan,0,0,2026-05-19,INCOME_SUPPORTS_EXPENDITURES,"Sources exceed applications; no indication of unreported income. The open issue is the real estate professional claim, a legal question."
+FSA-OX1-2023,TK300006,EP-OX1-EX,202312,BUSINESS,3,West,2026-07-28,K. Lindqvist,1000,1000,2026-07-21,MATERIAL_IMBALANCE,
+FSA-OX1-2024,TK300006,EP-OX1-EX,202412,BUSINESS,3,West,2026-07-28,K. Lindqvist,1000,1000,2026-07-21,MATERIAL_IMBALANCE,
+FSA-OX2-2024,TK300010,EP-OX2-EX,202412,BUSINESS,1,West,2026-10-06,M. Ferreira,300,300,2026-10-01,MATERIAL_IMBALANCE,Formal indirect method not yet allowed: the 7602(e) gate has not been documented.
+FSA-OX3-2024,TK300013,EP-OX3-EX,202412,BUSINESS,4,West,2026-08-14,K. Lindqvist,0,0,2026-08-12,INCOME_SUPPORTS_EXPENDITURES,

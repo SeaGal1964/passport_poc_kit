@@ -1,0 +1,14 @@
+episode_id,tin_token,tax_period,line_no,line_label,amount,note
+EP-A-EX19,TK100001,201912,1,"Total deposits, all accounts (business and personal)",276330,Three accounts; adjusted to current-year receipts
+EP-A-EX19,TK100001,201912,2,Less nontaxable and nonbusiness deposits,-19330,"Transfers 14,800; gift 3,000; 2018 refund 1,150; interest 380"
+EP-A-EX19,TK100001,201912,3,Net deposited receipts,257000,Line 1 plus line 2
+EP-A-EX19,TK100001,201912,4,Business expenses paid in cash,2600,Claimed expenses not paid by check or card
+EP-A-EX19,TK100001,201912,5,Capital items paid in cash,0,
+EP-A-EX19,TK100001,201912,6,Personal expenses paid in cash,4800,Living expenses not paid by check or card
+EP-A-EX19,TK100001,201912,7,Cash accumulated during the year,0,"Cash on hand $500 at both year ends, established at the initial interview"
+EP-A-EX19,TK100001,201912,8,Less nontaxable cash used for lines 4-7,-10400,Cash withdrawn from accounts already counted in line 1
+EP-A-EX19,TK100001,201912,9,Change in accounts receivable,0,Cash-basis taxpayer
+EP-A-EX19,TK100001,201912,10,Change in accounts payable,0,Cash-basis taxpayer
+EP-A-EX19,TK100001,201912,11,Corrected gross receipts,254000,Lines 3 through 10
+EP-A-EX19,TK100001,201912,12,Gross receipts reported,196000,SCH_C 1
+EP-A-EX19,TK100001,201912,13,Understatement of gross receipts,58000,Line 11 less line 12; the amount sustained on issue I-CC00001

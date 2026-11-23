@@ -39,6 +39,26 @@ adjustment repeats in 2024. The Thornburys have a prior no-change exam.
 See [`docs/TP360_Data_Model.md`](docs/TP360_Data_Model.md) for the ER diagram, every table's columns, and the AIMS-equivalent
 field list (SME to confirm). Closed-case figures are illustrative and computed with TY2024 parameters.
 
+## Exam income probes and indirect methods (IRM 4.10.4)
+
+Built from exam-side data only (the return, information returns, internal records, the initial interview and, for business
+returns, bank account analysis). Collection financial statements are not used.
+
+- **Cash T** (`tp_fsa`, `tp_fsa_line`, `v_fsa_summary`): financial status analysis per exam and tax period, each figure tagged
+  with where it came from. It is a minimum income probe, not a formal indirect method.
+- **IRC 7602(e) gate** (`tp_indirect_method_gate`, `v_indirect_method_gate`): the documented reasonable indication, likely
+  income source and method, with dates. The check fails if a result was used before the gate was documented, or if net
+  worth had no manager concurrence.
+- **Formal methods:** bank deposits and cash expenditures (`v_bdce_computation`) and net worth (`v_net_worth_computation`).
+- **Worked cases:** Marisol's 2019 field exam (material Cash T → gate → bank deposits → the $58,000 gross receipts
+  understatement); the Thornburys' 2024 exam (Cash T balances, so no formal method); three new open field exams —
+  Xena Jessup (net worth, manager concurrence), Jonah Vance-Ortiz (material Cash T, gate not yet documented) and
+  Xena Faraday (balances).
+- **SG11** flags an open exam whose Cash T does not balance. The dashboard has a new **Income probes** page.
+
+**SME to confirm:** the living-expense table (`tp_ref_ple`) is synthetic and only shaped like BLS data; the materiality
+rule (applications exceed sources by ≥ $10,000 and ≥ 10%); the gate fields; and the cash-on-hand handling.
+
 ## The two hero cases (TY2024)
 
 | | Case A — Marisol T. Vance (`TK100001`) | Case B — Marcus & Elena Thornbury (`TK200001`) |
