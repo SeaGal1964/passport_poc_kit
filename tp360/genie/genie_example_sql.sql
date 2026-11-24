@@ -155,3 +155,28 @@ FULL OUTER JOIN (SELECT * FROM {{catalog}}.{{schema}}.v_return_line_versions WHE
   ON a.form = b.form AND a.line = b.line AND a.sub_id = b.sub_id
 WHERE coalesce(b.amount, 0) <> coalesce(a.amount, 0)
 ORDER BY coalesce(b.form_sort, a.form_sort), coalesce(b.line_sort, a.line_sort), coalesce(b.line, a.line);
+
+-- E21. Which open exams have a Cash T that does not balance, and has the 7602(e) gate been documented?
+SELECT display_name, tin_token, episode_id, tax_period, total_sources, total_applications, imbalance,
+       round(100 * imbalance_pct, 1) AS imbalance_pct, gate_status
+FROM {{catalog}}.{{schema}}.v_fsa_summary
+WHERE episode_open AND material_imbalance
+ORDER BY imbalance DESC;
+
+-- E22. Show the Cash T for Marisol T. Vance's 2019 exam, with where each figure came from.
+SELECT side, category, description, amount, basis, reference
+FROM {{catalog}}.{{schema}}.v_fsa_lines
+WHERE display_name = 'Marisol T. Vance' AND tax_period = '201912'
+ORDER BY seq;
+
+-- E23. Walk through the bank deposits computation that supported Marisol T. Vance's 2019 gross receipts adjustment.
+SELECT line_no, line_label, amount, note
+FROM {{catalog}}.{{schema}}.v_bdce_computation
+WHERE display_name = 'Marisol T. Vance' AND tax_period = '201912'
+ORDER BY line_no;
+
+-- E24. Show the net worth computation for Xena Jessup by year.
+SELECT tax_period, item_type, item, amount, basis
+FROM {{catalog}}.{{schema}}.v_net_worth_computation
+WHERE display_name = 'Xena Jessup' AND item_type IN ('NW_INCREASE', 'NONDEDUCTIBLE', 'NONTAXABLE', 'CORRECTED_INCOME', 'REPORTED_INCOME', 'UNDERSTATEMENT')
+ORDER BY tax_period, item_sort;

@@ -23,6 +23,39 @@ SELECT DISTINCT tin_token, issue_code, CAST(substr(CAST(tax_period AS STRING), 1
 FROM tp_issue
 WHERE status = 'ADJUSTED' AND issue_code IS NOT NULL;
 
+-- Exam income probes (IRM 4.10.4): Cash T totals computed from its lines, independent of the stored conclusion.
+-- Materiality for the POC (SME to confirm): applications exceed sources by >= $10,000 and >= 10% of sources.
+CREATE OR REPLACE VIEW v_fsa_summary AS
+WITH tot AS (
+  SELECT fsa_id, sum(CASE WHEN side = 'SOURCE' THEN amount ELSE 0 END) AS total_sources,
+         sum(CASE WHEN side = 'APPLICATION' THEN amount ELSE 0 END) AS total_applications,
+         sum(CASE WHEN basis = 'BLS_TABLE' THEN amount ELSE 0 END) AS ple_from_table
+  FROM tp_fsa_line GROUP BY fsa_id),
+g AS (SELECT * FROM tp_indirect_method_gate)
+SELECT f.fsa_id, f.tin_token, t.display_name, f.episode_id, CAST(f.tax_period AS STRING) AS tax_period, f.return_class,
+       e.episode_type, e.episode_subtype, e.status AS episode_status, e.closed_date IS NULL AS episode_open,
+       f.household_size, f.region, f.prepared_date, f.prepared_by,
+       tot.total_sources, tot.total_applications, tot.ple_from_table,
+       tot.total_applications - tot.total_sources AS imbalance,
+       round((tot.total_applications - tot.total_sources) / tot.total_sources, 3) AS imbalance_pct,
+       (tot.total_applications - tot.total_sources >= 10000
+        AND tot.total_applications - tot.total_sources >= 0.10 * tot.total_sources) AS material_imbalance,
+       f.conclusion, f.cash_on_hand_begin, f.cash_on_hand_end, f.coh_established_date,
+       coalesce(g.method, 'NONE') AS formal_method, g.documented_date AS gate_documented_date,
+       g.manager_concurrence_date, g.result_used_date,
+       CASE WHEN g.gate_id IS NULL AND tot.total_applications - tot.total_sources >= 10000
+                 AND tot.total_applications - tot.total_sources >= 0.10 * tot.total_sources
+                 THEN 'GATE NOT DOCUMENTED — formal method not allowed yet'
+            WHEN g.gate_id IS NULL THEN 'No formal method indicated'
+            ELSE concat(g.method, ' — ', g.status) END AS gate_status,
+       f.note
+FROM tp_fsa f
+JOIN tot ON tot.fsa_id = f.fsa_id
+JOIN tp_taxpayer t ON t.tin_token = f.tin_token
+JOIN tp_compliance_episode e ON e.episode_id = f.episode_id
+LEFT JOIN g ON g.episode_id = f.episode_id
+          AND concat(';', g.tax_periods, ';') LIKE concat('%;', CAST(f.tax_period AS STRING), ';%');
+
 CREATE OR REPLACE VIEW v_tp_signal_evidence AS
 SELECT b.tin_token, 'SG01_UNDISCLOSED_BANK_ACCOUNT' AS signal_id, 'HIGH' AS severity,
        concat(b.institution, ' ', b.account_type, ' ending ', CAST(b.acct_last4 AS STRING), ' — balance ', CAST(b.balance AS STRING), ' — source ', b.source) AS evidence,
@@ -109,7 +142,15 @@ SELECT a.tin_token, 'SG10_REPEAT_ISSUE', 'MEDIUM',
        concat(a.issue_code, ' adjusted in ', CAST(a.yr AS STRING), ' and ', CAST(b.yr AS STRING)),
        'Prior audit history — same issue adjusted within five years'
 FROM v_adjusted_issue_years a
-JOIN v_adjusted_issue_years b ON b.tin_token = a.tin_token AND b.issue_code = a.issue_code AND b.yr > a.yr AND b.yr - a.yr <= 5;
+JOIN v_adjusted_issue_years b ON b.tin_token = a.tin_token AND b.issue_code = a.issue_code AND b.yr > a.yr AND b.yr - a.yr <= 5
+
+UNION ALL
+SELECT tin_token, 'SG11_CASH_T_MATERIAL_IMBALANCE', 'MEDIUM',
+       concat(tax_period, ': applications exceed sources by $', format_number(imbalance, 0),
+              ' (', CAST(round(imbalance_pct * 100) AS INT), '%); ', gate_status),
+       'Exam income probe (IRM 4.10.4.2.3.1) — open exam Cash T does not balance'
+FROM v_fsa_summary
+WHERE episode_open AND episode_type = 'EXAM' AND material_imbalance;
 
 -- One row per taxpayer per signal (evidence combined). Use this for counts and joins; v_tp_signal_evidence keeps
 -- one row per piece of evidence (e.g. each undisclosed account).
@@ -471,3 +512,40 @@ SELECT v.tin_token, v.display_name, v.tax_period, v.snapshot_id, v.version_type,
             ELSE 900000 END AS form_sort,
        coalesce(try_cast(regexp_extract(l.line, '^([0-9]+)', 1) AS INT), 9999) AS line_sort
 FROM tp_return_line l JOIN v_return_versions v ON v.snapshot_id = l.snapshot_id;
+
+-- --------------------------------------------------------------------------------------------
+-- Exam income probes and formal indirect methods (IRM 4.10.4)
+-- --------------------------------------------------------------------------------------------
+-- Cash T lines, sources and applications side by side order
+CREATE OR REPLACE VIEW v_fsa_lines AS
+SELECT f.fsa_id, f.tin_token, t.display_name, f.episode_id, CAST(f.tax_period AS STRING) AS tax_period,
+       l.seq, l.side, l.category, l.description, l.amount, l.basis, l.reference
+FROM tp_fsa_line l JOIN tp_fsa f ON f.fsa_id = l.fsa_id JOIN tp_taxpayer t ON t.tin_token = f.tin_token;
+
+-- IRC 7602(e) gate: was the reasonable indication documented before the formal method's result was used?
+-- Net worth also needs group manager concurrence (IRM 4.10.4.5.7.2).
+CREATE OR REPLACE VIEW v_indirect_method_gate AS
+SELECT g.gate_id, g.episode_id, g.tin_token, t.display_name, g.tax_periods, g.method, g.status,
+       g.triggers, g.reasonable_indication, g.likely_income_source,
+       g.documented_date, g.manager_concurrence_date, g.result_used_date,
+       CASE WHEN g.documented_date IS NULL THEN 'FAIL — reasonable indication not documented'
+            WHEN g.method = 'NET_WORTH' AND g.manager_concurrence_date IS NULL THEN 'FAIL — no manager concurrence for net worth'
+            WHEN g.result_used_date IS NOT NULL AND CAST(g.result_used_date AS DATE) < CAST(g.documented_date AS DATE)
+                 THEN 'FAIL — result used before the gate was documented'
+            WHEN g.method = 'NET_WORTH' AND g.result_used_date IS NOT NULL
+                 AND CAST(g.result_used_date AS DATE) < CAST(g.manager_concurrence_date AS DATE)
+                 THEN 'FAIL — result used before manager concurrence'
+            ELSE 'PASS' END AS gate_check
+FROM tp_indirect_method_gate g JOIN tp_taxpayer t ON t.tin_token = g.tin_token;
+
+CREATE OR REPLACE VIEW v_bdce_computation AS
+SELECT b.episode_id, b.tin_token, t.display_name, CAST(b.tax_period AS STRING) AS tax_period,
+       b.line_no, b.line_label, b.amount, b.note
+FROM tp_bdce_line b JOIN tp_taxpayer t ON t.tin_token = b.tin_token;
+
+CREATE OR REPLACE VIEW v_net_worth_computation AS
+SELECT n.episode_id, n.tin_token, t.display_name, CAST(n.tax_period AS STRING) AS tax_period, n.as_of_date,
+       n.item_type, n.item, n.amount, n.basis,
+       CASE n.item_type WHEN 'ASSET' THEN 1 WHEN 'LIABILITY' THEN 2 WHEN 'NW_INCREASE' THEN 3 WHEN 'NONDEDUCTIBLE' THEN 4
+            WHEN 'NONTAXABLE' THEN 5 WHEN 'CORRECTED_INCOME' THEN 6 WHEN 'REPORTED_INCOME' THEN 7 ELSE 8 END AS item_sort
+FROM tp_net_worth_item n JOIN tp_taxpayer t ON t.tin_token = n.tin_token;

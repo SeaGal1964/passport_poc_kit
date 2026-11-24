@@ -15,6 +15,7 @@ HERO = "Marisol T. Vance"
 HERO_LABEL = "Marisol T. Vance (TK100001)"
 PICK = "concat(t.display_name, ' (', t.tin_token, ')') = :taxpayer"
 RVE_PICK = "concat(t.display_name, ' (', t.tin_token, ')') = :rve_taxpayer"
+IM_PICK = "concat(f.display_name, ' — ', f.tax_period, ' (', f.episode_id, ')') = :probe_case"
 VERSIONS = ["AS_FILED", "AS_AMENDED", "RVE_WORKING", "PROPOSED", "AS_EXAMINED", "AS_APPEALED"]
 VERSION_VALUES = ", ".join(f"('{v}', {i})" for i, v in enumerate(VERSIONS, 1))
 
@@ -177,13 +178,47 @@ FROM {Q}.v_variance_root_causes GROUP BY root_cause ORDER BY findings DESC"""),
     "ds_cc_trace": ("Issue code → Form 1040 trace", f"""
 SELECT issue_code, issue_name, role, source_line, rollup_path
 FROM {Q}.v_issue_to_1040_trace ORDER BY issue_code, role DESC"""),
+    # ---- page 5: exam income probes (IRM 4.10.4) -------------------------------------------
+    "ds_im_cases": ("Income probe case picker values", f"""
+SELECT concat(f.display_name, ' — ', f.tax_period, ' (', f.episode_id, ')') AS probe_case,
+       CASE WHEN f.tin_token = 'TK100001' THEN 0 WHEN f.episode_open THEN 1 ELSE 2 END AS sort_key
+FROM {Q}.v_fsa_summary f ORDER BY sort_key, probe_case"""),
+    "ds_im_all": ("Cash T results — all exam cases", f"""
+SELECT f.display_name, f.tax_period, f.episode_id, CASE WHEN f.episode_open THEN 'Open' ELSE 'Closed' END AS exam,
+       f.return_class, f.total_sources, f.total_applications, f.imbalance, round(100 * f.imbalance_pct, 1) AS imbalance_pct,
+       CASE WHEN f.material_imbalance THEN 'MATERIAL' ELSE 'Balances' END AS result, f.gate_status
+FROM {Q}.v_fsa_summary f ORDER BY f.material_imbalance DESC, f.imbalance DESC"""),
+    "ds_im_kpis": ("Cash T totals — selected case", f"""
+SELECT f.total_sources, f.total_applications, f.imbalance, round(100 * f.imbalance_pct, 1) AS imbalance_pct,
+       CASE WHEN f.material_imbalance THEN 'MATERIAL IMBALANCE' ELSE 'Income supports expenditures' END AS result
+FROM {Q}.v_fsa_summary f WHERE {IM_PICK}"""),
+    "ds_im_lines": ("Cash T lines — selected case", f"""
+SELECT l.side, l.category, l.description, l.amount, l.basis, l.reference
+FROM {Q}.v_fsa_lines l JOIN {Q}.v_fsa_summary f ON f.fsa_id = l.fsa_id
+WHERE {IM_PICK} ORDER BY l.seq"""),
+    "ds_im_gate": ("IRC 7602(e) gate — selected case", f"""
+WITH g AS (SELECT g.* FROM {Q}.v_indirect_method_gate g JOIN {Q}.v_fsa_summary f ON f.episode_id = g.episode_id WHERE {IM_PICK}),
+f AS (SELECT f.* FROM {Q}.v_fsa_summary f WHERE {IM_PICK})
+SELECT coalesce(g.method, 'NONE') AS method, coalesce(g.gate_check, f.gate_status) AS gate_check,
+       CAST(g.documented_date AS STRING) AS documented, CAST(g.manager_concurrence_date AS STRING) AS manager_concurrence,
+       CAST(g.result_used_date AS STRING) AS result_used, g.reasonable_indication, g.likely_income_source
+FROM f LEFT JOIN g ON true"""),
+    "ds_im_bdce": ("Bank deposits and cash expenditures — selected case", f"""
+SELECT b.line_no, b.line_label, b.amount, b.note
+FROM {Q}.v_bdce_computation b JOIN {Q}.v_fsa_summary f ON f.episode_id = b.episode_id AND f.tax_period = b.tax_period
+WHERE {IM_PICK} ORDER BY b.line_no"""),
+    "ds_im_networth": ("Net worth computation — selected case", f"""
+SELECT coalesce(CAST(n.as_of_date AS STRING), n.tax_period) AS as_of_or_period, n.item_type, n.item, n.amount, n.basis
+FROM {Q}.v_net_worth_computation n JOIN {Q}.v_fsa_summary f ON f.episode_id = n.episode_id
+WHERE {IM_PICK} AND (n.tax_period IS NULL OR n.tax_period = '' OR n.tax_period = f.tax_period)
+ORDER BY n.item_sort, as_of_or_period, n.item"""),
 }
 
 # column types for tables: name -> (type, displayAs)
 NUMERIC_HINTS = ("balance", "deficiency", "amount", "count", "cases", "hours", "pct", "per_hour", "adjust", "findings",
                  "issues", "taxpayers", "hops", "raised", "conceded", "no_change", "sustained", "delta", "as_filed",
                  "as_adjusted", "line_count", "change", "notices", "exams", "days_to", "codes", "total_tax", "_seq",
-                 "lines", "versions")
+                 "lines", "versions", "sources", "applications", "imbalance")
 
 
 def col_type(name):
@@ -294,6 +329,7 @@ PARAMS = {  # keyword: (default, datasets that use it, values dataset)
                                  "ds_rve_findings"], "ds_rve_taxpayers"),
     "from_version": ("AS_FILED", ["ds_rve_pair", "ds_rve_compare"], "ds_from_versions"),
     "to_version": ("LATEST", ["ds_rve_pair", "ds_rve_compare"], "ds_to_versions"),
+    "probe_case": ("Marisol T. Vance — 201912 (EP-A-EX19)", ["ds_im_kpis", "ds_im_lines", "ds_im_gate", "ds_im_bdce", "ds_im_networth"], "ds_im_cases"),
 }
 
 
@@ -373,7 +409,7 @@ p2 = [
     table("ds_rve_origin", "Where the return data came from, by version", 0, 23, 6, 5),
 ]
 p3 = [
-    text(["## Signals across the population", "Rules SG01–SG10 run as SQL over the canonical model. The same rules feed Genie, this dashboard and any case tool — nothing is copied into a workflow vendor.", NOTE], 0, 0, 6, 2),
+    text(["## Signals across the population", "Rules SG01–SG11 run as SQL over the canonical model. The same rules feed Genie, this dashboard and any case tool — nothing is copied into a workflow vendor.", NOTE], 0, 0, 6, 2),
     counter("ds_sig_kpis", "taxpayers_with_signals", "Taxpayers with any signal", 0, 2),
     counter("ds_sig_kpis", "taxpayers_with_high", "Taxpayers with a HIGH signal", 2, 2),
     counter("ds_sig_kpis", "signal_rows", "Signals firing", 4, 2),
@@ -393,6 +429,27 @@ p4 = [
     hbar("ds_cc_rootcause", "root_cause", "findings", "Variance root causes", "Root cause", "Findings", 4, 16, 2, 6),
     table("ds_cc_trace", "Issue code → source line → Form 1040", 0, 22, 6, 6),
 ]
+p5 = [
+    text(["## Exam income probes and indirect methods (IRM 4.10.4)",
+          "Every exam does minimum income probes; the financial status analysis (Cash T) compares what came in with what went out, using exam data only: the return, information returns, the interview, a BLS-style living-expense table and, for business returns, bank account analysis. A Cash T is a probe, not a formal method. A formal indirect method (bank deposits, net worth) needs a documented reasonable indication of unreported income first — IRC 7602(e) — and net worth also needs manager concurrence. Living-expense figures and the materiality rule (≥ $10,000 and ≥ 10% of sources) are synthetic; SME to confirm.", NOTE], 0, 0, 6, 3),
+    table("ds_im_all", "Cash T results — every exam case with a financial status analysis", 0, 3, 6, 4,
+          {"display_name": "taxpayer", "tax_period": "tax period", "episode_id": "case", "return_class": "return",
+           "total_sources": "sources", "total_applications": "applications", "imbalance_pct": "imbalance %",
+           "gate_status": "formal method / 7602(e) gate"}),
+    picker(0, 7, 3, 1, "probe_case", "Exam case and tax period"),
+    counter("ds_im_kpis", "total_sources", "Sources of funds", 0, 8),
+    counter("ds_im_kpis", "total_applications", "Applications of funds", 2, 8),
+    counter("ds_im_kpis", "imbalance", "Applications over sources", 4, 8),
+    table("ds_im_lines", "Cash T — sources and applications, with where each figure came from", 0, 10, 6, 6,
+          {"basis": "source of figure"}),
+    table("ds_im_gate", "IRC 7602(e) gate — documented before the formal method was used?", 0, 16, 6, 3,
+          {"gate_check": "gate check", "result_used": "result first used", "reasonable_indication": "reasonable indication",
+           "likely_income_source": "likely income source"}),
+    table("ds_im_bdce", "Bank deposits and cash expenditures (IRM 4.10.4.5.4.6) — Marisol 201912", 0, 19, 3, 7,
+          {"line_no": "line", "line_label": "description"}),
+    table("ds_im_networth", "Net worth computation (IRM 4.10.4.5.7) — Xena Jessup", 3, 19, 3, 7,
+          {"as_of_or_period": "date / year", "item_type": "type"}),
+]
 
 dash = {
     "datasets": [dataset(k, v) for k, v in DATASETS.items()],
@@ -401,6 +458,7 @@ dash = {
         {"name": "p_rve", "displayName": "Return Viewer Editor", "layout": p2, "pageType": "PAGE_TYPE_CANVAS"},
         {"name": "p_signals", "displayName": "Signals", "layout": p3, "pageType": "PAGE_TYPE_CANVAS"},
         {"name": "p_closed", "displayName": "Closed cases", "layout": p4, "pageType": "PAGE_TYPE_CANVAS"},
+        {"name": "p_probes", "displayName": "Income probes", "layout": p5, "pageType": "PAGE_TYPE_CANVAS"},
     ],
 }
 os.makedirs(os.path.join(ROOT, "dashboards"), exist_ok=True)

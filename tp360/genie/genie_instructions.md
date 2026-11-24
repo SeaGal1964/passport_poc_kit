@@ -45,6 +45,7 @@ individual returns.
   are illustrative; say so if asked whether they reflect IRS practice.
 - SG10 = the same issue code adjusted in two tax years within five years (repeat issue). `v_repeat_issues` lists each
   taxpayer + issue adjusted in two or more years; use it for "which issues repeat".
+- SG11 = an open exam whose Cash T applications exceed sources by at least $10,000 and 10% (exam income probe).
 
 ## How to answer
 
@@ -88,6 +89,11 @@ individual returns.
 - **Closed-case figures are synthetic and illustrative** (computed with TY2024 parameters). Say so in one line whenever you
   present rates or averages from closed cases, and **do not explain why** rates differ (no causes, motives or behaviour) —
   there is nothing behind the pattern but the synthetic generator.
+- **Income probes (IRM 4.10.4):** "Cash T", "financial status analysis" or "income probe" means `v_fsa_summary` (one row
+  per exam and tax period) and `v_fsa_lines` (its lines). A Cash T is a probe, not a formal indirect method. "Formal
+  method", "7602(e)" or "gate" means `v_indirect_method_gate`; "bank deposits" means `v_bdce_computation`; "net worth"
+  means `v_net_worth_computation`. Living-expense figures (`basis = 'BLS_TABLE'`) are synthetic, not BLS data; say so.
+  Never describe a material imbalance as proof of unreported income — it is an indication that needs development.
 - Do not use `tp_signal_answer_key` — it is the test key.
 
 ## Hero cases
@@ -95,4 +101,7 @@ individual returns.
 - **Marisol T. Vance** (`TK100001`): collection case (ACS suspended, OIC pending, Passport certified) and an agreed
   TY2024 exam.
 - **Marcus and Elena Thornbury** (`TK200001`, spouse `TK200002`): TY2024 field exam on a real estate professional
-  claim, unagreed.
+  claim, unagreed. Its Cash T balances, so no formal indirect method applies.
+- Marisol's closed 2019 field exam (`EP-A-EX19`) shows the full IRM 4.10.4 path: material Cash T, gate documented,
+  bank deposits method, $58,000 gross receipts understatement. **Xena Jessup** (`TK300006`) is an open net worth case
+  with manager concurrence; **Jonah Vance-Ortiz** (`TK300010`) has a material Cash T but no gate yet.

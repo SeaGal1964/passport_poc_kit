@@ -101,6 +101,17 @@ Interest is computed at assessment and is not modeled. Closed-case computations 
 | `tp_case_closure` | Case level, the AIMS-equivalent record: program, selection source, outcome, closing TC, deficiency, penalty, agreed, hours, Appeals result. | episode_id, tin_token, tax_period, program, selection_source, outcome, closed_date, closing_tc, deficiency, penalty_code, penalty_amount, appeals_outcome, agreed_ind, total_hours, issue_count, adjusted_issue_count, aims_disposal_code, computation_note |
 | `tp_tax_computation` | Tax computation results per case, filed vs examined: AGI, taxable income, tax, credits, other taxes, total tax, payments, deficiency. | episode_id, tin_token, tax_period, filing_status_filed, filing_status_examined, agi_filed, agi_examined, taxable_income_filed, taxable_income_examined, tax_filed, tax_examined, credits_filed, credits_examined, other_taxes_filed, other_taxes_examined, total_tax_filed, total_tax_examined, payments_filed, payments_examined, deficiency, penalty_amount, computation_engine, interest_note |
 
+### Exam income probes and indirect methods (IRM 4.10.4) — exam-side data only
+
+| Table | Purpose | Columns |
+|---|---|---|
+| `tp_fsa` | Financial status analysis (Cash T) header per exam and tax period: household, region, cash on hand and when it was established, conclusion. | fsa_id, tin_token, episode_id, tax_period, return_class, household_size, region, prepared_date, prepared_by, cash_on_hand_begin, cash_on_hand_end, coh_established_date, conclusion, note |
+| `tp_fsa_line` | Cash T lines: SOURCE or APPLICATION, amount, and where the figure came from (RETURN, IRP, INTERNAL, INTERVIEW, BLS_TABLE, THIRD_PARTY, BANK_RECORDS). | fsa_id, seq, side, category, description, amount, basis, reference |
+| `tp_indirect_method_gate` | IRC 7602(e) gate: reasonable indication, likely income source, method, date documented, manager concurrence (net worth), date the result was first used. | gate_id, episode_id, tin_token, tax_periods, method, triggers, reasonable_indication, likely_income_source, documented_date, manager_concurrence_date, result_used_date, status |
+| `tp_bdce_line` | Bank deposits and cash expenditures computation, IRM 4.10.4.5.4.6 line by line. | episode_id, tin_token, tax_period, line_no, line_label, amount, note |
+| `tp_net_worth_item` | Net worth statements (assets, liabilities by date) and the per-year computation to corrected income. | episode_id, tin_token, tax_period, as_of_date, item_type, item, amount, basis |
+| `tp_ref_ple` | Personal living expense table by year, region and household size. SYNTHETIC, shaped like BLS data; SME to confirm before any real use. | tax_year, region, household_size, annual_ple, source |
+
 ### Reference (the issue -> line translation)
 
 | Table | Purpose | Columns |
@@ -122,7 +133,10 @@ Interest is computed at assessment and is not modeled. Closed-case computations 
 | View | Answers |
 |---|---|
 | `v_tp360_header` | One row per taxpayer: balance, open episodes, signals |
-| `v_tp_signals` | Rules SG01–SG10 with evidence |
+| `v_tp_signals` | Rules SG01–SG11 with evidence |
+| `v_fsa_summary` | Cash T per exam and tax period: sources, applications, imbalance, materiality, gate status |
+| `v_indirect_method_gate` | 7602(e) gate check: documented before the result was used; net worth concurrence |
+| `v_bdce_computation` / `v_net_worth_computation` | The formal method computations |
 | `v_return_compare` | RVE three-column view: as filed, as adjusted, delta |
 | `v_exam_results` | Deficiency per exam episode |
 | `v_case_results` | Closed case + tax computation, deficiency per hour |
